@@ -1,13 +1,19 @@
 package ym_cosmetic.pick_perfume_be.perfume.entity
 
 import jakarta.persistence.*
+import ym_cosmetic.pick_perfume_be.accord.entity.Accord
 import ym_cosmetic.pick_perfume_be.brand.entity.Brand
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.designer.entity.Designer
 import ym_cosmetic.pick_perfume_be.member.entity.Member
+import ym_cosmetic.pick_perfume_be.note.entity.Note
 import ym_cosmetic.pick_perfume_be.perfume.enums.DesignerRole
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
+import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
+import ym_cosmetic.pick_perfume_be.review.entity.Review
+import ym_cosmetic.pick_perfume_be.vote.entity.Vote
+import ym_cosmetic.pick_perfume_be.vote.vo.VoteCategory
 
 @Entity
 @Table(name = "perfume")
@@ -32,7 +38,7 @@ class Perfume(
     )
     var brand: Brand,
 
-    @OneToMany(mappedBy = "perfume", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "perfume")
     val designers: MutableList<PerfumeDesigner> = mutableListOf(),
 
     @Enumerated(EnumType.STRING)
@@ -50,7 +56,49 @@ class Perfume(
         name = "creator_id", foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     var creator: Member? = null,
+
+    @OneToMany(mappedBy = "perfume")
+    val votes: MutableList<Vote> = mutableListOf(),
+
+    @OneToMany(mappedBy = "perfume")
+    val reviews: MutableList<Review> = mutableListOf(),
+
+    @OneToMany(mappedBy = "perfume")
+    val perfumeNotes: MutableList<PerfumeNote> = mutableListOf(),
+
+    @OneToMany(mappedBy = "perfume")
+    val perfumeAccords: MutableList<PerfumeAccord> = mutableListOf()
+
 ) : BaseTimeEntity() {
+    fun getNotes(): List<PerfumeNote> {
+        return perfumeNotes.toList()
+    }
+
+    fun getNotesByType(type: NoteType): List<PerfumeNote> {
+        return perfumeNotes.filter { it.type == type }
+    }
+
+    fun getAccords(): List<PerfumeAccord> {
+        return perfumeAccords.toList()
+    }
+
+    fun addNote(note: Note, type: NoteType) {
+        val perfumeNote = PerfumeNote(
+            perfume = this,
+            note = note,
+            type = type
+        )
+        perfumeNotes.add(perfumeNote)
+    }
+
+    fun addAccord(accord: Accord) {
+        val perfumeAccord = PerfumeAccord(
+            perfume = this,
+            accord = accord
+        )
+        perfumeAccords.add(perfumeAccord)
+    }
+
     fun approve() {
         if (!isApproved) {
             isApproved = true
@@ -75,12 +123,6 @@ class Perfume(
         this.image = image
     }
 
-    fun getNotes(): List<PerfumeNote> {
-        // 이 메서드는 실제로는 지연 로딩된 컬렉션을 로드하거나
-        // JPA Repository에서 관련 데이터를 가져오는 로직이 구현되어야 함
-        // 여기서는 간단한 구현만 보여줌
-        return emptyList() // 실제 구현에서는 연관된 PerfumeNote를 반환
-    }
 
     fun addDesigner(designer: Designer, role: DesignerRole, description: String? = null) {
         val perfumeDesigner = PerfumeDesigner(
@@ -92,7 +134,6 @@ class Perfume(
         designers.add(perfumeDesigner)
     }
 
-    // 디자이너 제거 메서드
     fun removeDesigner(designer: Designer, role: DesignerRole) {
         designers.removeIf {
             it.designer.id == designer.id && it.role == role
@@ -106,29 +147,43 @@ class Perfume(
             .map { it.designer }
     }
 
-    // 주 조향사 조회 (첫 번째 조향사)
     fun getPrimaryPerfumer(): Designer? {
         return designers
             .find { it.role == DesignerRole.PERFUMER }
             ?.designer
     }
 
-
-    fun getAccords(): List<PerfumeAccord> {
-        // 이 메서드는 실제로는 지연 로딩된 컬렉션을 로드하거나
-        // JPA Repository에서 관련 데이터를 가져오는 로직이 구현되어야 함
-        return emptyList() // 실제 구현에서는 연관된 PerfumeAccord를 반환
-    }
-
-
     fun calculateAverageRating(): Double {
-        // 실제 구현에서는 리뷰 리포지토리를 통해 계산
-        return 0.0
+        if (reviews.isEmpty()) return 0.0
+        return reviews.map { it.rating.value }.average()
     }
 
     fun getReviewCount(): Int {
-        // 실제 구현에서는 리뷰 리포지토리를 통해 계산
-        return 0
+        return reviews.size
     }
 
+
+    fun getVoteResults(): Map<VoteCategory, Map<String, Int>> {
+        return votes.groupBy { it.category }
+            .mapValues { (_, categoryVotes) ->
+                categoryVotes.groupBy { it.value }
+                    .mapValues { it.value.size }
+            }
+    }
+
+
+    fun getVoteResultByCategory(category: VoteCategory): Map<String, Int> {
+        return votes.filter { it.category == category }
+            .groupBy { it.value }
+            .mapValues { it.value.size }
+    }
+
+    fun getMostVotedValueByCategory(): Map<VoteCategory, String?> {
+        return VoteCategory.entries.associateWith { category ->
+            votes.filter { it.category == category }
+                .groupBy { it.value }
+                .maxByOrNull { it.value.size }
+                ?.key
+        }
+    }
 }
