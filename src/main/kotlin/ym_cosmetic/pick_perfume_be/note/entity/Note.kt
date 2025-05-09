@@ -1,13 +1,11 @@
 package ym_cosmetic.pick_perfume_be.note.entity
 
-import com.fragrantica.domain.common.vo.ImageUrl
 import jakarta.persistence.*
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
-import java.time.LocalDateTime
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
+import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 
 @Entity
-@Table(name = "notes")
+@Table(name = "note")
 class Note(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -20,12 +18,4 @@ class Note(
 
     @Embedded
     var image: ImageUrl? = null,
-
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+) : BaseTimeEntity()
