@@ -66,7 +66,7 @@ dependencies {
 
 
     // API 문서화
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 
     // 모니터링 및 로깅
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
