@@ -1,10 +1,9 @@
 package ym_cosmetic.pick_perfume_be.perfume.entity
 
 import jakarta.persistence.*
-import org.springframework.data.annotation.CreatedDate
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.note.entity.Note
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "perfume_notes")
@@ -31,8 +30,4 @@ class PerfumeNote(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val type: NoteType,
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
-)
+): BaseTimeEntity()
