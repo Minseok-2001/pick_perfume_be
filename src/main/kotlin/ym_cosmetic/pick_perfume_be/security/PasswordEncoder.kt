@@ -5,12 +5,24 @@ import org.springframework.stereotype.Component
 
 @Component
 class PasswordEncoder {
+    private val LOG_ROUNDS = 10
+
     fun encode(rawPassword: CharSequence): String {
-        return BCrypt.hashpw(rawPassword.toString(), BCrypt.gensalt(10))
+        return try {
+            BCrypt.hashpw(rawPassword.toString(), BCrypt.gensalt(LOG_ROUNDS))
+        } catch (e: Exception) {
+            BCrypt.hashpw(rawPassword.toString(), BCrypt.gensalt())
+        }
     }
 
-
     fun matches(rawPassword: CharSequence, encodedPassword: String?): Boolean {
-        return BCrypt.checkpw(rawPassword.toString(), encodedPassword)
+        return try {
+            if (encodedPassword.isNullOrEmpty() || rawPassword.isEmpty()) {
+                return false
+            }
+            BCrypt.checkpw(rawPassword.toString(), encodedPassword)
+        } catch (e: Exception) {
+            false
+        }
     }
 }
