@@ -3,6 +3,9 @@ package ym_cosmetic.pick_perfume_be.member.entity
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
+import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
+import ym_cosmetic.pick_perfume_be.member.enums.AuthProvider
+import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import java.time.LocalDateTime
 
 @Entity
@@ -25,7 +28,7 @@ class Member(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var role: Role = Role.USER,
+    var role: MemberRole = MemberRole.MEMBER,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,19 +45,11 @@ class Member(
     @Column(nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now()
 ) {
-    enum class Role {
-        USER, ADMIN
-    }
 
-    enum class AuthProvider {
-        LOCAL, KAKAO, NAVER
-    }
-
-    // 도메인 로직
     fun updateProfile(nickname: String, profileImage: ImageUrl?) {
         this.nickname = nickname
         this.profileImage = profileImage
     }
 
-    fun isAdmin(): Boolean = role == Role.USER
+    fun isAdmin(): Boolean = role == MemberRole.ADMIN
 }
