@@ -5,7 +5,7 @@ import jakarta.persistence.*
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
-import ym_cosmetic.pick_perfume_be.vote.entity.vo.VoteCategory
+import ym_cosmetic.pick_perfume_be.vote.vo.VoteCategory
 
 @Entity
 @Table(
