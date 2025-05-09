@@ -3,6 +3,7 @@ package ym_cosmetic.pick_perfume_be.recommendation.service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionalEventListener
@@ -21,6 +22,10 @@ class MemberActivityService(
     private val memberPreferenceService: MemberPreferenceService
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(MemberActivityService::class.java)
+    }
 
     /**
      * 활동 기록
@@ -56,11 +61,16 @@ class MemberActivityService(
     @TransactionalEventListener
     fun handlePerfumeViewedEvent(event: PerfumeViewedEvent) {
         coroutineScope.launch {
-            recordActivity(
-                memberId = event.memberId,
-                activityType = ActivityType.VIEW,
-                perfumeId = event.perfumeId
-            )
+            try {
+                recordActivity(
+                    memberId = event.memberId,
+                    activityType = ActivityType.VIEW,
+                    perfumeId = event.perfumeId
+                )
+            } catch (e: Exception) {
+                logger.error("Failed to record perfume viewed activity: ${e.message}", e)
+                // 실패한 이벤트를 재처리 큐에 넣거나 알림 발송
+            }
         }
     }
 
