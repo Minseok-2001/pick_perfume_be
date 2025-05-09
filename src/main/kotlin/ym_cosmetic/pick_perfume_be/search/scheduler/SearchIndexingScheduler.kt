@@ -5,13 +5,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import ym_cosmetic.pick_perfume_be.recommendation.service.UserPreferenceAnalysisService
+import ym_cosmetic.pick_perfume_be.recommendation.service.MemberPreferenceAnalysisService
 import ym_cosmetic.pick_perfume_be.search.service.PerfumeIndexingService
 
 @Component
 class SearchIndexingScheduler(
     private val perfumeIndexingService: PerfumeIndexingService,
-    private val userPreferenceAnalysisService: UserPreferenceAnalysisService
+    private val memberPreferenceAnalysisService: MemberPreferenceAnalysisService
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -27,7 +27,7 @@ class SearchIndexingScheduler(
     @Scheduled(cron = "0 0 3 ? * MON")
     fun analyzeAllUserPreferences() {
         coroutineScope.launch {
-            userPreferenceAnalysisService.analyzeAllUserPreferences()
+            memberPreferenceAnalysisService.analyzeAllUserPreferences()
         }
     }
 }
