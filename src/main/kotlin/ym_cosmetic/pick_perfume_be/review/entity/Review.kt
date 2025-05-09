@@ -2,15 +2,13 @@ package ym_cosmetic.pick_perfume_be.review.entity
 
 
 import jakarta.persistence.*
-import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedDate
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.perfume.vo.Season
 import ym_cosmetic.pick_perfume_be.review.vo.Rating
 import ym_cosmetic.pick_perfume_be.review.vo.Sentiment
 import ym_cosmetic.pick_perfume_be.review.vo.TimeOfDay
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "reviews")
@@ -52,14 +50,7 @@ class Review(
     @Column
     var sentiment: Sentiment? = null,
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-) {
+): BaseTimeEntity() {
     fun update(
         content: String, rating: Rating, season: Season?,
         timeOfDay: TimeOfDay?, sentiment: Sentiment?
