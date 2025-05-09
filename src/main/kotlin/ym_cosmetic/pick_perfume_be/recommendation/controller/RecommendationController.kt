@@ -9,7 +9,7 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.recommendation.service.RecommendationService
 
 @RestController
-@RequestMapping("/api/recommendations")
+@RequestMapping("/recommendations")
 class RecommendationController(
     private val recommendationService: RecommendationService
 ) {

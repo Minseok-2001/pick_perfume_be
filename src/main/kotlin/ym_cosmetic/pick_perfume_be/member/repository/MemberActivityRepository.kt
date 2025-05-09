@@ -16,34 +16,28 @@ interface MemberActivityRepository : JpaRepository<MemberActivity, Long> {
 
     @Query(
         """
-        SELECT COUNT(DISTINCT ma1.memberId) FROM MemberActivity ma1
-        WHERE ma1.activityType = 'RECOMMENDATION_CLICK'
-        AND ma1.timestamp BETWEEN :startDate AND :endDate
-        AND EXISTS (
-            SELECT 1 FROM MemberActivity ma2
-            WHERE ma2.memberId = ma1.memberId
-            AND ma2.perfumeId = ma1.perfumeId
-            AND ma2.activityType IN ('REVIEW', 'VOTE')
-            AND ma2.timestamp > ma1.timestamp
-            AND ma2.timestamp <= :endDate
-        )
+    SELECT COUNT(DISTINCT ma1.memberId) FROM MemberActivity ma1
+    WHERE ma1.activityType = :recommendationClickType
+    AND ma1.timestamp BETWEEN :startDate AND :endDate
+    AND EXISTS (
+        SELECT 1 FROM MemberActivity ma2
+        WHERE ma2.memberId = ma1.memberId
+        AND ma2.perfumeId = ma1.perfumeId
+        AND ma2.activityType IN (:conversionTypes)
+        AND ma2.timestamp > ma1.timestamp
+        AND ma2.timestamp <= :endDate
+    )
     """
     )
     fun countRecommendationConversions(
         @Param("startDate") startDate: LocalDateTime,
-        @Param("endDate") endDate: LocalDateTime
+        @Param("endDate") endDate: LocalDateTime,
+        @Param("recommendationClickType") recommendationClickType: ActivityType = ActivityType.RECOMMENDATION_CLICK,
+        @Param("conversionTypes") conversionTypes: List<ActivityType> = listOf(
+            ActivityType.REVIEW,
+            ActivityType.VOTE
+        )
     ): Int
 
-    fun findByMemberIdAndTimestampBetweenOrderByTimestampDesc(
-        memberId: Long,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
-    ): List<MemberActivity>
 
-    fun findByActivityTypeAndMemberIdAndTimestampBetweenOrderByTimestampDesc(
-        activityType: String,
-        memberId: Long,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
-    ): List<MemberActivity>
 }

@@ -9,10 +9,11 @@ import org.apache.http.HttpHost
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import org.elasticsearch.client.RestClient
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories
@@ -24,12 +25,12 @@ class ElasticsearchConfig(
     @Value("\${elasticsearch.host:localhost}") private val host: String,
     @Value("\${elasticsearch.port:9200}") private val port: Int
 ) {
-    companion object {
-        private val logger = LoggerFactory.getLogger(ElasticsearchConfig::class.java)
-    }
+    private val logger = LoggerFactory.getLogger(ElasticsearchConfig::class.java)
 
     @Bean
     fun elasticsearchClient(): ElasticsearchClient {
+        logger.info("Connecting to Elasticsearch at {}:{}", host, port)
+
         val restClient = RestClient.builder(HttpHost(host, port, "http"))
             .setRequestConfigCallback { requestConfigBuilder ->
                 requestConfigBuilder
@@ -62,14 +63,27 @@ class ElasticsearchConfig(
     }
 
     @Bean
-    fun indexInitializer(elasticsearchOperations: ElasticsearchOperations): InitializingBean {
-        return InitializingBean {
+    fun elasticsearchIndexInitializer(elasticsearchOperations: ElasticsearchOperations): ApplicationListener<ContextRefreshedEvent> {
+        return ApplicationListener<ContextRefreshedEvent> { event ->
             try {
-                if (!elasticsearchOperations.indexOps(PerfumeDocument::class.java).exists()) {
-                    elasticsearchOperations.indexOps(PerfumeDocument::class.java).create()
+                logger.info("Initializing Elasticsearch indices")
+                val indexOps = elasticsearchOperations.indexOps(PerfumeDocument::class.java)
+
+                if (!indexOps.exists()) {
+                    logger.info("Creating index for PerfumeDocument")
+                    indexOps.create()
+
+                    // 매핑 설정
+                    val mapping = indexOps.createMapping()
+                    indexOps.putMapping(mapping)
+
+                    logger.info("Index created successfully")
+                } else {
+                    logger.info("Index already exists for PerfumeDocument")
                 }
             } catch (e: Exception) {
-                logger.error("Failed to initialize Elasticsearch indexes", e)
+                logger.error("Failed to initialize Elasticsearch indices: {}", e.message, e)
+                // 애플리케이션 시작에 실패하지 않도록 예외를 흡수합니다
             }
         }
     }

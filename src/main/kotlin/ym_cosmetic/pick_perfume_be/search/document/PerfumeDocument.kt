@@ -7,6 +7,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Document(indexName = "perfumes")
+@Setting(
+    shards = 1,
+    replicas = 0,
+)
 class PerfumeDocument(
     @Id
     val id: String,
@@ -26,7 +30,6 @@ class PerfumeDocument(
     @Field(type = FieldType.Keyword)
     val concentration: String?,
 
-    @Field(type = FieldType.Keyword)
     @MultiField(
         mainField = Field(type = FieldType.Keyword),
         otherFields = [
@@ -38,7 +41,6 @@ class PerfumeDocument(
     @Field(type = FieldType.Nested)
     val notesByType: List<NotesByType>,
 
-    @Field(type = FieldType.Keyword)
     @MultiField(
         mainField = Field(type = FieldType.Keyword),
         otherFields = [
@@ -72,27 +74,5 @@ class PerfumeDocument(
     val updatedAt: LocalDateTime
 )
 
-data class NotesByType(
-    @Field(type = FieldType.Keyword)
-    val type: String, // "TOP", "MIDDLE", "BASE"
 
-    @Field(type = FieldType.Keyword)
-    @MultiField(
-        mainField = Field(type = FieldType.Keyword),
-        otherFields = [
-            InnerField(suffix = "text", type = FieldType.Text, analyzer = "standard")
-        ]
-    )
-    val notes: List<String>
-)
 
-data class DesignerInfo(
-    @Field(type = FieldType.Keyword)
-    val id: String,
-
-    @Field(type = FieldType.Text, analyzer = "standard")
-    val name: String,
-
-    @Field(type = FieldType.Keyword)
-    val role: String
-)
