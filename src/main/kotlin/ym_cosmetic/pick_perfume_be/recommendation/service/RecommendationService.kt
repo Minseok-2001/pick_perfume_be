@@ -3,6 +3,7 @@ package ym_cosmetic.pick_perfume_be.recommendation.service
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -12,6 +13,7 @@ import ym_cosmetic.pick_perfume_be.common.event.RecommendationClickedEvent
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.recommendation.event.RecommendationImpressionEvent
+import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchCriteria
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
 import ym_cosmetic.pick_perfume_be.search.service.PerfumeSearchService
 import java.time.LocalDate
@@ -24,6 +26,10 @@ class RecommendationService(
     private val memberPreferenceService: MemberPreferenceService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
+    companion object {
+        private val logger = LoggerFactory.getLogger(RecommendationService::class.java)
+    }
+
     /**
      * 사용자 맞춤 추천 - 코루틴 활용
      */
@@ -31,54 +37,74 @@ class RecommendationService(
         memberId: Long,
         limit: Int = 10
     ): List<PerfumeSummaryResponse> = coroutineScope {
+        try {
+            // 1. 사용자 선호도 가져오기 (캐시에서 가져오거나 계산)
+            val preferences = memberPreferenceService.getMemberPreferences(memberId)
 
-        // 사용자 선호도 가져오기 (캐시에 있으면 캐시에서, 없으면 계산 후 캐시 저장)
-        val preferences = memberPreferenceService.getMemberPreferences(memberId)
+            // 2. 선호도 데이터가 충분한지 검증
+            val hasPreferences = preferences.preferredNotes.isNotEmpty() ||
+                    preferences.preferredAccords.isNotEmpty() ||
+                    preferences.preferredBrands.isNotEmpty()
 
-        // 선호도 데이터 검증
-        if (preferences.preferredNotes.isEmpty() &&
-            preferences.preferredAccords.isEmpty() &&
-            preferences.preferredBrands.isEmpty()
-        ) {
-            // 선호도 정보가 없으면 인기 향수 추천
+            // 3. 추천 쿼리 실행 (비동기)
+            val recommendedPerfumesDeferred = if (hasPreferences) {
+                async {
+                    perfumeSearchService.findRecommendedPerfumes(
+                        memberPreferences = preferences,
+                        limit = limit,
+                    )
+                }
+            } else {
+                async { emptyList() }
+            }
+
+            // 4. 백그라운드에서 선호도 업데이트
+            if (preferences.lastUpdated.isBefore(LocalDateTime.now().minusHours(24))) {
+                launch {
+                    try {
+                        memberPreferenceService.updateMemberPreferences(memberId)
+                    } catch (e: Exception) {
+                        logger.error("Failed to update member preferences: ${e.message}", e)
+                    }
+                }
+            }
+
+            // 5. 검색 결과 가져오기
+            val recommendedPerfumes = recommendedPerfumesDeferred.await()
+
+            // 6. 충분한 추천이 없으면 인기 향수로 보완
+            val result = if (recommendedPerfumes.isEmpty()) {
+                getPopularPerfumes(limit)
+            } else {
+                convertToPerfumeSummaryResponses(recommendedPerfumes)
+            }
+
+            // 7. 추천 노출 이벤트 발행 (비동기)
+            launch {
+                result.forEach { perfume ->
+                    try {
+                        eventPublisher.publishEvent(
+                            RecommendationImpressionEvent(
+                                memberId = memberId,
+                                perfumeId = perfume.id,
+                                recommendationType = "personalized"
+                            )
+                        )
+                    } catch (e: Exception) {
+                        logger.error("Failed to publish impression event: ${e.message}", e)
+                    }
+                }
+            }
+
+            return@coroutineScope result
+        } catch (e: Exception) {
+            logger.error(
+                "Error in personalized recommendations for member $memberId: ${e.message}",
+                e
+            )
+            // 에러 발생 시 인기 향수 반환
             return@coroutineScope getPopularPerfumes(limit)
         }
-
-        // 선호도 기반 추천 (비동기)
-        val recommendedPerfumesDeferred = async {
-            perfumeSearchService.findRecommendedPerfumes(
-                memberPreferences = preferences,
-                limit = limit,
-            )
-        }
-
-        // 백그라운드에서 선호도 업데이트 (필요 시)
-        if (preferences.lastUpdated.isBefore(LocalDateTime.now().minusHours(24))) {
-            launch {
-                memberPreferenceService.updateMemberPreferences(memberId)
-            }
-        }
-
-        // 검색 결과 가져오기
-        val recommendedPerfumes = recommendedPerfumesDeferred.await()
-
-        // 검색 결과를 PerfumeSummaryResponse로 변환
-        val result = convertToPerfumeSummaryResponses(recommendedPerfumes)
-
-        // 추천 노출 이벤트 발행 (비동기)
-        launch {
-            result.forEach { perfume ->
-                eventPublisher.publishEvent(
-                    RecommendationImpressionEvent(
-                        memberId = memberId,
-                        perfumeId = perfume.id,
-                        recommendationType = "personalized"
-                    )
-                )
-            }
-        }
-
-        return@coroutineScope result
     }
 
     /**
@@ -171,7 +197,7 @@ class RecommendationService(
     }
 
     /**
-     * 노트 기반 추천
+     * 노트 기반 추천 - 개선된 버전
      */
     @Transactional(readOnly = true)
     suspend fun getRecommendationsByNote(
@@ -180,12 +206,16 @@ class RecommendationService(
         limit: Int = 10
     ): List<PerfumeSummaryResponse> = coroutineScope {
         val searchResultsDeferred = async {
-            perfumeSearchService.searchPerfumes(
+            // 여기서 PageRequest 객체를 생성하고 필요한 검색 기준만 설정
+            val pageable = PageRequest.of(0, limit)
+            val criteria = PerfumeSearchCriteria(
                 keyword = null,
                 note = noteName,
                 sortBy = "rating",
-                limit = limit
+                pageable = pageable
+                // 다른 필드는 기본값(null)으로 두어 필터링에서 제외
             )
+            perfumeSearchService.searchPerfumes(criteria)
         }
 
         val searchResults = searchResultsDeferred.await()
@@ -245,6 +275,27 @@ class RecommendationService(
     }
 
     /**
+     * 시즌 기반 추천을 위한 오버로드 메소드 추가 - PerfumeSearchService에서 시즌 파라미터를 받도록 수정 필요
+     */
+    private suspend fun searchPerfumesBySeason(
+        season: String,
+        limit: Int
+    ): List<PerfumeSearchResult> {
+        val pageable = PageRequest.of(0, limit)
+        val criteria = PerfumeSearchCriteria(
+            keyword = null,
+            sortBy = "rating",
+            pageable = pageable
+            // Season 필드를 PerfumeSearchCriteria에 추가해야 함
+            // season = season
+        )
+
+        // 시즌 검색을 위한 임시 구현
+        // 실제로는 PerfumeSearchCriteria와 PerfumeSearchService를 수정해야 함
+        return perfumeSearchService.searchPerfumes(criteria)
+    }
+
+    /**
      * 다양한 요소를 종합한 개인화 추천 (하이브리드 접근법)
      * - 사용자 선호도
      * - 인기 향수
@@ -289,12 +340,8 @@ class RecommendationService(
                 else -> "WINTER"
             }
 
-            // 계절에 맞는 향수 추천
-            perfumeSearchService.searchPerfumes(
-                keyword = null,
-                season = season,
-                limit = limit / 2
-            )
+            // 계절에 맞는 향수 추천 - 수정된 메소드 호출
+            searchPerfumesBySeason(season, limit / 2)
         }
 
         // 각 방식의 추천 결과 취합
@@ -334,7 +381,6 @@ class RecommendationService(
         }
 
         // 3. 계절 요소 추가 (10%)
-        limit - combinedResults.size
         val convertedSeasonalRecs = convertToPerfumeSummaryResponses(seasonalRecs)
 
         convertedSeasonalRecs.forEach { perfume ->
@@ -370,4 +416,3 @@ class RecommendationService(
         return@coroutineScope combinedResults
     }
 }
-
