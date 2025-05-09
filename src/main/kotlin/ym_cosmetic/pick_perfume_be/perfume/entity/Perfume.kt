@@ -1,12 +1,10 @@
 package ym_cosmetic.pick_perfume_be.perfume.entity
 
 import jakarta.persistence.*
-import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedDate
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "perfumes")
@@ -44,15 +42,7 @@ class Perfume(
         name = "creator_id", foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     var creator: Member? = null,
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-) {
+) : BaseTimeEntity() {
     fun approve() {
         if (!isApproved) {
             isApproved = true
@@ -78,4 +68,28 @@ class Perfume(
     fun updateImage(image: ImageUrl?) {
         this.image = image
     }
+
+    fun getNotes(): List<PerfumeNote> {
+        // 이 메서드는 실제로는 지연 로딩된 컬렉션을 로드하거나
+        // JPA Repository에서 관련 데이터를 가져오는 로직이 구현되어야 함
+        // 여기서는 간단한 구현만 보여줌
+        return emptyList() // 실제 구현에서는 연관된 PerfumeNote를 반환
+    }
+
+    fun getAccords(): List<PerfumeAccord> {
+        // 이 메서드는 실제로는 지연 로딩된 컬렉션을 로드하거나
+        // JPA Repository에서 관련 데이터를 가져오는 로직이 구현되어야 함
+        return emptyList() // 실제 구현에서는 연관된 PerfumeAccord를 반환
+    }
+
+    fun calculateAverageRating(): Double {
+        // 실제 구현에서는 리뷰 리포지토리를 통해 계산
+        return 0.0
+    }
+
+    fun getReviewCount(): Int {
+        // 실제 구현에서는 리뷰 리포지토리를 통해 계산
+        return 0
+    }
+
 }
