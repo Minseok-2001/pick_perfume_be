@@ -20,7 +20,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
 
 @Configuration
-@EnableElasticsearchRepositories("ym_cosmetic.pick_perfume_be.search.repository")
+@EnableElasticsearchRepositories(basePackages = ["ym_cosmetic.pick_perfume_be.search.repository"])
 class ElasticsearchConfig(
     @Value("\${elasticsearch.host:localhost}") private val host: String,
     @Value("\${elasticsearch.port:9200}") private val port: Int
