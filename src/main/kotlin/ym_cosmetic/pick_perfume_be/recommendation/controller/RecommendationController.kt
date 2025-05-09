@@ -5,8 +5,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
+import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.recommendation.service.RecommendationService
+import ym_cosmetic.pick_perfume_be.security.CurrentMember
 
 @RestController
 @RequestMapping("/recommendations")
@@ -88,12 +90,11 @@ class RecommendationController(
      */
     @PostMapping("/click")
     fun recordRecommendationClick(
-        @AuthenticationPrincipal userDetails: UserDetails,
+        @CurrentMember member: Member,
         @RequestParam perfumeId: Long,
         @RequestParam recommendationType: String
     ): ApiResponse<Unit> {
-        val memberId = userDetails.username.toLong()
-        recommendationService.recordRecommendationClick(memberId, perfumeId, recommendationType)
+        recommendationService.recordRecommendationClick(member.id!!, perfumeId, recommendationType)
         return ApiResponse.success(Unit)
     }
 }
