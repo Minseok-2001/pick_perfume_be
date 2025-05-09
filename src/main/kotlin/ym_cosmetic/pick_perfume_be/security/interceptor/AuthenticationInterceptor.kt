@@ -7,15 +7,15 @@ import org.springframework.stereotype.Component
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.web.servlet.HandlerInterceptor
+import ym_cosmetic.pick_perfume_be.member.MemberService
 import ym_cosmetic.pick_perfume_be.member.entity.Member
-import ym_cosmetic.pick_perfume_be.security.UserContext
+import ym_cosmetic.pick_perfume_be.security.MemberContext
 
 @Component
-@RequiredArgsConstructor
-class AuthenticationInterceptor : HandlerInterceptor {
-    private val userContext: UserContext? = null
-
-    private val userService: UserService? = null
+class AuthenticationInterceptor(
+    private val memberContext: MemberContext,
+    private val memberService: MemberService
+) : HandlerInterceptor {
 
     override fun preHandle(
         request: HttpServletRequest, response: HttpServletResponse,
@@ -23,13 +23,11 @@ class AuthenticationInterceptor : HandlerInterceptor {
     ): Boolean {
         val session = request.getSession(false)
         if (session != null) {
-            val userId = session.getAttribute(USER_ID_SESSION_KEY) as Long?
-            if (userId != null) {
+            val memberId = session.getAttribute(MEMBER_ID_SESSION_KEY) as Long?
+            if (memberId != null) {
                 try {
-                    val user: Member? = userService.findById(userId)
-                    if (user != null) {
-                        userContext?.setCurrentUser(user)
-                    }
+                    val member: Member = memberService.findById(memberId)
+                    memberContext.setCurrentMember(member)
                 } catch (e: Exception) {
                     System.err.println("사용자 조회 실패: " + e.message)
                 }
@@ -39,31 +37,26 @@ class AuthenticationInterceptor : HandlerInterceptor {
         return true
     }
 
-    fun setUserToSession(request: HttpServletRequest, userId: Long?) {
+    fun setMemberToSession(request: HttpServletRequest, memberId: Long?) {
         val session = request.getSession(true)
-        session.setAttribute(USER_ID_SESSION_KEY, userId)
+        session.setAttribute(MEMBER_ID_SESSION_KEY, memberId)
     }
 
-    val userSession: HttpSession?
+    val memberSession: HttpSession?
         get() {
             val attr = RequestContextHolder.getRequestAttributes() as ServletRequestAttributes?
-            if (attr == null) {
-                return null
-            }
-
-            val request = attr.request
-            return request.getSession(false)
+            return attr?.request?.getSession(false)
         }
 
-    fun clearUserFromSession(request: HttpServletRequest) {
+    fun clearMemberFromSession(request: HttpServletRequest) {
         val session = request.getSession(false)
         if (session != null) {
-            session.removeAttribute(USER_ID_SESSION_KEY)
+            session.removeAttribute(MEMBER_ID_SESSION_KEY)
             session.invalidate()
         }
     }
 
     companion object {
-        private const val USER_ID_SESSION_KEY = "USER_ID"
+        private const val MEMBER_ID_SESSION_KEY = "MEMBER_ID"
     }
 }

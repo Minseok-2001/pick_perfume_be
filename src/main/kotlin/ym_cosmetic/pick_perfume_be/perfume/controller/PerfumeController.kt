@@ -14,7 +14,7 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.service.PerfumeService
-import ym_cosmetic.pick_perfume_be.security.CurrentUser
+import ym_cosmetic.pick_perfume_be.security.CurrentMember
 
 @RestController
 @RequestMapping("/api/perfumes")
@@ -44,7 +44,7 @@ class PerfumeController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createPerfume(
         @RequestBody request: PerfumeCreateRequest,
-        @CurrentUser member: Member
+        @CurrentMember member: Member
     ): ApiResponse<PerfumeResponse> {
         return ApiResponse.success(perfumeService.createPerfume(request, member.id))
     }

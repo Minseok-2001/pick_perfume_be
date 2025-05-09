@@ -9,18 +9,16 @@ import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
 import ym_cosmetic.pick_perfume_be.common.exception.UnauthorizedException
+import ym_cosmetic.pick_perfume_be.member.MemberService
+import ym_cosmetic.pick_perfume_be.member.entity.Member
 
 @Component
-class CurrentUserArgumentResolver(userService: UserService) : HandlerMethodArgumentResolver {
-    private val userService: UserService
-
-    init {
-        this.userService = userService
-    }
+class CurrentMemberArgumentResolver(private val memberService: MemberService) :
+    HandlerMethodArgumentResolver {
 
     override fun supportsParameter(parameter: MethodParameter): Boolean {
-        return parameter.hasParameterAnnotation<A?>(CurrentUser::class.java) &&
-                (parameter.getParameterType() == User::class.java ||
+        return parameter.hasParameterAnnotation(CurrentMember::class.java) &&
+                (parameter.getParameterType() == Member::class.java ||
                         parameter.getParameterType() == Long::class.java)
     }
 
@@ -28,10 +26,10 @@ class CurrentUserArgumentResolver(userService: UserService) : HandlerMethodArgum
         parameter: MethodParameter, mavContainer: ModelAndViewContainer?,
         webRequest: NativeWebRequest, binderFactory: WebDataBinderFactory?
     ): Any? {
-        val userId = RequestContextHolder.currentRequestAttributes()
-            .getAttribute(USER_ID_SESSION_KEY, RequestAttributes.SCOPE_SESSION) as Long?
+        val memberId = RequestContextHolder.currentRequestAttributes()
+            .getAttribute(MEMBER_ID_SESSION_KEY, RequestAttributes.SCOPE_SESSION) as Long?
 
-        if (userId == null) {
+        if (memberId == null) {
             if (parameter.getParameterType() == Long::class.java) {
                 return null
             }
@@ -39,13 +37,13 @@ class CurrentUserArgumentResolver(userService: UserService) : HandlerMethodArgum
         }
 
         if (parameter.getParameterType() == Long::class.java) {
-            return userId
+            return memberId
         }
 
-        return userService.findById(userId)
+        return memberService.findById(memberId)
     }
 
     companion object {
-        private const val USER_ID_SESSION_KEY = "USER_ID"
+        private const val MEMBER_ID_SESSION_KEY = "MEMBER_ID"
     }
 }

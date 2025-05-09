@@ -1,6 +1,6 @@
 package ym_cosmetic.pick_perfume_be.security
 
-import ym_cosmetic.pick_perfume_be.member.enums.UserRole
+import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 
 @Target(
     AnnotationTarget.FUNCTION,
@@ -8,4 +8,4 @@ import ym_cosmetic.pick_perfume_be.member.enums.UserRole
     AnnotationTarget.PROPERTY_SETTER
 )
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RequireRole(vararg val value: UserRole = [])
+annotation class RequireRole(vararg val value: MemberRole = [])

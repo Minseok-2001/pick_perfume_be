@@ -2,12 +2,10 @@ package ym_cosmetic.pick_perfume_be.vote.entity
 
 
 import jakarta.persistence.*
-import org.springframework.data.annotation.CreatedDate
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.vote.entity.vo.VoteCategory
-import java.time.LocalDateTime
 
 @Entity
 @Table(
@@ -40,10 +38,6 @@ class Vote(
 
     @Column(nullable = false)
     var value: String,
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
 ) : BaseTimeEntity() {
     init {
         require(category.isValidValue(value)) {

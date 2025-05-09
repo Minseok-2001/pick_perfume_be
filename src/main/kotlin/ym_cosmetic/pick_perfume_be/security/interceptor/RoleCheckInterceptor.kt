@@ -5,13 +5,13 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Component
 import org.springframework.web.method.HandlerMethod
 import org.springframework.web.servlet.HandlerInterceptor
-import ym_cosmetic.pick_perfume_be.member.enums.UserRole
+import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
+import ym_cosmetic.pick_perfume_be.security.MemberContext
 import ym_cosmetic.pick_perfume_be.security.RequireRole
-import ym_cosmetic.pick_perfume_be.security.UserContext
 
 @Component
 class RoleCheckInterceptor(
-    private val userContext: UserContext
+    private val memberContext: MemberContext
 ) : HandlerInterceptor {
 
     @Throws(Exception::class)
@@ -29,15 +29,15 @@ class RoleCheckInterceptor(
             return true
         }
 
-        if (!userContext.isAuthenticated()) {
+        if (!memberContext.isAuthenticated) {
             response.status = HttpServletResponse.SC_UNAUTHORIZED
             response.writer.write("인증이 필요합니다.")
             return false
         }
 
-        val userRole: UserRole? = userContext.getUserRole()
+        val memberRole: MemberRole? = memberContext.memberRole
         for (role in requireRole.value) {
-            if (role === userRole) {
+            if (role === memberRole) {
                 return true
             }
         }
