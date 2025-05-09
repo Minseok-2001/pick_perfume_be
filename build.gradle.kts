@@ -4,6 +4,7 @@ plugins {
     id("org.springframework.boot") version "3.4.5"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
+    kotlin("kapt") version "1.9.25"
 }
 
 group = "ym_cosmetic"
@@ -20,24 +21,64 @@ repositories {
 }
 
 dependencies {
+    // 스프링 핵심 의존성
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0")
-    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
-    implementation ("org.springframework.session:spring-session-jdbc")
-    implementation ("org.mindrot:jbcrypt:0.4")
-    implementation ("org.apache.commons:commons-text:1.10.0")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.session:spring-session-jdbc")
 
+    // 코틀린 관련
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
+    // 데이터베이스
+    implementation("com.mysql:mysql-connector-j")
+    implementation("mysql:mysql-connector-java:8.0.33")
+    implementation("com.h2database:h2")
+
+    // 마이그레이션
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
 
-    runtimeOnly("com.mysql:mysql-connector-j")
+    // 보안
+    implementation("org.springframework.security:spring-security-oauth2-client")
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    implementation("org.mindrot:jbcrypt:0.4")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
+
+    // 캐싱
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+
+    // AWS S3
+    implementation("com.amazonaws:aws-java-sdk-s3:1.12.589")
+
+    // API 문서화
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0")
+
+    // 모니터링 및 로깅
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+
+    // 유틸리티
+    implementation("org.apache.commons:commons-text:1.10.0")
+    implementation("commons-io:commons-io:2.15.1")
+
+    // QueryDSL
+    implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+    kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
+
+    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
+    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+
+    // 테스트 의존성
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+    testImplementation("io.mockk:mockk:1.13.9")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

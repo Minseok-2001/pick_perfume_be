@@ -11,7 +11,7 @@ import ym_cosmetic.pick_perfume_be.review.vo.Sentiment
 import ym_cosmetic.pick_perfume_be.review.vo.TimeOfDay
 
 @Entity
-@Table(name = "reviews")
+@Table(name = "review")
 class Review(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -50,7 +50,7 @@ class Review(
     @Column
     var sentiment: Sentiment? = null,
 
-): BaseTimeEntity() {
+    ) : BaseTimeEntity() {
     fun update(
         content: String, rating: Rating, season: Season?,
         timeOfDay: TimeOfDay?, sentiment: Sentiment?

@@ -9,7 +9,7 @@ import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "members")
+@Table(name = "member")
 class Member(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

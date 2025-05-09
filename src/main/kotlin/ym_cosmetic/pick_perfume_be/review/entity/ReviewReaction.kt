@@ -6,7 +6,7 @@ import ym_cosmetic.pick_perfume_be.member.entity.Member
 
 @Entity
 @Table(
-    name = "review_reactions",
+    name = "review_reaction",
     uniqueConstraints = [UniqueConstraint(columnNames = ["member_id", "review_id"])]
 )
 class ReviewReaction(
@@ -32,4 +32,4 @@ class ReviewReaction(
     @Column(nullable = false)
     var isLike: Boolean,
 
-): BaseTimeEntity()
+    ) : BaseTimeEntity()

@@ -1,6 +1,11 @@
 package ym_cosmetic.pick_perfume_be.perfume.dto.response
 
+import ym_cosmetic.pick_perfume_be.accord.dto.response.AccordResponse
+import ym_cosmetic.pick_perfume_be.brand.dto.response.BrandSummaryResponse
+import ym_cosmetic.pick_perfume_be.designer.dto.response.DesignerSummaryResponse
+import ym_cosmetic.pick_perfume_be.note.dto.response.NoteResponse
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
+import ym_cosmetic.pick_perfume_be.perfume.enums.DesignerRole
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import java.time.LocalDateTime
@@ -8,16 +13,16 @@ import java.time.LocalDateTime
 data class PerfumeResponse(
     val id: Long,
     val name: String,
-    val brand: String,
+    val brand: BrandSummaryResponse,
     val description: String?,
     val releaseYear: Int?,
-    val perfumer: String?,
     val concentration: Concentration?,
     val imageUrl: String?,
     val topNotes: List<NoteResponse>,
     val middleNotes: List<NoteResponse>,
     val baseNotes: List<NoteResponse>,
     val accords: List<AccordResponse>,
+    val designers: List<PerfumeDesignerResponse>,
     val averageRating: Double,
     val reviewCount: Int,
     val creatorNickname: String?,
@@ -28,24 +33,31 @@ data class PerfumeResponse(
     companion object {
         fun from(perfume: Perfume): PerfumeResponse {
             val notes = perfume.getNotes()
+            val designers = perfume.designers
 
             return PerfumeResponse(
                 id = perfume.id!!,
                 name = perfume.name,
-                brand = perfume.brand,
+                brand = BrandSummaryResponse.from(perfume.brand),
                 description = perfume.description,
                 releaseYear = perfume.releaseYear,
-                perfumer = perfume.perfumer,
                 concentration = perfume.concentration,
                 imageUrl = perfume.image?.url,
                 topNotes = notes.filter { it.type == NoteType.TOP }
-                    .map { NoteResponse(it.note.id!!, it.note.name, it.note.image?.url) },
+                    .map { NoteResponse.from(it.note) },
                 middleNotes = notes.filter { it.type == NoteType.MIDDLE }
-                    .map { NoteResponse(it.note.id!!, it.note.name, it.note.image?.url) },
+                    .map { NoteResponse.from(it.note) },
                 baseNotes = notes.filter { it.type == NoteType.BASE }
-                    .map { NoteResponse(it.note.id!!, it.note.name, it.note.image?.url) },
+                    .map { NoteResponse.from(it.note) },
                 accords = perfume.getAccords().map {
-                    AccordResponse(it.accord.id!!, it.accord.name, it.accord.color)
+                    AccordResponse.from(it.accord)
+                },
+                designers = designers.map {
+                    PerfumeDesignerResponse(
+                        designer = DesignerSummaryResponse.from(it.designer),
+                        role = it.role,
+                        description = it.description
+                    )
                 },
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
@@ -58,14 +70,8 @@ data class PerfumeResponse(
     }
 }
 
-data class NoteResponse(
-    val id: Long,
-    val name: String,
-    val imageUrl: String?
-)
-
-data class AccordResponse(
-    val id: Long,
-    val name: String,
-    val color: String?
+data class PerfumeDesignerResponse(
+    val designer: DesignerSummaryResponse,
+    val role: DesignerRole,
+    val description: String?
 )

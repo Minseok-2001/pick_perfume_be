@@ -1,12 +1,10 @@
 package ym_cosmetic.pick_perfume_be.accord.entity
 
 import jakarta.persistence.*
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
-import java.time.LocalDateTime
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 
 @Entity
-@Table(name = "accords")
+@Table(name = "accord")
 class Accord(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -19,12 +17,4 @@ class Accord(
 
     @Column
     var color: String? = null,
-
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+) : BaseTimeEntity()
