@@ -1,31 +1,43 @@
 package ym_cosmetic.pick_perfume_be.recommendation.service
 
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ym_cosmetic.pick_perfume_be.member.entity.Member
+import ym_cosmetic.pick_perfume_be.member.entity.MemberPreference
 import ym_cosmetic.pick_perfume_be.member.repository.MemberPreferenceRepository
 import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.review.repository.ReviewRepository
 import ym_cosmetic.pick_perfume_be.vote.repository.VoteRepository
+import java.time.LocalDateTime
 
 @Service
-class UserPreferenceAnalysisService(
+class MemberPreferenceAnalysisService(
     private val memberRepository: MemberRepository,
     private val reviewRepository: ReviewRepository,
     private val voteRepository: VoteRepository,
     private val perfumeRepository: PerfumeRepository,
-    private val userPreferenceRepository: MemberPreferenceRepository
+    private val userPreferenceRepository: MemberPreferenceRepository,
+    private val applicationCoroutineScope: CoroutineScope
+
 ) {
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    companion object {
+        private val logger =
+            LoggerFactory.getLogger(MemberPreferenceAnalysisService::class.java)
+    }
+
+    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+        logger.error("Coroutine failed: ${exception.message}", exception)
+    }
 
     // 사용자 선호도 분석 및 저장
-    fun analyzeUserPreferences(userId: Long) {
-        coroutineScope.launch {
-            val member = memberRepository.findById(userId).orElse(null) ?: return@launch
+    fun analyzeUserPreferences(memberId: Long) {
+        applicationCoroutineScope.launch(exceptionHandler) {
+            val member = memberRepository.findById(memberId).orElse(null) ?: return@launch
 
             // 여러 분석 작업을 병렬로 실행
             val reviewedPerfumeIds = async { getReviewedPerfumeIds(member) }
@@ -33,13 +45,14 @@ class UserPreferenceAnalysisService(
             val preferredAccords = async { analyzePreferredAccords(member) }
             val preferredBrands = async { analyzePreferredBrands(member) }
 
-            // 분석 결과 취합
-            val preferences = UserPreferences(
-                userId = userId,
+            val preferences = MemberPreference(
+                memberId = memberId,
                 reviewedPerfumeIds = reviewedPerfumeIds.await(),
                 preferredNotes = preferredNotes.await(),
                 preferredAccords = preferredAccords.await(),
-                preferredBrands = preferredBrands.await()
+                preferredBrands = preferredBrands.await(),
+                member = member,
+                lastUpdated = LocalDateTime.now(),
             )
 
             // 사용자 선호도 저장
@@ -48,19 +61,31 @@ class UserPreferenceAnalysisService(
     }
 
     // 사용자가 리뷰한 향수 ID 목록
-    private suspend fun getReviewedPerfumeIds(member: Member): List<String> {
+    private suspend fun getReviewedPerfumeIds(member: Member): List<Long> {
         return reviewRepository.findByMemberId(member.id!!)
-            .map { it.perfume.id.toString() }
+            .map { it.perfume.id!! }
     }
 
     // 선호하는 노트 분석
     private suspend fun analyzePreferredNotes(member: Member): List<String> {
         // 높은 평점을 준 향수들에서 노트 추출
         val highRatedReviews =
-            reviewRepository.findByMemberIdAndRatingGreaterThanEqual(member.id!!, 4)
+            reviewRepository.findByMemberIdAndRatingValueGreaterThanEqual(member.id!!, 4)
         val perfumeIds = highRatedReviews.map { it.perfume.id!! }
 
+        val perfumes = perfumeRepository.findAllById(perfumeIds)
+        val perfumeMap = perfumes.associateBy { it.id!! }
+
         val noteCounts = mutableMapOf<String, Int>()
+
+        highRatedReviews.forEach { review ->
+            val perfume = perfumeMap[review.perfume.id] ?: return@forEach
+
+            perfume.getNotes().forEach { perfumeNote ->
+                val noteName = perfumeNote.note.name
+                noteCounts[noteName] = (noteCounts[noteName] ?: 0) + 1
+            }
+        }
 
         // 각 향수의 노트 수집 및 카운트
         perfumeIds.forEach { perfumeId ->
@@ -122,14 +147,17 @@ class UserPreferenceAnalysisService(
 
     // 모든 사용자의 선호도 분석 (배치 작업)
     fun analyzeAllUserPreferences() {
-        coroutineScope.launch {
+        applicationCoroutineScope.launch {
             val members = memberRepository.findAll()
 
             members.forEach { member ->
                 try {
                     analyzeUserPreferences(member.id!!)
                 } catch (e: Exception) {
-                    // 로깅 처리
+                    logger.error(
+                        "Failed to analyze preferences for member ${member.id}: ${e.message}",
+                        e
+                    )
                 }
             }
         }
