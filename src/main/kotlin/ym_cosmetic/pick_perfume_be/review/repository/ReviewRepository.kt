@@ -13,4 +13,9 @@ interface ReviewRepository : JpaRepository<Review, Long> {
     ): List<Review>
 
     fun findByMemberId(memberId: Long): List<Review>
+
+    fun findByMemberIdAndRatingGreaterThanEqual(
+        memberId: Long,
+        rating: Int
+    ): List<Review>
 }
