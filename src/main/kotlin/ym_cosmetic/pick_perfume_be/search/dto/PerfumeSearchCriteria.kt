@@ -13,7 +13,9 @@ data class PerfumeSearchCriteria(
     val toYear: Int? = null,
     val minRating: Double? = null,
     val maxRating: Double? = null,
+    val season: String? = null,
+    val gender: String? = null,
     val sortBy: String = "relevance",
-    val pageable: Pageable
+    val pageable: Pageable,
+    val limit: Int? = null
 )
-
