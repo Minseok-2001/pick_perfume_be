@@ -11,7 +11,6 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.stereotype.Service
 import ym_cosmetic.pick_perfume_be.member.dto.MemberPreferenceDto
-import ym_cosmetic.pick_perfume_be.member.entity.QMemberPreference.memberPreference
 import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchCriteria
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
@@ -62,6 +61,20 @@ class PerfumeSearchService(
         criteria.note?.let { note ->
             boolQuery.filter(
                 Query.of { q -> q.term { t -> t.field("notes.keyword").value(note) } }
+            )
+        }
+
+        // 계절 필터
+        criteria.season?.let { season ->
+            boolQuery.filter(
+                Query.of { q -> q.term { t -> t.field("season.keyword").value(season) } }
+            )
+        }
+
+        // 성별 필터 추가
+        criteria.gender?.let { gender ->
+            boolQuery.filter(
+                Query.of { q -> q.term { t -> t.field("gender.keyword").value(gender) } }
             )
         }
 
@@ -265,7 +278,7 @@ class PerfumeSearchService(
             boolQuery.mustNot(
                 Query.of { q ->
                     q.ids { i ->
-                        i.values(memberPreference.reviewedPerfumeIds.map { it.toString() })
+                        i.values(memberPreferences.reviewedPerfumeIds.map { it.toString() })
                     }
                 }
             )
