@@ -6,14 +6,14 @@ services:
     container_name: pick-perfume-elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false  # 개발 환경에서는 문제 없음
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"  # 메모리 설정 추가
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
       - es-data:/usr/share/elasticsearch/data
     restart: always
-    healthcheck: # 헬스체크 추가
+    healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
       interval: 30s
       timeout: 10s
