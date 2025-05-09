@@ -1,9 +1,8 @@
 package ym_cosmetic.pick_perfume_be.perfume.entity
 
 import jakarta.persistence.*
-import org.springframework.data.annotation.CreatedDate
 import ym_cosmetic.pick_perfume_be.accord.entity.Accord
-import java.time.LocalDateTime
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 
 @Entity
 @Table(name = "perfume_accord")
@@ -27,7 +26,4 @@ class PerfumeAccord(
     )
     var accord: Accord,
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
-)
+): BaseTimeEntity()
