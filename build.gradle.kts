@@ -33,6 +33,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
+    // 이벤트 처리
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+
     // 데이터베이스
     implementation("com.mysql:mysql-connector-j")
     implementation("mysql:mysql-connector-java:8.0.33")
@@ -55,6 +58,12 @@ dependencies {
 
     // AWS S3
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.589")
+
+    // ES
+    implementation("org.springframework.data:spring-data-elasticsearch:5.4.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.7.3")
+
 
     // API 문서화
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0")
