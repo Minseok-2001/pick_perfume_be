@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.perfume.service
 
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -32,6 +33,9 @@ import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeDesignerRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeNoteRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
+import ym_cosmetic.pick_perfume_be.search.event.PerfumeCreatedEvent
+import ym_cosmetic.pick_perfume_be.search.event.PerfumeDeletedEvent
+import ym_cosmetic.pick_perfume_be.search.event.PerfumeUpdatedEvent
 
 @Service
 class PerfumeService(
@@ -44,7 +48,9 @@ class PerfumeService(
     private val perfumeAccordRepository: PerfumeAccordRepository,
     private val perfumeDesignerRepository: PerfumeDesignerRepository,
     private val memberRepository: MemberRepository,
-    private val s3Service: S3Service
+    private val s3Service: S3Service,
+    private val eventPublisher: ApplicationEventPublisher
+
 ) {
     @Transactional(readOnly = true)
     fun findPerfumeById(id: Long): PerfumeResponse {
@@ -98,6 +104,7 @@ class PerfumeService(
 
         // 디자이너 추가
         addPerfumeDesigners(savedPerfume, request.designers)
+        eventPublisher.publishEvent(PerfumeCreatedEvent(savedPerfume.id!!))
 
         return PerfumeResponse.from(savedPerfume)
     }
@@ -132,6 +139,7 @@ class PerfumeService(
 
         // 디자이너 업데이트
         updatePerfumeDesigners(perfume, request.designers)
+        eventPublisher.publishEvent(PerfumeUpdatedEvent(id))
 
         return PerfumeResponse.from(perfume)
     }
@@ -166,6 +174,7 @@ class PerfumeService(
 
         // 향수 삭제
         perfumeRepository.deleteById(id)
+        eventPublisher.publishEvent(PerfumeDeletedEvent(id))
     }
 
     private fun getBrandByNameOrCreate(brandName: String): Brand {
