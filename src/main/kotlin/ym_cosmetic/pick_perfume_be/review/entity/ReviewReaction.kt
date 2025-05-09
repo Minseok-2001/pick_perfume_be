@@ -1,9 +1,8 @@
 package ym_cosmetic.pick_perfume_be.review.entity
 
 import jakarta.persistence.*
-import org.springframework.data.annotation.CreatedDate
+import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.member.entity.Member
-import java.time.LocalDateTime
 
 @Entity
 @Table(
@@ -33,7 +32,4 @@ class ReviewReaction(
     @Column(nullable = false)
     var isLike: Boolean,
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
-)
+): BaseTimeEntity()
