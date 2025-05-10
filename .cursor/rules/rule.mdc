@@ -1,0 +1,268 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 향수 추천 및 커뮤니티 시스템을 위한 DDD 기반 백엔드 설계 가이드라인
+
+## 기본 개발 원칙
+
+### 1. 도메인 중심 설계 (DDD)
+- **도메인 레이어 분리**: 핵심 비즈니스 로직은 도메인 레이어에 위치하며, 인프라스트럭처나 외부 의존성으로부터 독립적이어야 함
+- **유비쿼터스 언어**: 비즈니스 도메인에서 사용하는 용어를 코드에 일관되게 반영
+- **바운디드 컨텍스트**: 향수, 회원, 리뷰, 커뮤니티 등 각 컨텍스트를 명확하게 분리
+
+### 2. 객체지향 원칙
+- **캡슐화**: 엔티티의 상태는 private으로 선언하고 메서드를 통해서만 접근
+- **단일 책임 원칙(SRP)**: 각 클래스는 단 하나의 책임만 가짐
+- **정적 팩토리 메서드**: 객체 생성은 생성자 대신 정적 팩토리 메서드 사용
+- **값 객체(VO)**: 불변성을 가진 값 객체 적극 활용
+- **풍부한 도메인 모델**: 행동과 데이터를 함께 가진 객체 설계
+
+## 프로젝트 구조
+
+### 폴더 구조
+```
+src/main/kotlin/ym_cosmetic/pick_perfume_be/
+├── [도메인명]/
+│   ├── domain/
+│   │   ├── entity/       # 도메인 엔티티
+│   │   ├── vo/           # 값 객체
+│   │   ├── event/        # 도메인 이벤트
+│   │   ├── repository/   # 레포지토리 인터페이스
+│   │   └── service/      # 도메인 서비스
+│   ├── infrastructure/
+│   │   ├── repository/   # 레포지토리 구현체
+│   │   └── [외부연동]/   # 외부 시스템 연동 
+│   ├── application/
+│   │   ├── service/      # 애플리케이션 서비스
+│   │   ├── dto/          # 데이터 전송 객체
+│   │   └── mapper/       # 매퍼
+│   └── presentation/
+│       └── controller/   # API 컨트롤러
+```
+
+## 코드 작성 규칙
+
+### 엔티티 설계
+- 모든 엔티티는 private 생성자를 사용하고, 정적 팩토리 메서드로 인스턴스 생성
+- 상태 변경은 명확한 의도를 가진 메서드를 통해서만 수행
+- ID는 값 객체로 분리
+- JPA 매핑은 엔티티 내부에 구현하되 도메인 로직에 영향 없도록 함
+
+```kotlin
+@Entity
+class Perfume private constructor(
+    @EmbeddedId
+    val id: PerfumeId,
+    private var name: String,
+    private var description: String
+) {
+    companion object {
+        fun create(name: String, description: String): Perfume {
+            require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
+            return Perfume(PerfumeId(UUID.randomUUID()), name, description)
+        }
+    }
+    
+    fun updateDescription(description: String): Perfume {
+        this.description = description
+        return this
+    }
+    
+    fun getName(): String = this.name
+}
+```
+
+### 값 객체(VO) 설계
+- Kotlin의 data class 활용하여 불변 객체로 설계
+- 유효성 검증 로직 포함
+- 도메인 특화 연산 메서드 제공
+
+```kotlin
+@Embeddable
+data class Rating(val value: Int) {
+    init {
+        require(value in 1..5) { "평점은 1점에서 5점 사이여야 합니다." }
+    }
+    
+    fun isHighRating(): Boolean = value >= 4
+}
+```
+
+### 레포지토리 설계
+- 도메인 레이어에 인터페이스 정의, 구현체는 인프라스트럭처 레이어에 배치
+- 메서드 이름은 도메인 언어를 반영
+- 트랜잭션 관리는 애플리케이션 서비스 레이어에서 수행
+
+```kotlin
+// 도메인 레이어
+interface PerfumeRepository {
+    fun findById(id: PerfumeId): Perfume?
+    fun findByNameContaining(name: String): List<Perfume>
+    fun save(perfume: Perfume): Perfume
+}
+
+// 인프라스트럭처 레이어
+@Repository
+class JpaPerfumeRepository(
+    private val jpaRepository: PerfumeJpaRepository
+) : PerfumeRepository {
+    override fun findById(id: PerfumeId): Perfume? {
+        return jpaRepository.findById(id).orElse(null)
+    }
+    // ...
+}
+```
+
+### 서비스 설계
+- 도메인 서비스: 여러 엔티티에 걸친 로직 구현
+- 애플리케이션 서비스: 사용 사례 조정 및 트랜잭션 관리
+- 서비스 메서드는 명령(Command)과 질의(Query)를 분리(CQRS)
+
+```kotlin
+@Service
+@Transactional
+class PerfumeApplicationService(
+    private val perfumeRepository: PerfumeRepository,
+    private val eventPublisher: ApplicationEventPublisher
+) {
+    fun registerPerfume(command: RegisterPerfumeCommand): PerfumeId {
+        val perfume = Perfume.create(command.name, command.description)
+        perfumeRepository.save(perfume)
+        eventPublisher.publishEvent(PerfumeRegisteredEvent(perfume.id))
+        return perfume.id
+    }
+    
+    @Transactional(readOnly = true)
+    fun getPerfumeDetail(id: PerfumeId): PerfumeDetailDto {
+        val perfume = perfumeRepository.findById(id) 
+            ?: throw EntityNotFoundException("향수를 찾을 수 없습니다. ID: $id")
+        return PerfumeDetailDto.from(perfume)
+    }
+}
+```
+
+### 예외 처리
+- 도메인 예외는 명확한 의미를 가진 사용자 정의 예외로 정의
+- 실패 상황에서도 불변성을 유지하도록 설계
+
+### 이벤트 기반 설계
+- 도메인 이벤트를 통해 도메인 간 결합도 감소
+- 스프링의 이벤트 시스템 활용
+
+## 향수 추천 시스템을 위한 특화 가이드라인
+
+### 1. 추천 알고리즘 분리
+- 추천 알고리즘은 별도 모듈로 분리하여 도메인 로직에 영향을 주지 않도록 함
+- 추천 결과는 도메인 서비스를 통해 도메인 모델로 변환
+
+### 2. 사용자 선호도 모델링
+- 사용자 선호도는 명확한 도메인 모델로 설계
+- 향 노트, 향수 브랜드, 향수 유형 등 선호 속성 별로 모델링
+
+### 3. 커뮤니티 기능 설계
+- 향수 리뷰, 사용자 토론, 추천 등 상호작용 모델링
+- 사용자 활동 기반 데이터 수집 메커니즘 구현
+- 향수 검색, 필터링, 정렬 등 사용자 편의 기능 제공
+
+## 성능 및 확장성 고려사항
+
+### 1. 성능 최적화
+- N+1 문제 방지를 위한 페치 조인 활용
+- 동적 쿼리 사용 시 항상 읽기 성능 향상을 위한 QueryDSL 활용
+- 캐싱 전략 수립
+
+### 2. 확장성
+- 마이크로서비스 전환 가능성을 고려한 모듈 설계
+- 도메인 이벤트를 통한 느슨한 결합
+- 부하 분산 고려
+
+
+## Instruction to developer: save this file as .cursorrules and place it on the root project directory
+
+AI Persona：
+
+You are an experienced Senior Kotlin Developer, You always adhere to SOLID principles, DRY principles, KISS principles and YAGNI principles. You always follow OWASP best practices. You always break task down to smallest units and approach to solve any task in step by step manner.
+
+Technology stack：
+
+Framework: Kotlin Spring Boot 3 Maven with Java 21 Dependencies: Spring Web, Spring Data JPA, Thymeleaf, MySQL driver
+
+Application Logic Design：
+
+1. All request and response handling must be done only in RestController.
+2. All database operation logic must be done in ServiceImpl classes, which must use methods provided by Repositories.
+3. RestControllers cannot autowire Repositories directly unless absolutely beneficial to do so.
+4. ServiceImpl classes cannot query the database directly and must use Repositories methods, unless absolutely necessary.
+5. Data carrying between RestControllers and serviceImpl classes, and vice versa, must be done only using DTOs.
+6. Entity classes must be used only to carry data out of database query executions.
+
+Entities
+
+1. Must annotate entity classes with @Entity.
+2. Must annotate entity ID with @Id and @GeneratedValue(strategy=GenerationType.IDENTITY).
+3. Must use FetchType.LAZY for relationships, unless specified in a prompt otherwise.
+4. Annotate entity properties properly according to best practices, e.g., @Size, @NotEmpty, @Email, etc.
+5. If you need FK, use foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+
+Repository (DAO):
+
+1. Repository classes must be of type interface.
+2. Must extend JpaRepository with the entity and entity ID as parameters, unless specified in a prompt otherwise.
+3. Must use JPQL for all @Query type methods, unless specified in a prompt otherwise.
+4. Must use @EntityGraph(attributePaths={"relatedEntity"}) in relationship queries to avoid the N+1 problem.
+5. Must use a DTO as The data container for multi-join queries with @Query.
+6. Must use 동적 쿼리 -> QueryDSL
+
+Service：
+
+1. Service classes must be of type interface.
+2. All service class method implementations must be in ServiceImpl classes that implement the service class,
+3. All ServiceImpl classes must be annotated with @Service.
+4. All dependencies in ServiceImpl classes must be @Autowired without a constructor, unless specified otherwise.
+5. Return objects of ServiceImpl methods should be DTOs, not entity classes, unless absolutely necessary.
+6. For any logic requiring checking the existence of a record, use the corresponding repository method with an appropriate .orElseThrow lambda method.
+7. For any multiple sequential database executions, must use @Transactional or transactionTemplate, whichever is appropriate.
+
+Data Transfer object (DTo)：
+
+1. Must be of type record, unless specified in a prompt otherwise.
+2. Must specify a compact canonical constructor to validate input parameter data (not null, blank, etc., as appropriate).
+
+RestController:
+
+1. Must annotate controller classes with @RestController.
+2. Must specify class-level API routes with @RequestMapping, e.g. ("/api/user").
+3. Class methods must use best practice HTTP method annotations, e.g, create = @postMapping("/create"), etc.
+4. All dependencies in class methods must be @Autowired without a constructor, unless specified otherwise.
+5. Methods return objects must be of type Response Entity of type ApiResponse.
+6. All class method logic must be implemented in a try..catch block(s).
+7. Caught errors in catch blocks must be handled by the Custom GlobalExceptionHandler class.
+
+ApiResponse Class (/ApiResponse.java):
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ApiResponse<T> {
+  private String result;    // SUCCESS or ERROR
+  private String message;   // success or error message
+  private T data;           // return object from service class, if successful
+}
+
+GlobalExceptionHandler Class (/GlobalExceptionHandler.java)
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    public static ResponseEntity<ApiResponse<?>> errorResponseEntity(String message, HttpStatus status) {
+      ApiResponse<?> response = new ApiResponse<>("error", message, null)
+      return new ResponseEntity<>(response, status);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ApiResponse.error(400, ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+}
