@@ -1,42 +1,59 @@
 package ym_cosmetic.pick_perfume_be.perfume.entity
 
-
 import jakarta.persistence.*
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.designer.entity.Designer
 import ym_cosmetic.pick_perfume_be.perfume.enums.DesignerRole
 
 @Entity
-@Table(
-    name = "perfume_designer",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["perfume_id", "designer_id", "role"])]
-)
-class PerfumeDesigner(
+@Table(name = "perfume_designer")
+class PerfumeDesigner private constructor(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-        name = "perfume_id",
-        nullable = false,
-        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
-    )
-    var perfume: Perfume,
+    @JoinColumn(name = "perfume_id", nullable = false)
+    private val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-        name = "designer_id",
-        nullable = false,
-        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
-    )
-    var designer: Designer,
+    @JoinColumn(name = "designer_id", nullable = false)
+    private val designer: Designer,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var role: DesignerRole,
+    private val role: DesignerRole,
 
-    @Column
-    var description: String? = null,
+    @Column(length = 500)
+    private var description: String? = null
+) : BaseTimeEntity() {
 
-    ) : BaseTimeEntity()
+    companion object {
+        fun create(
+            perfume: Perfume,
+            designer: Designer,
+            role: DesignerRole,
+            description: String? = null
+        ): PerfumeDesigner {
+            return PerfumeDesigner(
+                perfume = perfume,
+                designer = designer,
+                role = role,
+                description = description
+            )
+        }
+    }
+    
+    fun getDesigner(): Designer = this.designer
+    
+    fun getRole(): DesignerRole = this.role
+    
+    fun getDescription(): String? = this.description
+    
+    fun updateDescription(description: String?): PerfumeDesigner {
+        this.description = description
+        return this
+    }
+    
+    fun getPerfume(): Perfume = this.perfume
+}
 

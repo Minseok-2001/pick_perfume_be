@@ -7,27 +7,40 @@ import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 
 @Entity
 @Table(name = "perfume_note")
-class PerfumeNote(
+class PerfumeNote private constructor(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-        name = "perfume_id",
-        nullable = false,
-        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
-    )
-    var perfume: Perfume,
+    @JoinColumn(name = "perfume_id", nullable = false)
+    private val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-        name = "note_id",
-        nullable = false,
-        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
-    )
-    var note: Note,
+    @JoinColumn(name = "note_id", nullable = false)
+    private val note: Note,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val type: NoteType,
-) : BaseTimeEntity()
+    private val type: NoteType
+) : BaseTimeEntity() {
+
+    companion object {
+        fun create(
+            perfume: Perfume,
+            note: Note,
+            type: NoteType
+        ): PerfumeNote {
+            return PerfumeNote(
+                perfume = perfume,
+                note = note,
+                type = type
+            )
+        }
+    }
+
+    fun getPerfume(): Perfume = this.perfume
+    
+    fun getNote(): Note = this.note
+    
+    fun getType(): NoteType = this.type
+}

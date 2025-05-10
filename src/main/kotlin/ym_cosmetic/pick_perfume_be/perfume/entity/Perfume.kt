@@ -17,18 +17,18 @@ import ym_cosmetic.pick_perfume_be.vote.vo.VoteCategory
 
 @Entity
 @Table(name = "perfume")
-class Perfume(
+class Perfume private constructor(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     @Column(nullable = false)
-    var name: String,
+    private var name: String,
 
     @Column(length = 5000)
-    var description: String? = null,
+    private var description: String? = null,
 
     @Column
-    var releaseYear: Int? = null,
+    private var releaseYear: Int? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -36,67 +36,112 @@ class Perfume(
         nullable = false,
         foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
-    var brand: Brand,
+    private var brand: Brand,
 
     @OneToMany(mappedBy = "perfume")
-    val designers: MutableList<PerfumeDesigner> = mutableListOf(),
+    private val designers: MutableList<PerfumeDesigner> = mutableListOf(),
 
     @Enumerated(EnumType.STRING)
     @Column
-    var concentration: Concentration? = null,
+    private var concentration: Concentration? = null,
 
     @Embedded
-    var image: ImageUrl? = null,
+    private var image: ImageUrl? = null,
 
     @Column(nullable = false)
-    var isApproved: Boolean = false,
+    private var isApproved: Boolean = false,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
         name = "creator_id", foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
-    var creator: Member? = null,
+    private var creator: Member? = null,
 
     @OneToMany(mappedBy = "perfume")
-    val votes: MutableList<Vote> = mutableListOf(),
+    private val votes: MutableList<Vote> = mutableListOf(),
 
     @OneToMany(mappedBy = "perfume")
-    val reviews: MutableList<Review> = mutableListOf(),
+    private val reviews: MutableList<Review> = mutableListOf(),
 
     @OneToMany(mappedBy = "perfume")
-    val perfumeNotes: MutableList<PerfumeNote> = mutableListOf(),
+    private val perfumeNotes: MutableList<PerfumeNote> = mutableListOf(),
 
     @OneToMany(mappedBy = "perfume")
-    val perfumeAccords: MutableList<PerfumeAccord> = mutableListOf()
+    private val perfumeAccords: MutableList<PerfumeAccord> = mutableListOf()
 
 ) : BaseTimeEntity() {
+
+    companion object {
+        fun create(
+            name: String,
+            brand: Brand,
+            description: String? = null,
+            releaseYear: Int? = null,
+            concentration: Concentration? = null,
+            image: ImageUrl? = null,
+            creator: Member? = null,
+            isAdmin: Boolean = false
+        ): Perfume {
+            require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
+            
+            return Perfume(
+                name = name,
+                brand = brand,
+                description = description,
+                releaseYear = releaseYear,
+                concentration = concentration,
+                image = image,
+                creator = creator,
+                isApproved = isAdmin
+            )
+        }
+    }
+
+    fun getName(): String = this.name
+    
+    fun getDescription(): String? = this.description
+    
+    fun getReleaseYear(): Int? = this.releaseYear
+    
+    fun getBrand(): Brand = this.brand
+    
+    fun getConcentration(): Concentration? = this.concentration
+    
+    fun getImage(): ImageUrl? = this.image
+    
+    fun isApproved(): Boolean = this.isApproved
+    
+    fun getCreator(): Member? = this.creator
+
     fun getNotes(): List<PerfumeNote> {
         return perfumeNotes.toList()
     }
 
     fun getNotesByType(type: NoteType): List<PerfumeNote> {
-        return perfumeNotes.filter { it.type == type }
+        return perfumeNotes.filter { it.getType() == type }
     }
 
     fun getAccords(): List<PerfumeAccord> {
         return perfumeAccords.toList()
     }
 
-    fun addNote(note: Note, type: NoteType) {
-        val perfumeNote = PerfumeNote(
+    fun addNote(note: Note, type: NoteType): PerfumeNote {
+        val perfumeNote = PerfumeNote.create(
             perfume = this,
             note = note,
             type = type
         )
         perfumeNotes.add(perfumeNote)
+        return perfumeNote
     }
 
-    fun addAccord(accord: Accord) {
-        val perfumeAccord = PerfumeAccord(
+    fun addAccord(accord: Accord): PerfumeAccord {
+        val perfumeAccord = PerfumeAccord.create(
             perfume = this,
             accord = accord
         )
         perfumeAccords.add(perfumeAccord)
+        return perfumeAccord
     }
 
     fun approve() {
@@ -111,77 +156,80 @@ class Perfume(
         description: String?,
         releaseYear: Int?,
         concentration: Concentration?
-    ) {
+    ): Perfume {
+        require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
+        
         this.name = name
         this.brand = brand
         this.description = description
         this.releaseYear = releaseYear
         this.concentration = concentration
+        return this
     }
 
-    fun updateImage(image: ImageUrl?) {
+    fun updateImage(image: ImageUrl?): Perfume {
         this.image = image
+        return this
     }
 
 
-    fun addDesigner(designer: Designer, role: DesignerRole, description: String? = null) {
-        val perfumeDesigner = PerfumeDesigner(
+    fun addDesigner(designer: Designer, role: DesignerRole, description: String? = null): PerfumeDesigner {
+        val perfumeDesigner = PerfumeDesigner.create(
             perfume = this,
             designer = designer,
             role = role,
             description = description
         )
         designers.add(perfumeDesigner)
+        return perfumeDesigner
     }
 
     fun removeDesigner(designer: Designer, role: DesignerRole) {
         designers.removeIf {
-            it.designer.id == designer.id && it.role == role
+            it.getDesigner().id == designer.id && it.getRole() == role
         }
     }
 
     // 특정 역할의 디자이너들 조회
     fun getDesignersByRole(role: DesignerRole): List<Designer> {
         return designers
-            .filter { it.role == role }
-            .map { it.designer }
+            .filter { it.getRole() == role }
+            .map { it.getDesigner() }
     }
 
     fun getPrimaryPerfumer(): Designer? {
         return designers
-            .find { it.role == DesignerRole.PERFUMER }
-            ?.designer
+            .find { it.getRole() == DesignerRole.PERFUMER }
+            ?.getDesigner()
     }
 
     fun calculateAverageRating(): Double {
         if (reviews.isEmpty()) return 0.0
-        return reviews.map { it.rating.value }.average()
+        return reviews.map { it.getRating().value }.average()
     }
 
     fun getReviewCount(): Int {
         return reviews.size
     }
 
-
     fun getVoteResults(): Map<VoteCategory, Map<String, Int>> {
-        return votes.groupBy { it.category }
+        return votes.groupBy { it.getCategory() }
             .mapValues { (_, categoryVotes) ->
-                categoryVotes.groupBy { it.value }
+                categoryVotes.groupBy { it.getValue() }
                     .mapValues { it.value.size }
             }
     }
 
-
     fun getVoteResultByCategory(category: VoteCategory): Map<String, Int> {
-        return votes.filter { it.category == category }
-            .groupBy { it.value }
+        return votes.filter { it.getCategory() == category }
+            .groupBy { it.getValue() }
             .mapValues { it.value.size }
     }
 
     fun getMostVotedValueByCategory(): Map<VoteCategory, String?> {
         return VoteCategory.entries.associateWith { category ->
-            votes.filter { it.category == category }
-                .groupBy { it.value }
+            votes.filter { it.getCategory() == category }
+                .groupBy { it.getValue() }
                 .maxByOrNull { it.value.size }
                 ?.key
         }

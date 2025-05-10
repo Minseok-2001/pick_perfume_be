@@ -3,6 +3,7 @@ package ym_cosmetic.pick_perfume_be.perfume.dto.response
 import ym_cosmetic.pick_perfume_be.brand.dto.response.BrandSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
+import java.time.LocalDateTime
 
 data class PerfumeSummaryResponse(
     val id: Long,
@@ -13,26 +14,22 @@ data class PerfumeSummaryResponse(
     val imageUrl: String?,
     val averageRating: Double,
     val reviewCount: Int,
-    val topAccords: List<String>,
-    val primaryPerfumer: String?
+    val creatorNickname: String?,
+    val createdAt: LocalDateTime
 ) {
     companion object {
         fun from(perfume: Perfume): PerfumeSummaryResponse {
-            val primaryPerfumer = perfume.getPrimaryPerfumer()?.name
-
             return PerfumeSummaryResponse(
                 id = perfume.id!!,
-                name = perfume.name,
-                brand = BrandSummaryResponse.from(perfume.brand),
-                releaseYear = perfume.releaseYear,
-                concentration = perfume.concentration,
-                imageUrl = perfume.image?.url,
+                name = perfume.getName(),
+                brand = BrandSummaryResponse.from(perfume.getBrand()),
+                releaseYear = perfume.getReleaseYear(),
+                concentration = perfume.getConcentration(),
+                imageUrl = perfume.getImage()?.url,
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
-                topAccords = perfume.getAccords()
-                    .map { it.accord.name }
-                    .take(3),
-                primaryPerfumer = primaryPerfumer
+                creatorNickname = perfume.getCreator()?.nickname,
+                createdAt = perfume.createdAt
             )
         }
     }

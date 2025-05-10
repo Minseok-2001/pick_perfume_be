@@ -81,15 +81,15 @@ class PerfumeService(
         // 브랜드 조회 또는 생성
         val brand = getBrandByNameOrCreate(request.brandName)
 
-        val perfume = Perfume(
+        val perfume = Perfume.create(
             name = request.name,
-            brand = brand,  // 브랜드 엔티티 설정
+            brand = brand,
             description = request.description,
             releaseYear = request.releaseYear,
             concentration = request.concentration,
             image = request.imageUrl?.let { ImageUrl(it) },
             creator = creator,
-            isApproved = creator?.role == MemberRole.ADMIN
+            isAdmin = creator?.role == MemberRole.ADMIN
         )
 
         val savedPerfume = perfumeRepository.save(perfume)
@@ -192,18 +192,9 @@ class PerfumeService(
             val note = noteRepository.findByNameIgnoreCase(noteName)
                 ?: noteRepository.save(Note(name = noteName))
 
-            val perfumeNote = PerfumeNote(
-                perfume = perfume,
-                note = note,
-                type = type
-            )
+            val perfumeNote = perfume.addNote(note, type)
             perfumeNoteRepository.save(perfumeNote)
         }
-    }
-
-    private fun updatePerfumeNotes(perfume: Perfume, noteNames: List<String>, type: NoteType) {
-        perfumeNoteRepository.deleteByPerfumeIdAndType(perfume.id!!, type)
-        addPerfumeNotes(perfume, noteNames, type)
     }
 
     private fun addPerfumeAccords(perfume: Perfume, accordNames: List<String>) {
@@ -211,42 +202,40 @@ class PerfumeService(
             val accord = accordRepository.findByNameIgnoreCase(accordName)
                 ?: accordRepository.save(Accord(name = accordName))
 
-            val perfumeAccord = PerfumeAccord(
-                perfume = perfume,
-                accord = accord
-            )
+            val perfumeAccord = perfume.addAccord(accord)
             perfumeAccordRepository.save(perfumeAccord)
         }
     }
 
-    private fun updatePerfumeAccords(perfume: Perfume, accordNames: List<String>) {
-        perfumeAccordRepository.deleteByPerfumeId(perfume.id!!)
-        addPerfumeAccords(perfume, accordNames)
-    }
-
-    private fun addPerfumeDesigners(
-        perfume: Perfume,
-        designerRequests: List<PerfumeDesignerRequest>
-    ) {
-        designerRequests.forEach { request ->
-            val designer = getDesignerByNameOrCreate(request.designerName)
-
-            val perfumeDesigner = PerfumeDesigner(
-                perfume = perfume,
-                designer = designer,
-                role = request.role,
-                description = request.description
-            )
+    private fun addPerfumeDesigners(perfume: Perfume, designers: List<PerfumeDesignerRequest>) {
+        designers.forEach { designerRequest ->
+            val designer = getDesignerByNameOrCreate(designerRequest.name)
+            val perfumeDesigner = perfume.addDesigner(designer, designerRequest.role, designerRequest.description)
             perfumeDesignerRepository.save(perfumeDesigner)
         }
     }
 
-    private fun updatePerfumeDesigners(
-        perfume: Perfume,
-        designerRequests: List<PerfumeDesignerRequest>
-    ) {
+    private fun updatePerfumeNotes(perfume: Perfume, noteNames: List<String>, type: NoteType) {
+        // 기존 노트 삭제
+        perfumeNoteRepository.deleteByPerfumeIdAndType(perfume.id!!, type)
+
+        // 새 노트 추가
+        addPerfumeNotes(perfume, noteNames, type)
+    }
+
+    private fun updatePerfumeAccords(perfume: Perfume, accordNames: List<String>) {
+        // 기존 어코드 삭제
+        perfumeAccordRepository.deleteByPerfumeId(perfume.id!!)
+
+        // 새 어코드 추가
+        addPerfumeAccords(perfume, accordNames)
+    }
+
+    private fun updatePerfumeDesigners(perfume: Perfume, designers: List<PerfumeDesignerRequest>) {
+        // 기존 디자이너 삭제
         perfumeDesignerRepository.deleteByPerfumeId(perfume.id!!)
 
-        addPerfumeDesigners(perfume, designerRequests)
+        // 새 디자이너 추가
+        addPerfumeDesigners(perfume, designers)
     }
 }

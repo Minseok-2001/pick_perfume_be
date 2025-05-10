@@ -33,36 +33,46 @@ data class PerfumeResponse(
     companion object {
         fun from(perfume: Perfume): PerfumeResponse {
             val notes = perfume.getNotes()
-            val designers = perfume.designers
+            
+            // 디자이너 처리
+            val designers = mutableListOf<PerfumeDesignerResponse>()
+            
+            // 각 역할별로 디자이너를 가져와서 처리
+            DesignerRole.entries.forEach { role ->
+                val roleDesigners = perfume.getDesignersByRole(role)
+                roleDesigners.forEach { designer ->
+                    designers.add(
+                        PerfumeDesignerResponse(
+                            designer = DesignerSummaryResponse.from(designer),
+                            role = role,
+                            description = null // 설명은 엔티티에서 직접 가져올 수 없어 null로 설정
+                        )
+                    )
+                }
+            }
 
             return PerfumeResponse(
                 id = perfume.id!!,
-                name = perfume.name,
-                brand = BrandSummaryResponse.from(perfume.brand),
-                description = perfume.description,
-                releaseYear = perfume.releaseYear,
-                concentration = perfume.concentration,
-                imageUrl = perfume.image?.url,
-                topNotes = notes.filter { it.type == NoteType.TOP }
-                    .map { NoteResponse.from(it.note) },
-                middleNotes = notes.filter { it.type == NoteType.MIDDLE }
-                    .map { NoteResponse.from(it.note) },
-                baseNotes = notes.filter { it.type == NoteType.BASE }
-                    .map { NoteResponse.from(it.note) },
+                name = perfume.getName(),
+                brand = BrandSummaryResponse.from(perfume.getBrand()),
+                description = perfume.getDescription(),
+                releaseYear = perfume.getReleaseYear(),
+                concentration = perfume.getConcentration(),
+                imageUrl = perfume.getImage()?.url,
+                topNotes = notes.filter { it.getType() == NoteType.TOP }
+                    .map { NoteResponse.from(it.getNote()) },
+                middleNotes = notes.filter { it.getType() == NoteType.MIDDLE }
+                    .map { NoteResponse.from(it.getNote()) },
+                baseNotes = notes.filter { it.getType() == NoteType.BASE }
+                    .map { NoteResponse.from(it.getNote()) },
                 accords = perfume.getAccords().map {
-                    AccordResponse.from(it.accord)
+                    AccordResponse.from(it.getAccord())
                 },
-                designers = designers.map {
-                    PerfumeDesignerResponse(
-                        designer = DesignerSummaryResponse.from(it.designer),
-                        role = it.role,
-                        description = it.description
-                    )
-                },
+                designers = designers,
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
-                creatorNickname = perfume.creator?.nickname,
-                isApproved = perfume.isApproved,
+                creatorNickname = perfume.getCreator()?.nickname,
+                isApproved = perfume.isApproved(),
                 createdAt = perfume.createdAt,
                 updatedAt = perfume.updatedAt
             )
