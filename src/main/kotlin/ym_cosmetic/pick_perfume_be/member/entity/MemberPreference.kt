@@ -34,6 +34,9 @@ class MemberPreference(
     var reviewedPerfumeIds: List<Long> = emptyList(),
 
     @Column(nullable = false)
-    var lastUpdated: LocalDateTime = LocalDateTime.now()
+    var lastUpdated: LocalDateTime = LocalDateTime.now(),
+
+    @Version
+    var version: Long = 0,
 ) : BaseTimeEntity()
 
