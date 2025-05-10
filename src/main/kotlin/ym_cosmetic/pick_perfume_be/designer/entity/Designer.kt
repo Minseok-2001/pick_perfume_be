@@ -34,6 +34,29 @@ class Designer(
     var socialMediaHandle: String? = null,
 
     ) : BaseTimeEntity() {
+    
+    companion object {
+        fun create(
+            name: String,
+            biography: String? = null,
+            birthDate: LocalDate? = null,
+            country: Country? = null,
+            photo: ImageUrl? = null,
+            website: String? = null,
+            socialMediaHandle: String? = null
+        ): Designer {
+            return Designer(
+                name = name,
+                biography = biography,
+                birthDate = birthDate,
+                country = country,
+                photo = photo,
+                website = website,
+                socialMediaHandle = socialMediaHandle
+            )
+        }
+    }
+    
     fun updateDetails(
         name: String,
         biography: String?,

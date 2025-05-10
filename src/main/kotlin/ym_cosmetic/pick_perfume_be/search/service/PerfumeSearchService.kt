@@ -206,7 +206,7 @@ class PerfumeSearchService(
             notesQuery.should(
                 Query.of { q ->
                     q.term { t ->
-                        t.field("notes.keyword").value(note).boost(2.0f)
+                        t.field("notes.keyword").value("note").boost(2.0f)
                     }
                 }
             )
@@ -219,7 +219,7 @@ class PerfumeSearchService(
             accordsQuery.should(
                 Query.of { q ->
                     q.term { t ->
-                        t.field("accords.keyword").value(accord).boost(1.5f)
+                        t.field("accords.keyword").value("accord").boost(1.5f)
                     }
                 }
             )

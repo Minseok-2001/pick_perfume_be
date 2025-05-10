@@ -21,14 +21,14 @@ data class PerfumeSummaryResponse(
         fun from(perfume: Perfume): PerfumeSummaryResponse {
             return PerfumeSummaryResponse(
                 id = perfume.id!!,
-                name = perfume.getName(),
-                brand = BrandSummaryResponse.from(perfume.getBrand()),
-                releaseYear = perfume.getReleaseYear(),
-                concentration = perfume.getConcentration(),
-                imageUrl = perfume.getImage()?.url,
+                name = perfume.name,
+                brand = BrandSummaryResponse.from(perfume.brand),
+                releaseYear = perfume.releaseYear,
+                concentration = perfume.concentration,
+                imageUrl = perfume.image?.url,
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
-                creatorNickname = perfume.getCreator()?.nickname,
+                creatorNickname = perfume.creator?.nickname,
                 createdAt = perfume.createdAt
             )
         }

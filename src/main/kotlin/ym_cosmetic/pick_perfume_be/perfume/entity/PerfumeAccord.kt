@@ -12,11 +12,11 @@ class PerfumeAccord private constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "perfume_id", nullable = false)
-    private val perfume: Perfume,
+    val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accord_id", nullable = false)
-    private val accord: Accord
+    val accord: Accord
 ) : BaseTimeEntity() {
     
     companion object {
@@ -30,8 +30,4 @@ class PerfumeAccord private constructor(
             )
         }
     }
-    
-    fun getPerfume(): Perfume = this.perfume
-    
-    fun getAccord(): Accord = this.accord
 }

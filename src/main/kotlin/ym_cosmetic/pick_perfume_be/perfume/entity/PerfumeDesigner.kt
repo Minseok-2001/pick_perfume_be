@@ -13,18 +13,18 @@ class PerfumeDesigner private constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "perfume_id", nullable = false)
-    private val perfume: Perfume,
+    val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "designer_id", nullable = false)
-    private val designer: Designer,
+    val designer: Designer,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private val role: DesignerRole,
+    val role: DesignerRole,
 
     @Column(length = 500)
-    private var description: String? = null
+    var description: String? = null
 ) : BaseTimeEntity() {
 
     companion object {
@@ -43,17 +43,9 @@ class PerfumeDesigner private constructor(
         }
     }
     
-    fun getDesigner(): Designer = this.designer
-    
-    fun getRole(): DesignerRole = this.role
-    
-    fun getDescription(): String? = this.description
-    
     fun updateDescription(description: String?): PerfumeDesigner {
         this.description = description
         return this
     }
-    
-    fun getPerfume(): Perfume = this.perfume
 }
 

@@ -15,16 +15,15 @@ data class PerfumeSearchResult(
     companion object {
         fun fromDocument(document: PerfumeDocument): PerfumeSearchResult {
             return PerfumeSearchResult(
-                id = document.id.toLong(),
+                id = document.id,
                 name = document.name,
                 brandName = document.brandName,
-                imageUrl = null, // 이 정보는 문서에 없으므로 필요하면 추가
-                averageRating = document.averageRating,
+                imageUrl = document.imageUrl,
+                averageRating = document.averageRating.toFloat(),
                 reviewCount = document.reviewCount,
-                topNotes = document.notesByType
-                    .find { it.type == "TOP" }
-                    ?.notes ?: emptyList(),
-                mainAccords = document.accords.take(3)
+                topNotes = document.notes.filter { it.type == "TOP" }
+                    .map { it.name },
+                mainAccords = document.accords.map { it.name }
             )
         }
     }

@@ -33,7 +33,7 @@ class PerfumeIndexingService(
             documents.chunked(100).forEach { batch ->
                 val queries = batch.map { document ->
                     IndexQueryBuilder()
-                        .withId(document.id)
+                        .withId(document.id.toString())
                         .withObject(document)
                         .build()
                 }

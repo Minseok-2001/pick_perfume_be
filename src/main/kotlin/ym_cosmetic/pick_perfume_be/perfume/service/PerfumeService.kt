@@ -25,9 +25,6 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
-import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeAccord
-import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeDesigner
-import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeNote
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeAccordRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeDesignerRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeNoteRepository
@@ -209,8 +206,9 @@ class PerfumeService(
 
     private fun addPerfumeDesigners(perfume: Perfume, designers: List<PerfumeDesignerRequest>) {
         designers.forEach { designerRequest ->
-            val designer = getDesignerByNameOrCreate(designerRequest.name)
-            val perfumeDesigner = perfume.addDesigner(designer, designerRequest.role, designerRequest.description)
+            val designer = getDesignerByNameOrCreate(designerRequest.designerName)
+            val perfumeDesigner =
+                perfume.addDesigner(designer, designerRequest.role, designerRequest.description)
             perfumeDesignerRepository.save(perfumeDesigner)
         }
     }

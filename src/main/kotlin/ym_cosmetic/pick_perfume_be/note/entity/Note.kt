@@ -18,4 +18,18 @@ class Note(
 
     @Embedded
     var image: ImageUrl? = null,
-) : BaseTimeEntity()
+) : BaseTimeEntity() {
+    companion object {
+        fun create(
+            name: String,
+            description: String? = null,
+            image: ImageUrl? = null
+        ): Note {
+            return Note(
+                name = name,
+                description = description,
+                image = image
+            )
+        }
+    }
+}

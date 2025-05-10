@@ -2,70 +2,74 @@ package ym_cosmetic.pick_perfume_be.search.document
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.elasticsearch.annotations.*
-import ym_cosmetic.pick_perfume_be.vote.vo.VoteCategory
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Document(indexName = "perfumes")
-@Setting(
-    shards = 1,
-    replicas = 0,
-)
-class PerfumeDocument(
+@Setting(settingPath = "es-settings.json")
+data class PerfumeDocument(
     @Id
-    val id: String,
+    val id: Long,
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @MultiField(
+        mainField = Field(type = FieldType.Text, analyzer = "korean"),
+        otherFields = [
+            InnerField(suffix = "keyword", type = FieldType.Keyword),
+            InnerField(suffix = "ngram", type = FieldType.Text, analyzer = "ngram_analyzer")
+        ]
+    )
     val name: String,
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @MultiField(
+        mainField = Field(type = FieldType.Text, analyzer = "korean"),
+        otherFields = [
+            InnerField(suffix = "standard", type = FieldType.Text, analyzer = "standard")
+        ]
+    )
     val description: String?,
-
-    @Field(type = FieldType.Keyword)
-    val brandName: String,
 
     @Field(type = FieldType.Integer)
     val releaseYear: Int?,
 
+    @MultiField(
+        mainField = Field(type = FieldType.Keyword),
+        otherFields = [
+            InnerField(suffix = "text", type = FieldType.Text, analyzer = "korean")
+        ]
+    )
+    val brandName: String,
+
+    @Field(type = FieldType.Long)
+    val brandId: Long,
+
     @Field(type = FieldType.Keyword)
     val concentration: String?,
 
-    @MultiField(
-        mainField = Field(type = FieldType.Keyword),
-        otherFields = [
-            InnerField(suffix = "text", type = FieldType.Text, analyzer = "standard")
-        ]
-    )
-    val notes: List<String>,
+    @Field(type = FieldType.Keyword)
+    val imageUrl: String?,
+
+    @Field(type = FieldType.Nested, includeInParent = true)
+    val notes: List<NoteDocument>,
+
+    @Field(type = FieldType.Nested, includeInParent = true)
+    val accords: List<AccordDocument>,
 
     @Field(type = FieldType.Nested)
-    val notesByType: List<NotesByType>,
+    val designers: List<DesignerDocument>,
 
-    @MultiField(
-        mainField = Field(type = FieldType.Keyword),
-        otherFields = [
-            InnerField(suffix = "text", type = FieldType.Text, analyzer = "standard")
-        ]
-    )
-    val accords: List<String>,
-
-    @Field(type = FieldType.Nested)
-    val designers: List<DesignerInfo>,
-
-    @Field(type = FieldType.Float)
-    val averageRating: Float,
+    @Field(type = FieldType.Double)
+    val averageRating: Double,
 
     @Field(type = FieldType.Integer)
     val reviewCount: Int,
 
-    @Field(type = FieldType.Nested)
-    val voteResults: Map<VoteCategory, Map<String, Int>>,
+    @Field(type = FieldType.Boolean)
+    val isApproved: Boolean,
 
-    @Field(type = FieldType.Date, format = [DateFormat.date])
-    val releaseDate: LocalDate?,
+    @Field(type = FieldType.Object)
+    val seasonality: Seasonality? = null,
 
     @Field(type = FieldType.Keyword)
-    val tags: List<String> = emptyList(),
+    val gender: String? = null,
 
     @Field(type = FieldType.Date, format = [DateFormat.date_hour_minute_second])
     val createdAt: LocalDateTime,
@@ -73,6 +77,3 @@ class PerfumeDocument(
     @Field(type = FieldType.Date, format = [DateFormat.date_hour_minute_second])
     val updatedAt: LocalDateTime
 )
-
-
-

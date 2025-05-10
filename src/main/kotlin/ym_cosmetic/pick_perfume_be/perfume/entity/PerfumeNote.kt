@@ -13,15 +13,15 @@ class PerfumeNote private constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "perfume_id", nullable = false)
-    private val perfume: Perfume,
+    val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "note_id", nullable = false)
-    private val note: Note,
+    val note: Note,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private val type: NoteType
+    val type: NoteType
 ) : BaseTimeEntity() {
 
     companion object {
@@ -37,10 +37,4 @@ class PerfumeNote private constructor(
             )
         }
     }
-
-    fun getPerfume(): Perfume = this.perfume
-    
-    fun getNote(): Note = this.note
-    
-    fun getType(): NoteType = this.type
 }

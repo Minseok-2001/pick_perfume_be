@@ -42,6 +42,35 @@ class Brand(
     var isPopular: Boolean = false,
 
     ) : BaseTimeEntity() {
+
+    companion object {
+        fun create(
+            name: String,
+            description: String? = null,
+            foundedYear: Int? = null,
+            website: String? = null,
+            logo: ImageUrl? = null,
+            country: Country? = null,
+            designer: String? = null,
+            isLuxury: Boolean = false,
+            isNiche: Boolean = false,
+            isPopular: Boolean = false
+        ): Brand {
+            return Brand(
+                name = name,
+                description = description,
+                foundedYear = foundedYear,
+                website = website,
+                logo = logo,
+                country = country,
+                designer = designer,
+                isLuxury = isLuxury,
+                isNiche = isNiche,
+                isPopular = isPopular
+            )
+        }
+    }
+        
     fun updateDetails(
         name: String,
         description: String?,
