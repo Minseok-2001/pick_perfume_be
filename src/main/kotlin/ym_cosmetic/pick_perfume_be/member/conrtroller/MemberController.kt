@@ -11,7 +11,7 @@ import ym_cosmetic.pick_perfume_be.security.CurrentMember
 
 
 @RestController
-@RequestMapping("/members")
+@RequestMapping("/api/members")
 class MemberController(
     private val memberService: MemberService
 ) {

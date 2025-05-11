@@ -11,7 +11,7 @@ import ym_cosmetic.pick_perfume_be.auth.service.AuthService
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 class AuthController(
     private val authService: AuthService
 ) {

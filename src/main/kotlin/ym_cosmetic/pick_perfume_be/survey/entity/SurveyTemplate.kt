@@ -1,7 +1,6 @@
 package ym_cosmetic.pick_perfume_be.survey.entity
 
 import jakarta.persistence.*
-import org.hibernate.annotations.Type
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
@@ -50,12 +49,3 @@ class SurveyTemplate(
     )
 }
 
-/**
- * 질문 유형
- */
-enum class QuestionType {
-    SINGLE_CHOICE,    // 단일 선택
-    MULTIPLE_CHOICE,  // 다중 선택
-    SLIDER,           // 슬라이더
-    MATRIX_SLIDER     // 행렬 슬라이더
-} 

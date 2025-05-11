@@ -9,8 +9,6 @@ import ym_cosmetic.pick_perfume_be.survey.entity.SurveyStatus
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyRepository
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyResponseRepository
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyTemplateRepository
-import java.time.LocalDateTime
-import java.util.*
 
 @Service
 class SurveyService(
@@ -28,8 +26,6 @@ class SurveyService(
         val survey = Survey(
             memberId = request.memberId,
             imageUrl = request.imageUrl,
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now(),
             status = SurveyStatus.SUBMITTED
         )
         
@@ -112,8 +108,6 @@ class SurveyService(
         val updatedSurvey = Survey(
             surveyId = survey.surveyId,
             memberId = survey.memberId,
-            createdAt = survey.createdAt,
-            updatedAt = LocalDateTime.now(),
             imageUrl = survey.imageUrl,
             status = status,
             responses = survey.responses
@@ -149,7 +143,7 @@ class SurveyService(
      */
     @Transactional
     fun analyzeSurvey(id: Long): SurveyAnalysisResult {
-        val survey = surveyRepository.findById(id)
+        surveyRepository.findById(id)
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $id") }
         
         // 실제 모델이 구현되면 해당 로직으로 대체

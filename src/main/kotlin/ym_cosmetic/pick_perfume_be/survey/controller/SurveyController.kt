@@ -5,12 +5,15 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import ym_cosmetic.pick_perfume_be.survey.dto.*
+import ym_cosmetic.pick_perfume_be.survey.dto.SurveyAnalysisResult
+import ym_cosmetic.pick_perfume_be.survey.dto.SurveyResponseDto
+import ym_cosmetic.pick_perfume_be.survey.dto.SurveySubmitRequest
+import ym_cosmetic.pick_perfume_be.survey.dto.SurveySummary
 import ym_cosmetic.pick_perfume_be.survey.entity.SurveyStatus
 import ym_cosmetic.pick_perfume_be.survey.service.SurveyService
 
 @RestController
-@RequestMapping("/api/v1/surveys")
+@RequestMapping("/api/surveys")
 @Tag(name = "설문 API", description = "설문 제출 및 관리 API")
 class SurveyController(
     private val surveyService: SurveyService

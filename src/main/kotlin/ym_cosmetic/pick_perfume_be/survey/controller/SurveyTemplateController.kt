@@ -12,7 +12,7 @@ import ym_cosmetic.pick_perfume_be.survey.entity.QuestionType
 import ym_cosmetic.pick_perfume_be.survey.service.SurveyTemplateService
 
 @RestController
-@RequestMapping("/api/v1/survey-templates")
+@RequestMapping("/api/survey-templates")
 @Tag(name = "설문 템플릿 API", description = "설문 템플릿 관리 API")
 class SurveyTemplateController(
     private val surveyTemplateService: SurveyTemplateService

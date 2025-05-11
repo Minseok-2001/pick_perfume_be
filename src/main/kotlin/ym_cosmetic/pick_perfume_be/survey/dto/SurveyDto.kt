@@ -1,6 +1,9 @@
 package ym_cosmetic.pick_perfume_be.survey.dto
 
-import ym_cosmetic.pick_perfume_be.survey.entity.*
+import ym_cosmetic.pick_perfume_be.survey.entity.QuestionType
+import ym_cosmetic.pick_perfume_be.survey.entity.Survey
+import ym_cosmetic.pick_perfume_be.survey.entity.SurveyStatus
+import ym_cosmetic.pick_perfume_be.survey.entity.SurveyTemplate
 import java.time.LocalDateTime
 
 /**
@@ -106,7 +109,7 @@ data class ResponseSubmitDto(
             QuestionType.SINGLE_CHOICE -> choiceAnswers != null && choiceAnswers.size == 1
             QuestionType.MULTIPLE_CHOICE -> {
                 choiceAnswers != null && 
-                (question.maxSelections == null || choiceAnswers.size <= question.maxSelections)
+                (question.maxSelections == null || choiceAnswers.size <= question.maxSelections!!)
             }
             QuestionType.SLIDER -> {
                 sliderAnswer != null && 

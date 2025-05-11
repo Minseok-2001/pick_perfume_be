@@ -1,8 +1,6 @@
 package ym_cosmetic.pick_perfume_be.survey.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import ym_cosmetic.pick_perfume_be.survey.entity.SurveyResponse
 
@@ -24,9 +22,4 @@ interface SurveyResponseRepository : JpaRepository<SurveyResponse, Long> {
      */
     fun findBySurveySurveyIdAndQuestionQuestionId(surveyId: Long, questionId: Long): SurveyResponse?
     
-    /**
-     * 특정 선택지를 선택한 응답 수 조회
-     */
-    @Query("SELECT COUNT(sr) FROM SurveyResponse sr WHERE sr.choiceAnswers LIKE %:option%")
-    fun countByChoiceAnswersContaining(@Param("option") option: String): Long
-} 
+}
