@@ -1,6 +1,9 @@
 package ym_cosmetic.pick_perfume_be.search.document
 
-import org.springframework.data.elasticsearch.annotations.*
+import org.springframework.data.elasticsearch.annotations.Field
+import org.springframework.data.elasticsearch.annotations.FieldType
+import org.springframework.data.elasticsearch.annotations.InnerField
+import org.springframework.data.elasticsearch.annotations.MultiField
 
 data class NoteDocument(
     @Field(type = FieldType.Long)

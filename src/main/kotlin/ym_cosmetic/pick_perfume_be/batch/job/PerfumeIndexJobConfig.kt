@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.batch.job
 
+import org.slf4j.LoggerFactory
 import org.springframework.batch.core.Job
 import org.springframework.batch.core.Step
 import org.springframework.batch.core.job.builder.JobBuilder
@@ -18,8 +19,6 @@ import ym_cosmetic.pick_perfume_be.batch.writer.PerfumeIndexWriter
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
-import org.slf4j.LoggerFactory
-import java.util.*
 
 @Configuration
 class PerfumeIndexJobConfig(

@@ -85,7 +85,7 @@ class VoteController(
         voteService.deleteVote(id)
     }
 
- 
+
     @GetMapping("/perfumes/{perfumeId}/categories/{category}")
     fun getVotesByCategory(
         @PathVariable perfumeId: Long,

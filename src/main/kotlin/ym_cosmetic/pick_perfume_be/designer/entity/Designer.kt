@@ -34,7 +34,7 @@ class Designer(
     var socialMediaHandle: String? = null,
 
     ) : BaseTimeEntity() {
-    
+
     companion object {
         fun create(
             name: String,
@@ -56,7 +56,7 @@ class Designer(
             )
         }
     }
-    
+
     fun updateDetails(
         name: String,
         biography: String?,

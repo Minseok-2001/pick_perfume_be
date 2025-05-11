@@ -2,7 +2,6 @@ package ym_cosmetic.pick_perfume_be.search.mapper
 
 import org.springframework.stereotype.Component
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
-import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.search.document.AccordDocument
 import ym_cosmetic.pick_perfume_be.search.document.DesignerDocument
 import ym_cosmetic.pick_perfume_be.search.document.NoteDocument

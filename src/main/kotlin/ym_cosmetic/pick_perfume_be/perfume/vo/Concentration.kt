@@ -19,12 +19,12 @@ enum class Concentration(
             BODY_SPRAY -> 1
         }
     }
-    
+
     companion object {
         fun fromDisplayName(name: String): Concentration? {
             return values().find { it.displayName.equals(name, ignoreCase = true) }
         }
-        
+
         fun fromAbbreviation(abbr: String): Concentration? {
             return when (abbr.uppercase()) {
                 "PARFUM", "PERFUME", "EXTRAIT" -> PARFUM

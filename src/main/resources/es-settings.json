@@ -6,22 +6,34 @@
         "korean": {
           "type": "custom",
           "tokenizer": "nori_tokenizer",
-          "filter": ["nori_part_of_speech", "lowercase", "synonym"]
+          "filter": [
+            "nori_part_of_speech",
+            "lowercase",
+            "synonym"
+          ]
         },
         "ngram_analyzer": {
           "type": "custom",
           "tokenizer": "ngram_tokenizer",
-          "filter": ["lowercase"]
+          "filter": [
+            "lowercase"
+          ]
         },
         "autocomplete": {
           "type": "custom",
           "tokenizer": "standard",
-          "filter": ["lowercase", "edge_ngram_filter"]
+          "filter": [
+            "lowercase",
+            "edge_ngram_filter"
+          ]
         },
         "text_search": {
           "type": "custom",
           "tokenizer": "standard",
-          "filter": ["lowercase", "synonym"]
+          "filter": [
+            "lowercase",
+            "synonym"
+          ]
         }
       },
       "tokenizer": {
@@ -34,7 +46,10 @@
           "type": "ngram",
           "min_gram": 2,
           "max_gram": 5,
-          "token_chars": ["letter", "digit"]
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
         }
       },
       "filter": {

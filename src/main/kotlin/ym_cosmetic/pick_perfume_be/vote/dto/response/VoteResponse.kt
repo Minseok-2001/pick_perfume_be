@@ -14,7 +14,7 @@ data class VoteResponse(
     val perfumeName: String,
 
     val category: VoteCategory,
-    
+
     val categoryDisplayName: String,
 
     val value: String,

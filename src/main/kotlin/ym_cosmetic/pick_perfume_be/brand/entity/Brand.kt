@@ -70,7 +70,7 @@ class Brand(
             )
         }
     }
-        
+
     fun updateDetails(
         name: String,
         description: String?,

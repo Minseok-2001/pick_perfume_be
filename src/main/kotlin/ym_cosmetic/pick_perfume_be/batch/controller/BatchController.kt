@@ -15,7 +15,7 @@ class BatchController(
 ) {
     private val logger = LoggerFactory.getLogger(BatchController::class.java)
 
-    
+
     @PostMapping("/index-perfumes")
     fun indexPerfumes(
         @RequestParam(required = false, defaultValue = "csv") source: String

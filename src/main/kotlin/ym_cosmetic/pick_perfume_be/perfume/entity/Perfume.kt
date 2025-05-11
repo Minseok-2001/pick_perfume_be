@@ -60,7 +60,7 @@ class Perfume private constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-        name = "creator_id", 
+        name = "creator_id",
         foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     val creator: Member? = null,
@@ -96,7 +96,7 @@ class Perfume private constructor(
             searchSynced: Boolean = false
         ): Perfume {
             require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
-            
+
             return Perfume(
                 name = name,
                 brand = brand,
@@ -114,7 +114,7 @@ class Perfume private constructor(
 
     fun getNotes(): List<PerfumeNote> = perfumeNotes.toList()
 
-    fun getNotesByType(type: NoteType): List<PerfumeNote> = 
+    fun getNotesByType(type: NoteType): List<PerfumeNote> =
         perfumeNotes.filter { it.type == type }
 
     fun getAccords(): List<PerfumeAccord> = perfumeAccords.toList()
@@ -152,7 +152,7 @@ class Perfume private constructor(
         concentration: Concentration?
     ): Perfume {
         require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
-        
+
         this.name = name
         this.brand = brand
         this.description = description
@@ -173,7 +173,11 @@ class Perfume private constructor(
         return this
     }
 
-    fun addDesigner(designer: Designer, role: DesignerRole, description: String? = null): PerfumeDesigner {
+    fun addDesigner(
+        designer: Designer,
+        role: DesignerRole,
+        description: String? = null
+    ): PerfumeDesigner {
         val perfumeDesigner = PerfumeDesigner.create(
             perfume = this,
             designer = designer,
