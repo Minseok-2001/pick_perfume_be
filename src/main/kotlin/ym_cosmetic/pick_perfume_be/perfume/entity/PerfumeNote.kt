@@ -12,11 +12,19 @@ class PerfumeNote private constructor(
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "perfume_id", nullable = false)
+    @JoinColumn(
+        name = "perfume_id",
+        nullable = false,
+        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    )
     val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "note_id", nullable = false)
+    @JoinColumn(
+        name = "note_id",
+        nullable = false,
+        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    )
     val note: Note,
 
     @Enumerated(EnumType.STRING)

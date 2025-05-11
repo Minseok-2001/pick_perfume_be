@@ -1,4 +1,6 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   flyway:
     enabled: true
   datasource:
@@ -7,9 +9,9 @@ spring:
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
-    open-in-view: false
+    open-in-view: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
@@ -20,18 +22,19 @@ spring:
     jdbc:
       initialize-schema: never
   elasticsearch:
-    uris:
-      http://${elasticsearch.host:localhost}:${elasticsearch.port:9200}
+    uris: http://${elasticsearch.host:localhost}:${elasticsearch.port:9200}
     connection-timeout: 1s
     socket-timeout: 30s
-
+  batch:
+    jdbc:
+      initialize-schema: always
 
 logging:
   level:
     org.springframework.data.elasticsearch: DEBUG
-
-
-
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    ym_cosmetic.pick_perfume_be.batch: DEBUG
 
 springdoc:
   swagger-ui:

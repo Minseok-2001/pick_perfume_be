@@ -1,10 +1,12 @@
 package ym_cosmetic.pick_perfume_be.perfume.dto.request
 
+import ym_cosmetic.pick_perfume_be.perfume.enums.Gender
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
 
 data class PerfumeCreateRequest(
     val name: String,
     val brandName: String,
+    val gender: Gender,
     val description: String?,
     val releaseYear: Int?,
     val concentration: Concentration?,

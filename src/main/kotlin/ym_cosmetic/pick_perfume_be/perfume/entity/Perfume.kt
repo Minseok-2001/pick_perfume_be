@@ -1,6 +1,7 @@
 package ym_cosmetic.pick_perfume_be.perfume.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.ColumnDefault
 import ym_cosmetic.pick_perfume_be.accord.entity.Accord
 import ym_cosmetic.pick_perfume_be.brand.entity.Brand
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
@@ -9,6 +10,7 @@ import ym_cosmetic.pick_perfume_be.designer.entity.Designer
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.note.entity.Note
 import ym_cosmetic.pick_perfume_be.perfume.enums.DesignerRole
+import ym_cosmetic.pick_perfume_be.perfume.enums.Gender
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.review.entity.Review
@@ -30,6 +32,10 @@ class Perfume private constructor(
     @Column
     var releaseYear: Int? = null,
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    var gender: Gender,
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
         name = "brand_id",
@@ -49,6 +55,7 @@ class Perfume private constructor(
     var image: ImageUrl? = null,
 
     @Column(nullable = false)
+    @ColumnDefault("false")
     var isApproved: Boolean = false,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -69,7 +76,7 @@ class Perfume private constructor(
 
     @OneToMany(mappedBy = "perfume")
     val perfumeAccords: MutableList<PerfumeAccord> = mutableListOf(),
-    
+
     @Column(nullable = false)
     var searchSynced: Boolean = false
 
@@ -79,6 +86,7 @@ class Perfume private constructor(
         fun create(
             name: String,
             brand: Brand,
+            gender: Gender,
             description: String? = null,
             releaseYear: Int? = null,
             concentration: Concentration? = null,
@@ -92,6 +100,7 @@ class Perfume private constructor(
             return Perfume(
                 name = name,
                 brand = brand,
+                gender = gender,
                 description = description,
                 releaseYear = releaseYear,
                 concentration = concentration,

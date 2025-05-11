@@ -1,22 +1,24 @@
 package ym_cosmetic.pick_perfume_be.batch.config
 
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.core.task.SimpleAsyncTaskExecutor
-import org.springframework.core.task.TaskExecutor
-import javax.sql.DataSource
 import org.springframework.batch.core.repository.JobRepository
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
+import org.springframework.core.task.SimpleAsyncTaskExecutor
+import org.springframework.core.task.TaskExecutor
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.transaction.PlatformTransactionManager
+import javax.sql.DataSource
 
 @Configuration
 @EnableBatchProcessing
 class BatchConfig(private val dataSource: DataSource) {
 
     @Bean
-    fun taskExecutor(): TaskExecutor {
+    @Primary
+    fun batchTaskExecutor(): TaskExecutor {
         val executor = SimpleAsyncTaskExecutor("batch-executor-")
         executor.concurrencyLimit = 10
         return executor
@@ -31,7 +33,7 @@ class BatchConfig(private val dataSource: DataSource) {
     fun jobRepository(): JobRepository {
         val factory = JobRepositoryFactoryBean()
         factory.setDataSource(dataSource)
-        factory.setTransactionManager(transactionManager())
+        factory.transactionManager = transactionManager()
         factory.afterPropertiesSet()
         return factory.getObject()
     }

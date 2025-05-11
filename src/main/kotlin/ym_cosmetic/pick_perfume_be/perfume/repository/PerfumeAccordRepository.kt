@@ -11,4 +11,6 @@ interface PerfumeAccordRepository : JpaRepository<PerfumeAccord, Long> {
     @Modifying
     @Query("DELETE FROM PerfumeAccord pa WHERE pa.perfume.id = :perfumeId")
     fun deleteByPerfumeId(perfumeId: Long)
+
+    fun findByPerfumeIdAndAccordId(perfumeId: Long, accordId: Long): PerfumeAccord?
 }

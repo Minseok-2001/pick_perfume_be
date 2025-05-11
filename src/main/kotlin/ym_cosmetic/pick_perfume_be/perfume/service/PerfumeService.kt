@@ -81,6 +81,7 @@ class PerfumeService(
         val perfume = Perfume.create(
             name = request.name,
             brand = brand,
+            gender = request.gender,
             description = request.description,
             releaseYear = request.releaseYear,
             concentration = request.concentration,

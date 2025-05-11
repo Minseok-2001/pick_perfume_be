@@ -12,11 +12,19 @@ class PerfumeDesigner private constructor(
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "perfume_id", nullable = false)
+    @JoinColumn(
+        name = "perfume_id",
+        nullable = false,
+        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    )
     val perfume: Perfume,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "designer_id", nullable = false)
+    @JoinColumn(
+        name = "designer_id",
+        nullable = false,
+        foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    )
     val designer: Designer,
 
     @Enumerated(EnumType.STRING)
@@ -42,7 +50,7 @@ class PerfumeDesigner private constructor(
             )
         }
     }
-    
+
     fun updateDescription(description: String?): PerfumeDesigner {
         this.description = description
         return this

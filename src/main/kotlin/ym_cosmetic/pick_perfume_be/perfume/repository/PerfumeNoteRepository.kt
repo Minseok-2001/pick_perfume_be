@@ -11,6 +11,8 @@ interface PerfumeNoteRepository : JpaRepository<PerfumeNote, Long> {
 
     fun findByPerfumeIdAndType(perfumeId: Long, type: NoteType): List<PerfumeNote>
 
+    fun findByPerfumeIdAndNoteId(perfumeId: Long, noteId: Long): PerfumeNote?
+
     @Modifying
     @Query("DELETE FROM PerfumeNote pn WHERE pn.perfume.id = :perfumeId")
     fun deleteByPerfumeId(perfumeId: Long)
