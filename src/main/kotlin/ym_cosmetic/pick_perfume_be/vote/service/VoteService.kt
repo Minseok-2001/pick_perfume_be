@@ -77,21 +77,22 @@ class VoteService(
         val perfume = perfumeRepository.findById(perfumeId)
             .orElseThrow { EntityNotFoundException("Perfume not found with id: $perfumeId") }
 
-        // 이미 해당 카테고리에 투표했는지 확인
-        val existingVote =
-            voteRepository.findByMemberIdAndPerfumeIdAndCategory(memberId, perfumeId, category)
+        // 이미 해당 카테고리에 투표했는지 확인 - 락 획득을 위해 for update 사용
+        val existingVote = voteRepository.findByMemberIdAndPerfumeIdAndCategoryForUpdate(memberId, perfumeId, category)
+        val statistics = getVoteStatistics(perfumeId)
 
         if (existingVote != null) {
             // 이미 투표한 경우, 값 업데이트
             existingVote.updateValue(value)
+            val updatedVote = voteRepository.save(existingVote)
 
             // 이벤트 발행
             eventPublisher.publishEvent(VoteUpdatedEvent(memberId, perfumeId, category, value))
 
-            // 투표 통계 업데이트
-            updatePerfumeVoteStatistics(perfumeId)
+            // 투표 통계 업데이트 - 비동기로 처리
+            updatePerfumeVoteStatisticsAsync(perfumeId, statistics)
 
-            return existingVote
+            return updatedVote
         }
 
         // 새 투표 생성
@@ -107,8 +108,8 @@ class VoteService(
         // 이벤트 발행
         eventPublisher.publishEvent(VoteCreatedEvent(memberId, perfumeId, category.name, value))
 
-        // 투표 통계 업데이트
-        updatePerfumeVoteStatistics(perfumeId)
+        // 투표 통계 업데이트 - 비동기로 처리
+        updatePerfumeVoteStatisticsAsync(perfumeId, statistics)
 
         return savedVote
     }
@@ -204,32 +205,37 @@ class VoteService(
      */
     @Transactional
     fun updatePerfumeVoteStatistics(perfumeId: Long) {
-        val perfume = perfumeRepository.findById(perfumeId)
-            .orElseThrow { EntityNotFoundException("Perfume not found with id: $perfumeId") }
+        try {
+            val perfume = perfumeRepository.findById(perfumeId)
+                .orElseThrow { EntityNotFoundException("Perfume not found with id: $perfumeId") }
 
-        val votes = voteRepository.findByPerfumeId(perfumeId)
+            val votes = voteRepository.findByPerfumeId(perfumeId)
 
-        // 카테고리별 투표 결과 집계
-        val statistics = VoteCategory.values().associate { category ->
-            category.name to votes.filter { it.category == category }
-                .groupBy { it.value }
-                .mapValues { it.value.size }
+            // 카테고리별 투표 결과 집계
+            val statistics = VoteCategory.values().associate { category ->
+                category.name to votes.filter { it.category == category }
+                    .groupBy { it.value }
+                    .mapValues { it.value.size }
+            }
+
+            // 통계 저장 또는 업데이트 - 락 획득
+            val stats = perfumeVoteStatisticsRepository.findByPerfumeIdForUpdate(perfumeId)
+                ?: PerfumeVoteStatistics(
+                    perfumeId = perfumeId,
+                    perfume = perfume,
+                    statistics = mutableMapOf(),
+                    lastUpdated = LocalDateTime.now()
+                )
+
+            // 통계 업데이트
+            stats.statistics = statistics
+            stats.lastUpdated = LocalDateTime.now()
+
+            perfumeVoteStatisticsRepository.save(stats)
+        } catch (e: Exception) {
+            logger.error("Failed to update perfume vote statistics: ${e.message}", e)
+            // 실패해도 투표 자체는 성공하도록 예외를 던지지 않음
         }
-
-        // 통계 저장 또는 업데이트
-        val stats = perfumeVoteStatisticsRepository.findByPerfumeId(perfumeId)
-            ?: PerfumeVoteStatistics(
-                perfumeId = perfumeId,
-                perfume = perfume,
-                statistics = mutableMapOf(),
-                lastUpdated = LocalDateTime.now()
-            )
-
-        // 통계 업데이트
-        stats.statistics = statistics
-        stats.lastUpdated = LocalDateTime.now()
-
-        perfumeVoteStatisticsRepository.save(stats)
     }
 
     private fun convertToVoteResults(statistics: Map<String, Map<String, Int>>): Map<VoteCategory, VoteResult> {

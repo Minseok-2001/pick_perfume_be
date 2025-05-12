@@ -1,23 +1,35 @@
-version: '3.8'
+version: "3.8"
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
     container_name: pick-perfume-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
       - es-data:/usr/share/elasticsearch/data
-    restart: always
+      - ./src/main/resources/es-settings.json:/usr/share/elasticsearch/config/es-settings.json
+      - ./src/main/resources/analysis:/usr/share/elasticsearch/config/analysis
+    ports:
+      - "9200:9200"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: >
+      bash -c "
+        elasticsearch-plugin install analysis-nori --batch || true &&
+        /usr/local/bin/docker-entrypoint.sh elasticsearch"
+    networks:
+      - app-network
 
   mysql:
     image: mysql:8.0
@@ -37,3 +49,7 @@ services:
 volumes:
   mysql-data:
   es-data:
+
+networks:
+  app-network:
+    driver: bridge
