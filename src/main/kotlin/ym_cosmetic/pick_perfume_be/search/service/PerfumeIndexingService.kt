@@ -3,10 +3,12 @@ package ym_cosmetic.pick_perfume_be.search.service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionalEventListener
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
@@ -23,6 +25,7 @@ class PerfumeIndexingService(
     private val perfumeDocumentMapper: PerfumeDocumentMapper
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val logger = LoggerFactory.getLogger(PerfumeIndexingService::class.java)
 
     // 비동기적으로 모든 향수 데이터 인덱싱
     fun indexAllPerfumes() {
@@ -75,12 +78,52 @@ class PerfumeIndexingService(
         }
     }
 
-    // 인덱스 삭제 및 재생성
+    @Transactional(readOnly = true)
     fun reindexAllPerfumes() {
-        coroutineScope.launch {
-            elasticsearchOperations.indexOps(PerfumeDocument::class.java).delete()
-            elasticsearchOperations.indexOps(PerfumeDocument::class.java).create()
-            indexAllPerfumes()
+        try {
+            val perfumes = perfumeRepository.findAllWithDetails()
+            val documents = perfumes.map { perfumeDocumentMapper.toDocument(it) }
+
+            documents.chunked(100).forEach { batch ->
+                val queries = batch.map { document ->
+                    IndexQueryBuilder()
+                        .withId(document.id.toString())
+                        .withObject(document)
+                        .build()
+                }
+
+                elasticsearchOperations.bulkIndex(
+                    queries,
+                    IndexCoordinates.of("perfumes")
+                )
+            }
+
+            logger.info("향수 인덱싱 완료: ${documents.size}개 문서")
+        } catch (e: Exception) {
+            logger.error("인덱싱 중 오류 발생", e)
+            throw e
         }
+    }
+    // 트랜잭션 내에서 데이터 로드
+    @Transactional(readOnly = true)
+    suspend fun loadPerfumeDocuments(): List<PerfumeDocument> {
+        // FETCH JOIN으로 연관 엔티티를 함께 로드
+        val perfumes = perfumeRepository.findAllWithDetails()
+        return perfumes.map { perfumeDocumentMapper.toDocument(it) }
+    }
+
+    // 배치 인덱싱 처리
+    private suspend fun indexBatch(batch: List<PerfumeDocument>) {
+        val queries = batch.map { document ->
+            IndexQueryBuilder()
+                .withId(document.id.toString())
+                .withObject(document)
+                .build()
+        }
+
+        elasticsearchOperations.bulkIndex(
+            queries,
+            IndexCoordinates.of("perfumes")
+        )
     }
 }

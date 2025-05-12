@@ -1,0 +1,56 @@
+{
+  "id": 1,
+  "name": "샤넬 No.5",
+  "content": "세계적으로 유명한 향수 중 하나로, 알데하이드 계열의 플로럴 향이 특징입니다.",
+  "releaseYear": 1921,
+  "brandName": "샤넬",
+  "brandId": 1,
+  "concentration": "오드퍼퓸",
+  "imageUrl": "https://example.com/chanel_no5.jpg",
+  "notes": [
+    {
+      "id": 1,
+      "name": "알데하이드",
+      "type": "TOP"
+    },
+    {
+      "id": 2,
+      "name": "일랑일랑",
+      "type": "MIDDLE"
+    },
+    {
+      "id": 3,
+      "name": "바닐라",
+      "type": "BASE"
+    }
+  ],
+  "accords": [
+    {
+      "id": 1,
+      "name": "플로럴"
+    },
+    {
+      "id": 2,
+      "name": "파우더리"
+    }
+  ],
+  "designers": [
+    {
+      "id": 1,
+      "name": "가브리엘 샤넬",
+      "role": "디자이너"
+    }
+  ],
+  "averageRating": 4.5,
+  "reviewCount": 1000,
+  "isApproved": true,
+  "seasonality": {
+    "spring": 0.7,
+    "summer": 0.3,
+    "fall": 0.8,
+    "winter": 0.6
+  },
+  "gender": "FEMALE",
+  "createdAt": "2023-01-01T12:00:00",
+  "updatedAt": "2023-01-01T12:00:00"
+}

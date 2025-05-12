@@ -22,4 +22,6 @@ interface PerfumeRepositoryCustom {
     ): Page<Perfume>
 
     fun findTopByReviewCount(pageable: Pageable): Page<Perfume>
+    fun findAllWithDetails(): List<Perfume>
+
 }

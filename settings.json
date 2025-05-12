@@ -1,0 +1,81 @@
+{
+  "settings": {
+    "index": {
+      "max_ngram_diff": 10,
+      "analysis": {
+        "analyzer": {
+          "korean": {
+            "type": "custom",
+            "tokenizer": "nori_tokenizer",
+            "filter": ["nori_part_of_speech", "lowercase"]
+          },
+          "ngram_analyzer": {
+            "type": "custom",
+            "tokenizer": "ngram_tokenizer",
+            "filter": ["lowercase"]
+          },
+          "autocomplete": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["lowercase", "edge_ngram_filter"]
+          },
+          "text_search": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["lowercase"]
+          }
+        },
+        "tokenizer": {
+          "nori_tokenizer": {
+            "type": "nori_tokenizer",
+            "decompound_mode": "mixed"
+          },
+          "ngram_tokenizer": {
+            "type": "ngram",
+            "min_gram": 2,
+            "max_gram": 5,
+            "token_chars": ["letter", "digit"]
+          }
+        },
+        "filter": {
+          "nori_part_of_speech": {
+            "type": "nori_part_of_speech",
+            "stoptags": [
+              "E",
+              "IC",
+              "J",
+              "MAG",
+              "MAJ",
+              "MM",
+              "SC",
+              "SE",
+              "SF",
+              "SP",
+              "SSC",
+              "SSO",
+              "SY",
+              "UNA",
+              "UNKNOWN",
+              "VA",
+              "VCN",
+              "VCP",
+              "VSV",
+              "VV",
+              "VX",
+              "XPN",
+              "XR",
+              "XSA",
+              "XSN",
+              "XSV"
+            ]
+          },
+          "edge_ngram_filter": {
+            "type": "edge_ngram",
+            "min_gram": 1,
+            "max_gram": 10
+          }
+        }
+      }
+    }
+  }
+}

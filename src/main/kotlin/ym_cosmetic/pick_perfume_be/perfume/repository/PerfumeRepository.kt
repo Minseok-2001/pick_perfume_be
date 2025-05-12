@@ -8,4 +8,6 @@ import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 
 interface PerfumeRepository : JpaRepository<Perfume, Long>, PerfumeRepositoryCustom {
     fun findByIdIn(ids: List<Long>, pageable: Pageable): Page<Perfume>
+
+
 }

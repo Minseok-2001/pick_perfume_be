@@ -5,7 +5,6 @@ import org.springframework.data.elasticsearch.annotations.*
 import java.time.LocalDateTime
 
 @Document(indexName = "perfumes")
-@Setting(settingPath = "es-settings.json")
 data class PerfumeDocument(
     @Id
     val id: Long,

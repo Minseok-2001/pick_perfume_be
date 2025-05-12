@@ -6,6 +6,7 @@ import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
+import org.hibernate.Hibernate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -13,8 +14,7 @@ import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 import org.springframework.stereotype.Repository
 import ym_cosmetic.pick_perfume_be.brand.entity.QBrand
 import ym_cosmetic.pick_perfume_be.member.entity.QMember
-import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
-import ym_cosmetic.pick_perfume_be.perfume.entity.QPerfume
+import ym_cosmetic.pick_perfume_be.perfume.entity.*
 import ym_cosmetic.pick_perfume_be.review.entity.QReview
 
 @Repository
@@ -182,4 +182,49 @@ class PerfumeRepositoryImpl(
 
         return query.fetchOne() ?: 0L
     }
+
+    override fun findAllWithDetails(): List<Perfume> {
+        // 1. 기본 향수 정보 로드
+        val perfumes = JPAQueryFactory(entityManager)
+            .selectFrom(QPerfume.perfume)
+            .fetch()
+        
+        // 2. 향수 ID 목록 추출
+        val perfumeIds = perfumes.map { it.id }
+        
+        // 3. 각 관계를 별도로 로드하고 메모리에서 결합
+        if (perfumeIds.isNotEmpty()) {
+            // 3.1 노트 로드
+            JPAQueryFactory(entityManager)
+                .selectFrom(QPerfumeNote.perfumeNote)
+                .where(QPerfumeNote.perfumeNote.perfume.id.`in`(perfumeIds))
+                .fetch()
+                .groupBy { it.perfume.id }
+            
+            // 3.2 어코드 로드
+            JPAQueryFactory(entityManager)
+                .selectFrom(QPerfumeAccord.perfumeAccord)
+                .where(QPerfumeAccord.perfumeAccord.perfume.id.`in`(perfumeIds))
+                .fetch()
+                .groupBy { it.perfume.id }
+            
+            // 3.3 디자이너 로드
+            JPAQueryFactory(entityManager)
+                .selectFrom(QPerfumeDesigner.perfumeDesigner)
+                .where(QPerfumeDesigner.perfumeDesigner.perfume.id.`in`(perfumeIds))
+                .fetch()
+                .groupBy { it.perfume.id }
+            
+            // 4. Hibernate 초기화 (LazyInitializationException 방지)
+            perfumes.forEach { perfume ->
+                // 각 관계를 초기화
+                Hibernate.initialize(perfume.perfumeNotes)
+                Hibernate.initialize(perfume.perfumeAccords)
+                Hibernate.initialize(perfume.designers)
+            }
+        }
+        
+        return perfumes
+    }
+
 }

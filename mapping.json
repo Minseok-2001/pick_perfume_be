@@ -1,0 +1,155 @@
+{
+  "properties": {
+    "id": {
+      "type": "long"
+    },
+    "name": {
+      "type": "text",
+      "analyzer": "korean",
+      "fields": {
+        "keyword": {
+          "type": "keyword"
+        },
+        "ngram": {
+          "type": "text",
+          "analyzer": "ngram_analyzer"
+        }
+      }
+    },
+    "content": {
+      "type": "text",
+      "analyzer": "korean",
+      "fields": {
+        "standard": {
+          "type": "text",
+          "analyzer": "standard"
+        }
+      }
+    },
+    "releaseYear": {
+      "type": "integer"
+    },
+    "brandName": {
+      "type": "keyword",
+      "fields": {
+        "text": {
+          "type": "text",
+          "analyzer": "korean"
+        }
+      }
+    },
+    "brandId": {
+      "type": "long"
+    },
+    "concentration": {
+      "type": "keyword"
+    },
+    "imageUrl": {
+      "type": "keyword"
+    },
+    "notes": {
+      "type": "nested",
+      "include_in_parent": true,
+      "properties": {
+        "id": {
+          "type": "long"
+        },
+        "name": {
+          "type": "text",
+          "analyzer": "korean",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            },
+            "ngram": {
+              "type": "text",
+              "analyzer": "ngram_analyzer"
+            }
+          }
+        },
+        "type": {
+          "type": "keyword"
+        }
+      }
+    },
+    "accords": {
+      "type": "nested",
+      "include_in_parent": true,
+      "properties": {
+        "id": {
+          "type": "long"
+        },
+        "name": {
+          "type": "text",
+          "analyzer": "korean",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            },
+            "ngram": {
+              "type": "text",
+              "analyzer": "ngram_analyzer"
+            }
+          }
+        }
+      }
+    },
+    "designers": {
+      "type": "nested",
+      "properties": {
+        "id": {
+          "type": "long"
+        },
+        "name": {
+          "type": "text",
+          "analyzer": "korean",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "role": {
+          "type": "keyword"
+        }
+      }
+    },
+    "averageRating": {
+      "type": "double"
+    },
+    "reviewCount": {
+      "type": "integer"
+    },
+    "isApproved": {
+      "type": "boolean"
+    },
+    "seasonality": {
+      "type": "object",
+      "properties": {
+        "spring": {
+          "type": "float"
+        },
+        "summer": {
+          "type": "float"
+        },
+        "fall": {
+          "type": "float"
+        },
+        "winter": {
+          "type": "float"
+        }
+      }
+    },
+    "gender": {
+      "type": "keyword"
+    },
+    "createdAt": {
+      "type": "date",
+      "format": "date_hour_minute_second"
+    },
+    "updatedAt": {
+      "type": "date",
+      "format": "date_hour_minute_second"
+    }
+  }
+}
