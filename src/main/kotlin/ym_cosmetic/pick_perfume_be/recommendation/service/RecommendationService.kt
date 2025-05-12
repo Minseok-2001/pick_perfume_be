@@ -218,7 +218,10 @@ class RecommendationService(
             perfumeSearchService.searchPerfumes(criteria)
         }
 
-        val searchResults = searchResultsDeferred.await()
+        val searchPageResult = searchResultsDeferred.await()
+        // content 필드에서 실제 결과 리스트 추출
+        val searchResults = searchPageResult.content
+
         val result = convertToPerfumeSummaryResponses(searchResults)
 
         // 추천 노출 이벤트 발행 (비동기)
@@ -285,14 +288,12 @@ class RecommendationService(
         val criteria = PerfumeSearchCriteria(
             keyword = null,
             sortBy = "rating",
-            pageable = pageable
-            // Season 필드를 PerfumeSearchCriteria에 추가해야 함
-            // season = season
+            pageable = pageable,
+            season = season
         )
 
-        // 시즌 검색을 위한 임시 구현
-        // 실제로는 PerfumeSearchCriteria와 PerfumeSearchService를 수정해야 함
-        return perfumeSearchService.searchPerfumes(criteria)
+        val searchPageResult = perfumeSearchService.searchPerfumes(criteria)
+        return searchPageResult.content
     }
 
     /**

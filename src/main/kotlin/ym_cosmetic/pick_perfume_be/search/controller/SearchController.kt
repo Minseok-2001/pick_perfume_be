@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchCriteria
-import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
+import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchPageResult
 import ym_cosmetic.pick_perfume_be.search.service.PerfumeSearchService
 
 @RestController
@@ -30,7 +30,7 @@ class SearchController(
         @RequestParam sortBy: String = "relevance",
         @RequestParam page: Int = 0,
         @RequestParam size: Int = 20
-    ): ApiResponse<List<PerfumeSearchResult>> {
+    ): ApiResponse<PerfumeSearchPageResult> {
         val pageable = PageRequest.of(page, size)
 
         val criteria = PerfumeSearchCriteria(

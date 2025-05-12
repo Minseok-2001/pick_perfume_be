@@ -8,18 +8,20 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.elasticsearch.client.elc.NativeQuery
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
+import org.springframework.data.elasticsearch.core.SearchHits
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.stereotype.Service
 import ym_cosmetic.pick_perfume_be.member.dto.MemberPreferenceDto
 import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchCriteria
+import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchPageResult
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
 
 @Service
 class PerfumeSearchService(
     private val elasticsearchOperations: ElasticsearchOperations
 ) {
-    fun searchPerfumes(criteria: PerfumeSearchCriteria): List<PerfumeSearchResult> {
+    fun searchPerfumes(criteria: PerfumeSearchCriteria): PerfumeSearchPageResult {
         val boolQuery = BoolQuery.Builder()
 
         // 키워드 검색
@@ -174,16 +176,24 @@ class PerfumeSearchService(
         }
 
         // 검색 실행
-        val searchHits = elasticsearchOperations.search(
+        val searchHits: SearchHits<PerfumeDocument> = elasticsearchOperations.search(
             nativeQuery.build(),
             PerfumeDocument::class.java,
             IndexCoordinates.of("perfumes")
         )
 
         // 결과 변환
-        return searchHits.map { hit ->
+        val content = searchHits.map { hit ->
             PerfumeSearchResult.fromDocument(hit.content)
         }.toList()
+        
+        // 페이지네이션 정보를 포함한 결과 반환
+        return PerfumeSearchPageResult.of(
+            content = content,
+            totalCount = searchHits.totalHits,
+            page = criteria.pageable.pageNumber,
+            size = criteria.pageable.pageSize
+        )
     }
 
     // 유사한 향수 찾기
@@ -261,9 +271,12 @@ class PerfumeSearchService(
             IndexCoordinates.of("perfumes")
         )
 
-        return searchHits.map { hit ->
+        // 결과 변환
+        val content = searchHits.map { hit ->
             PerfumeSearchResult.fromDocument(hit.content)
         }.toList()
+        
+        return content
     }
 
     // 사용자 선호도 기반 추천
@@ -349,8 +362,11 @@ class PerfumeSearchService(
             IndexCoordinates.of("perfumes")
         )
 
-        return searchHits.map { hit ->
+        // 결과 변환
+        val content = searchHits.map { hit ->
             PerfumeSearchResult.fromDocument(hit.content)
         }.toList()
+        
+        return content
     }
 }
