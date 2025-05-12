@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "ts-node src/index.ts",
     "dev": "ts-node-dev --respawn src/index.ts",
-    "import": "ts-node src/batch/importPerfume.ts"
+    "import": "ts-node src/batch/importPerfume.ts",
+    "update-images": "ts-node src/batch/updatePerfumeImages.ts"
   },
   "keywords": [
     "perfume",
@@ -18,14 +19,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mikro-orm/core": "^5.7.12",
-    "@mikro-orm/mysql": "^5.7.12",
-    "@mikro-orm/migrations": "^5.7.12",
     "@mikro-orm/cli": "^5.7.12",
+    "@mikro-orm/core": "^5.7.12",
+    "@mikro-orm/migrations": "^5.7.12",
+    "@mikro-orm/mysql": "^5.7.12",
     "@mikro-orm/reflection": "^5.7.12",
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.9.0",
     "csv-parser": "^3.0.0",
     "dotenv": "^16.0.3",
     "reflect-metadata": "^0.1.13",
+    "sharp": "^0.34.1",
     "winston": "^3.8.2"
   },
   "devDependencies": {

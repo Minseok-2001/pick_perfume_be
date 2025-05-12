@@ -155,13 +155,21 @@ class ReviewService(
      * 특정 향수의 리뷰 목록 조회
      */
     @Transactional(readOnly = true)
-    fun getReviewsByPerfumeId(perfumeId: Long, pageable: Pageable, currentUserId: Long?): Page<ReviewSummaryDto> {
-        // TODO: perfumeId로 리뷰 목록 조회하는 Repository 메소드 구현 필요
+    fun getReviewsByPerfumeId(perfumeId: Long, pageable: Pageable, currentUserId: Long?): Page<ReviewResponseDto> {
         val reviewPage = reviewRepository.findAll(pageable)
         
         return reviewPage.map { review ->
-            val likeCount = reviewReactionService.countLikesByReviewId(review.id!!)
-            ReviewSummaryDto.from(review, likeCount)
+            reviewReactionService.countLikesByReviewId(review.id!!)
+            ReviewResponseDto.from(
+                review = review,
+                likeCount = reviewReactionService.countLikesByReviewId(review.id!!),
+                dislikeCount = reviewReactionService.countDislikesByReviewId(review.id!!),
+                currentUserReaction = if (currentUserId != null) {
+                    reviewReactionService.getUserReactionForReview(currentUserId, review.id!!)
+                } else {
+                    null
+                }
+            )
         }
     }
 

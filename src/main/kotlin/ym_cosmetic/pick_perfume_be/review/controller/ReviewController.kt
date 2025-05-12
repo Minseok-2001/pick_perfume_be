@@ -77,7 +77,7 @@ class ReviewController(
         @PathVariable("id") perfumeId: Long,
         @PageableDefault(size = 10, sort = ["createdAt"]) pageable: Pageable,
         @CurrentMember member: Member
-    ): ApiResponse<Page<ReviewSummaryDto>> {
+    ): ApiResponse<Page<ReviewResponseDto>> {
         val reviews = reviewService.getReviewsByPerfumeId(perfumeId, pageable, member.id)
         return ApiResponse.success(reviews)
     }
