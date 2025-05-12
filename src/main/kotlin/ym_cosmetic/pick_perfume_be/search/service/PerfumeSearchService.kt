@@ -34,7 +34,7 @@ class PerfumeSearchService(
                 .should(
                     Query.of { q ->
                         q.match { m ->
-                            m.field("brandName").query(keyword).boost(1.5f)
+                            m.field("brandName.text").query(keyword).boost(3.0f)
                         }
                     }
                 )
