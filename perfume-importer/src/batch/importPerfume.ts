@@ -28,8 +28,8 @@ async function importPerfumeData() {
     logger.info(`Imported ${perfumeMap.size} perfumes`);
 
     // 노트 데이터 가져오기
-    logger.info("Importing notes...");
-    await importService.importNotes("note.csv", perfumeMap);
+    // logger.info("Importing notes...");
+    // await importService.importNotes("note.csv", perfumeMap);
 
     // 어코드 데이터 가져오기
     logger.info("Importing accords...");

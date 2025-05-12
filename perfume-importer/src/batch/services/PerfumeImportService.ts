@@ -187,25 +187,25 @@ export class PerfumeImportService {
           );
         } else {
           // 기존 향수 업데이트
-          perfume.name = perfumeCsv.title;
-          perfume.brand = brand;
-          perfume.description = perfumeCsv.description;
-          perfume.url = perfumeCsv.url;
-          perfume.releaseYear = releaseYear;
-          perfume.gender = gender;
-          perfume.concentration = concentration;
-          this.em.persist(perfume);
-          logger.debug(
-            `Updated existing perfume: ${perfume.name} (Brand: ${brand.name})`
-          );
+          // perfume.name = perfumeCsv.title;
+          // perfume.brand = brand;
+          // perfume.description = perfumeCsv.description;
+          // perfume.url = perfumeCsv.url;
+          // perfume.releaseYear = releaseYear;
+          // perfume.gender = gender;
+          // perfume.concentration = concentration;
+          // this.em.persist(perfume);
+          // logger.debug(
+          //   `Updated existing perfume: ${perfume.name} (Brand: ${brand.name})`
+          // );
         }
 
         // 디자이너 정보 처리
-        await this.processDesigners(
-          perfume,
-          perfumeCsv.perfumer1,
-          perfumeCsv.perfumer2
-        );
+        // await this.processDesigners(
+        //   perfume,
+        //   perfumeCsv.perfumer1,
+        //   perfumeCsv.perfumer2
+        // );
 
         // CSV ID와 향수 객체를 맵에 저장
         perfumeMap.set(perfumeCsv.id, perfume);
@@ -412,7 +412,11 @@ export class PerfumeImportService {
         });
 
         if (!existingRelation) {
-          const perfumeAccord = new PerfumeAccord(perfume, accord);
+          const perfumeAccord = new PerfumeAccord(
+            perfume,
+            accord,
+            Number(accordCsv.position)
+          );
           this.em.persist(perfumeAccord);
           logger.debug(
             `Added accord ${accord.name} to perfume ${perfume.name}`

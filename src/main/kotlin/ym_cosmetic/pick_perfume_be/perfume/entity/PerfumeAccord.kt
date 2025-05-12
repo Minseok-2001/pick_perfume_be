@@ -24,17 +24,22 @@ class PerfumeAccord private constructor(
         nullable = false,
         foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
-    val accord: Accord
+    val accord: Accord,
+
+    @Column
+    var position: Int? = null,
 ) : BaseTimeEntity() {
 
     companion object {
         fun create(
             perfume: Perfume,
-            accord: Accord
+            accord: Accord,
+            position: Int? = null
         ): PerfumeAccord {
             return PerfumeAccord(
                 perfume = perfume,
-                accord = accord
+                accord = accord,
+                position = position
             )
         }
     }

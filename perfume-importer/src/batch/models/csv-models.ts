@@ -40,4 +40,5 @@ export interface AccordCsv {
   id: string;
   perfume_id: string;
   accord_name: string;
+  position: string;
 }

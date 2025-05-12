@@ -11,13 +11,13 @@ export class PerfumeAccord extends BaseEntity {
   @ManyToOne(() => Accord)
   accord!: Accord;
 
-  @Property({ nullable: true })
-  strength?: number;
+  @Property()
+  position?: number;
 
-  constructor(perfume: Perfume, accord: Accord, strength?: number) {
+  constructor(perfume: Perfume, accord: Accord, position?: number) {
     super();
     this.perfume = perfume;
     this.accord = accord;
-    this.strength = strength;
+    this.position = position;
   }
 }
