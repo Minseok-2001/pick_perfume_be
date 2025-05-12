@@ -1,6 +1,6 @@
 ---
-content:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
 # 향수 추천 및 커뮤니티 시스템을 위한 DDD 기반 백엔드 설계 가이드라인
@@ -258,16 +258,15 @@ class PerfumeController(
     private val perfumeService: PerfumeService
 ) {
     @GetMapping("/{id}")
-    fun getPerfume(@PathVariable id: String): ResponseEntity<PerfumeDetailDto> {
+    fun getPerfume(@PathVariable id: String): ApiResponse<PerfumeDetailDto> {
         val perfumeId = PerfumeId.of(id)
         val perfume = perfumeService.findById(perfumeId)
-            ?: return ResponseEntity.notFound().build()
             
-        return ResponseEntity.ok(PerfumeDetailDto.from(perfume))
+        return ApiResponse.success(PerfumeDetailDto.from(perfume))
     }
     
     @PostMapping
-    fun createPerfume(@Valid @RequestBody request: CreatePerfumeRequest): ResponseEntity<PerfumeDetailDto> {
+    fun createPerfume(@Valid @RequestBody request: CreatePerfumeRequest): ApiResponse<PerfumeDetailDto> {
         val command = RegisterPerfumeCommand(
             name = request.name,
             content = request.content,
@@ -276,8 +275,7 @@ class PerfumeController(
         )
         
         val perfume = perfumeService.registerPerfume(command)
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(PerfumeDetailDto.from(perfume))
+        return ApiResponse.success(perfume)
     }
 }
 ```

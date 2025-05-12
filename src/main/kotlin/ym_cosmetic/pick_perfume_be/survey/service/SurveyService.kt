@@ -39,7 +39,8 @@ class SurveyService(
             // 템플릿 조회
             val template = surveyTemplateRepository.findById(responseDto.questionId)
                 .orElseThrow { NoSuchElementException("질문을 찾을 수 없습니다: ${responseDto.questionId}") }
-            
+
+            println("템플릿: $template")
             // 응답 유효성 검사
             if (!responseDto.validate(template)) {
                 throw IllegalArgumentException("잘못된 응답 형식입니다: ${template.questionKey}")
@@ -49,10 +50,14 @@ class SurveyService(
             val response = SurveyResponse(
                 survey = savedSurvey,
                 question = template,
-                choiceAnswers = responseDto.choiceAnswers,
-                sliderAnswer = responseDto.sliderAnswer,
-                matrixAnswers = responseDto.matrixAnswers
+                sliderAnswer = responseDto.sliderAnswer
             )
+            
+            // 선택형 응답 추가
+            responseDto.choiceAnswers?.forEach { response.addChoiceAnswer(it) }
+            
+            // 행렬형 응답 추가
+            responseDto.matrixAnswers?.forEach { (key, value) -> response.addMatrixAnswer(key, value) }
             
             // 응답 저장
             val savedResponse = surveyResponseRepository.save(response)

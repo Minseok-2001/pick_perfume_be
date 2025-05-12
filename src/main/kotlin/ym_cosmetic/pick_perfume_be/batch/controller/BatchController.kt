@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import ym_cosmetic.pick_perfume_be.batch.scheduler.BatchScheduler
+import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 
 @RestController
 @RequestMapping("/api/admin/batch")
@@ -19,9 +20,9 @@ class BatchController(
     @PostMapping("/index-perfumes")
     fun indexPerfumes(
         @RequestParam(required = false, defaultValue = "csv") source: String
-    ): ResponseEntity<String> {
+    ): ApiResponse<String> {
         logger.info("향수 인덱싱 작업 수동 실행 요청 받음 (소스: {})", source)
         val result = batchScheduler.runPerfumeIndexJobManually(source)
-        return ResponseEntity.ok(result)
+        return ApiResponse.success(result)
     }
 } 

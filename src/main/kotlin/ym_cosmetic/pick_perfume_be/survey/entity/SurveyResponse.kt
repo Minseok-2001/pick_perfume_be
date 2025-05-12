@@ -1,8 +1,6 @@
 package ym_cosmetic.pick_perfume_be.survey.entity
 
 import jakarta.persistence.*
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 
 /**
@@ -25,27 +23,24 @@ class SurveyResponse(
     @JoinColumn(name = "question_id", nullable = false)
     val question: SurveyTemplate,
 
-    @Column(name = "choice_answers", columnDefinition = "json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    val choiceAnswers: List<String>? = null,
-
     @Column(name = "slider_answer")
     val sliderAnswer: Int? = null,
-
-    @Column(name = "matrix_answers", columnDefinition = "json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    val matrixAnswers: Map<String, Int>? = null
+    
+    @OneToMany(mappedBy = "response", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val choiceAnswers: MutableList<SurveyResponseChoice> = mutableListOf(),
+    
+    @OneToMany(mappedBy = "response", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val matrixAnswers: MutableList<SurveyResponseMatrix> = mutableListOf()
 ) : BaseTimeEntity() {
-    companion object {
-        fun fromEntity(response: SurveyResponse): SurveyResponse {
-            return SurveyResponse(
-                responseId = response.responseId,
-                survey = response.survey,
-                question = response.question,
-                choiceAnswers = response.choiceAnswers,
-                sliderAnswer = response.sliderAnswer,
-                matrixAnswers = response.matrixAnswers
-            )
-        }
+    // 편의 메서드
+    fun addChoiceAnswer(option: String): SurveyResponse {
+        choiceAnswers.add(SurveyResponseChoice(response = this, optionText = option))
+        return this
+    }
+    
+    fun addMatrixAnswer(key: String, value: Int): SurveyResponse {
+        matrixAnswers.add(SurveyResponseMatrix(response = this, optionKey = key, value = value))
+        return this
     }
 }
+

@@ -1,8 +1,6 @@
 package ym_cosmetic.pick_perfume_be.survey.entity
 
 import jakarta.persistence.*
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 
 /**
  * 설문 템플릿 엔티티
@@ -19,33 +17,38 @@ class SurveyTemplate(
     @Column(name = "question_key", nullable = false, unique = true)
     val questionKey: String,
 
-    @Column(name = "question_text", nullable = false)
+    @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     val questionText: String,
 
     @Column(name = "question_type", nullable = false)
     @Enumerated(EnumType.STRING)
     val questionType: QuestionType,
 
-    @Column(name = "options", columnDefinition = "json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    val options: List<String>? = null,
-
     @Column(name = "max_selections")
     val maxSelections: Int? = null,
-
-    @Column(name = "scale", columnDefinition = "json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    val scale: Scale? = null,
 
     @Column(name = "required", nullable = false)
     val required: Boolean = true,
 
     @Column(name = "sort_order", nullable = false)
-    val sortOrder: Int
+    val sortOrder: Int,
+    
+    @OneToMany(mappedBy = "template", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val options: MutableList<SurveyTemplateOption> = mutableListOf(),
+    
+    @OneToOne(mappedBy = "template", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var scale: SurveyTemplateScale? = null
 ) {
-    data class Scale(
-        val min: Int,
-        val max: Int
-    )
+    // 편의 메서드
+    fun addOption(option: String): SurveyTemplate {
+        options.add(SurveyTemplateOption(template = this, optionText = option, sortOrder = options.size))
+        return this
+    }
+    
+    fun setScale(min: Int, max: Int): SurveyTemplate {
+        scale = SurveyTemplateScale(template = this, min = min, max = max)
+        return this
+    }
 }
+
 

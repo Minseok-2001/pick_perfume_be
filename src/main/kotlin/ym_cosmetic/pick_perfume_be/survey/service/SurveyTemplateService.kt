@@ -6,9 +6,7 @@ import ym_cosmetic.pick_perfume_be.survey.dto.SurveyTemplateCreateRequest
 import ym_cosmetic.pick_perfume_be.survey.dto.SurveyTemplateResponse
 import ym_cosmetic.pick_perfume_be.survey.dto.SurveyTemplateUpdateRequest
 import ym_cosmetic.pick_perfume_be.survey.entity.QuestionType
-import ym_cosmetic.pick_perfume_be.survey.entity.SurveyTemplate
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyTemplateRepository
-import java.util.*
 
 @Service
 class SurveyTemplateService(
@@ -70,35 +68,6 @@ class SurveyTemplateService(
     }
 
     /**
-     * 설문 템플릿 수정
-     */
-    @Transactional
-    fun updateTemplate(id: Long, request: SurveyTemplateUpdateRequest): SurveyTemplateResponse {
-        val existingTemplate = surveyTemplateRepository.findById(id)
-            .orElseThrow { NoSuchElementException("설문 템플릿을 찾을 수 없습니다: $id") }
-        
-        // 질문 유형에 따른 유효성 검사
-        validateTemplateUpdateRequest(request)
-        
-        // 기존 템플릿 데이터를 유지하면서 변경 사항 적용
-        val updatedTemplate = SurveyTemplate(
-            questionId = existingTemplate.questionId,
-            questionKey = existingTemplate.questionKey,
-            questionText = request.questionText,
-            questionType = request.questionType,
-            options = request.options,
-            maxSelections = request.maxSelections,
-            scale = request.scale?.let { SurveyTemplate.Scale(it.min, it.max) },
-            required = request.required,
-            sortOrder = request.sortOrder
-        )
-        
-        // 템플릿 저장
-        val savedTemplate = surveyTemplateRepository.save(updatedTemplate)
-        return SurveyTemplateResponse.fromEntity(savedTemplate)
-    }
-
-    /**
      * 설문 템플릿 삭제
      */
     @Transactional
@@ -143,6 +112,27 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("슬라이더 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+            QuestionType.NUMERIC_INPUT -> {
+                if (request.scale == null) {
+                    throw IllegalArgumentException("숫자 입력 질문에는 범위(scale)가 필요합니다.")
+                }
+                if (request.scale.min >= request.scale.max) {
+                    throw IllegalArgumentException("숫자 입력 최소값은 최대값보다 작아야 합니다.")
+                }
+            }
+            QuestionType.COLOR_PICKER -> {
+                if (request.options.isNullOrEmpty()) {
+                    throw IllegalArgumentException("색상 선택 질문에는 최소 하나 이상의 색상이 필요합니다.")
+                }
+            }
+            QuestionType.PERFUME_RATING_SLIDER -> {
+                if (request.scale == null) {
+                    throw IllegalArgumentException("향수 평점 슬라이더 질문에는 범위(scale)가 필요합니다.")
+                }
+                if (request.scale.min >= request.scale.max) {
+                    throw IllegalArgumentException("향수 평점 슬라이더 최소값은 최대값보다 작아야 합니다.")
+                }
+            }
         }
     }
 
@@ -178,6 +168,27 @@ class SurveyTemplateService(
                 }
                 if (request.scale.min >= request.scale.max) {
                     throw IllegalArgumentException("슬라이더 최소값은 최대값보다 작아야 합니다.")
+                }
+            }
+            QuestionType.NUMERIC_INPUT -> {
+                if (request.scale == null) {
+                    throw IllegalArgumentException("숫자 입력 질문에는 범위(scale)가 필요합니다.")
+                }
+                if (request.scale.min >= request.scale.max) {
+                    throw IllegalArgumentException("숫자 입력 최소값은 최대값보다 작아야 합니다.")
+                }
+            }
+            QuestionType.COLOR_PICKER -> {
+                if (request.options.isNullOrEmpty()) {
+                    throw IllegalArgumentException("색상 선택 질문에는 최소 하나 이상의 색상이 필요합니다.")
+                }
+            }
+            QuestionType.PERFUME_RATING_SLIDER -> {
+                if (request.scale == null) {
+                    throw IllegalArgumentException("향수 평점 슬라이더 질문에는 범위(scale)가 필요합니다.")
+                }
+                if (request.scale.min >= request.scale.max) {
+                    throw IllegalArgumentException("향수 평점 슬라이더 최소값은 최대값보다 작아야 합니다.")
                 }
             }
         }

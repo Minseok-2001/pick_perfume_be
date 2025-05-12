@@ -1,9 +1,6 @@
 package ym_cosmetic.pick_perfume_be.survey.dto
 
-import ym_cosmetic.pick_perfume_be.survey.entity.QuestionType
-import ym_cosmetic.pick_perfume_be.survey.entity.Survey
-import ym_cosmetic.pick_perfume_be.survey.entity.SurveyStatus
-import ym_cosmetic.pick_perfume_be.survey.entity.SurveyTemplate
+import ym_cosmetic.pick_perfume_be.survey.entity.*
 import java.time.LocalDateTime
 
 /**
@@ -70,16 +67,16 @@ data class SurveyAnswerDto(
     val matrixAnswers: Map<String, Int>?
 ) {
     companion object {
-        fun fromEntity(response: ym_cosmetic.pick_perfume_be.survey.entity.SurveyResponse): SurveyAnswerDto {
+        fun fromEntity(response: SurveyResponse): SurveyAnswerDto {
             return SurveyAnswerDto(
                 responseId = response.responseId,
                 questionId = response.question.questionId ?: 0L,
                 questionKey = response.question.questionKey,
                 questionText = response.question.questionText,
                 questionType = response.question.questionType,
-                choiceAnswers = response.choiceAnswers,
+                choiceAnswers = response.choiceAnswers.map { it.optionText },
                 sliderAnswer = response.sliderAnswer,
-                matrixAnswers = response.matrixAnswers
+                matrixAnswers = response.matrixAnswers.associate { it.optionKey to it.value }
             )
         }
     }
@@ -108,14 +105,25 @@ data class ResponseSubmitDto(
         return when (question.questionType) {
             QuestionType.SINGLE_CHOICE -> choiceAnswers != null && choiceAnswers.size == 1
             QuestionType.MULTIPLE_CHOICE -> {
-                choiceAnswers != null && 
+                choiceAnswers != null &&
                 (question.maxSelections == null || choiceAnswers.size <= question.maxSelections!!)
             }
             QuestionType.SLIDER -> {
-                sliderAnswer != null && 
+                sliderAnswer != null &&
                 question.scale?.let { sliderAnswer in it.min..it.max } ?: false
             }
             QuestionType.MATRIX_SLIDER -> matrixAnswers != null && matrixAnswers.isNotEmpty()
+            QuestionType.NUMERIC_INPUT -> {
+                sliderAnswer != null &&
+                question.scale?.let { sliderAnswer in it.min..it.max } ?: false
+            }
+            QuestionType.COLOR_PICKER -> {
+                choiceAnswers != null && choiceAnswers.size == 1
+            }
+            QuestionType.PERFUME_RATING_SLIDER -> {
+                sliderAnswer != null &&
+                question.scale?.let { sliderAnswer in it.min..it.max } ?: false
+            }
         }
     }
 }
