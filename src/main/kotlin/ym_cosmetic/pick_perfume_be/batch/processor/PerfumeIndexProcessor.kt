@@ -58,17 +58,9 @@ class PerfumeIndexProcessor : ItemProcessor<Perfume, PerfumeDocument> {
                 )
             }
 
-            // 성별 정보 추출 - 투표 데이터가 있을 경우에만
-            val genderVotes = perfume.getVoteResults()
-                .entries
-                .find { it.key.name == "GENDER" }
-                ?.value
 
-            val gender = genderVotes?.let {
-                it.entries
-                    .maxByOrNull { entry -> entry.value }
-                    ?.key
-            }
+
+            val gender = perfume.gender.name
 
             // 평균 평점 계산
             val averageRating = perfume.calculateAverageRating()
