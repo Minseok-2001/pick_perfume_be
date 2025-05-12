@@ -21,14 +21,14 @@ class GlobalExceptionHandler {
         )
     }
 
-    @ExceptionHandler(Exception::class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ResponseBody
-    fun handleGenericException(ex: Exception): ApiResponse<Nothing> {
-        return ApiResponse.error(
-            message = "An unexpected error occurred: ${ex.message}",
-            code = "INTERNAL_SERVER_ERROR",
-            status = HttpStatus.INTERNAL_SERVER_ERROR.value()
-        )
-    }
+//    @ExceptionHandler(Exception::class)
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    @ResponseBody
+//    fun handleGenericException(ex: Exception): ApiResponse<Nothing> {
+//        return ApiResponse.error(
+//            message = "An unexpected error occurred: ${ex.message}",
+//            code = "INTERNAL_SERVER_ERROR",
+//            status = HttpStatus.INTERNAL_SERVER_ERROR.value()
+//        )
+//    }
 }

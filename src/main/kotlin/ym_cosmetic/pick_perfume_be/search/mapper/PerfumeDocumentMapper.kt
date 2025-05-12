@@ -32,14 +32,14 @@ class PerfumeDocumentMapper {
             DesignerDocument(
                 id = perfumeDesigner.designer.id ?: 0L,
                 name = perfumeDesigner.designer.name,
-                role = perfumeDesigner.role.name
+                role = perfumeDesigner.designerRole.name
             )
         }
 
         return PerfumeDocument(
             id = perfume.id ?: 0L,
             name = perfume.name,
-            description = perfume.description,
+            content = perfume.content,
             brandName = perfume.brand.name,
             brandId = perfume.brand.id ?: 0L,
             releaseYear = perfume.releaseYear,

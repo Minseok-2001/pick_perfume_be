@@ -29,7 +29,7 @@ class PerfumeSearchService(
                     Query.of { q -> q.match { m -> m.field("name").query(keyword).boost(2.0f) } }
                 )
                 .should(
-                    Query.of { q -> q.match { m -> m.field("description").query(keyword) } }
+                    Query.of { q -> q.match { m -> m.field("content").query(keyword) } }
                 )
                 .should(
                     Query.of { q ->

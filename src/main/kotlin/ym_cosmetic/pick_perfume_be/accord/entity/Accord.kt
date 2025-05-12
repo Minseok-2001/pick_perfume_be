@@ -13,7 +13,7 @@ class Accord(
     var name: String,
 
     @Column
-    var description: String? = null,
+    var content: String? = null,
 
     @Column
     var color: String? = null,
@@ -21,12 +21,12 @@ class Accord(
     companion object {
         fun create(
             name: String,
-            description: String? = null,
+            content: String? = null,
             color: String? = null,
         ): Accord {
             return Accord(
                 name = name,
-                description = description,
+                content = content,
                 color = color,
             )
         }

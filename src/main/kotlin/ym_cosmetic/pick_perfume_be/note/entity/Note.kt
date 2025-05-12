@@ -14,7 +14,7 @@ class Note(
     var name: String,
 
     @Column
-    var description: String? = null,
+    var content: String? = null,
 
     @Embedded
     var image: ImageUrl? = null,
@@ -22,12 +22,12 @@ class Note(
     companion object {
         fun create(
             name: String,
-            description: String? = null,
+            content: String? = null,
             image: ImageUrl? = null
         ): Note {
             return Note(
                 name = name,
-                description = description,
+                content = content,
                 image = image
             )
         }

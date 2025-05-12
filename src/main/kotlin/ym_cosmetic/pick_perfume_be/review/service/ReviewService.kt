@@ -10,14 +10,10 @@ import ym_cosmetic.pick_perfume_be.common.exception.EntityNotFoundException
 import ym_cosmetic.pick_perfume_be.common.exception.ForbiddenException
 import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
-import ym_cosmetic.pick_perfume_be.perfume.vo.Season
 import ym_cosmetic.pick_perfume_be.review.dto.*
 import ym_cosmetic.pick_perfume_be.review.entity.Review
 import ym_cosmetic.pick_perfume_be.review.repository.ReviewRepository
 import ym_cosmetic.pick_perfume_be.review.vo.Rating
-import ym_cosmetic.pick_perfume_be.review.vo.Sentiment
-import ym_cosmetic.pick_perfume_be.review.vo.TimeOfDay
-import java.util.*
 
 @Service
 class ReviewService(
@@ -43,13 +39,13 @@ class ReviewService(
             perfume = perfume,
             content = request.content,
             rating = Rating.of(request.rating),
-            season = request.season?.let { Season.fromString(it) },
-            timeOfDay = request.timeOfDay?.let { TimeOfDay.fromString(it) },
-            sentiment = request.sentiment?.let { Sentiment.fromString(it) }
+            season = request.season,
+            timeOfDay = request.timeOfDay,
+            sentiment = request.sentiment,
         )
         
         val savedReview = reviewRepository.save(review)
-        
+
         return ReviewResponseDto.from(
             review = savedReview,
             likeCount = 0,
@@ -63,8 +59,8 @@ class ReviewService(
      */
     @Transactional(readOnly = true)
     fun getReviewById(reviewId: Long, currentUserId: Long?): ReviewResponseDto {
-        val review = reviewRepository.findById(reviewId)
-            .orElseThrow { EntityNotFoundException("리뷰", reviewId) }
+        val review = reviewRepository.findByIdWithMemberAndPerfume(reviewId)
+            ?: throw EntityNotFoundException("리뷰", reviewId)
         
         val likeCount = reviewReactionService.countLikesByReviewId(reviewId)
         val dislikeCount = reviewReactionService.countDislikesByReviewId(reviewId)
@@ -98,9 +94,9 @@ class ReviewService(
         review.update(
             content = request.content,
             rating = Rating.of(request.rating),
-            season = request.season?.let { Season.fromString(it) },
-            timeOfDay = request.timeOfDay?.let { TimeOfDay.fromString(it) },
-            sentiment = request.sentiment?.let { Sentiment.fromString(it) }
+            season = request.season,
+            timeOfDay = request.timeOfDay,
+            sentiment = request.sentiment
         )
         
         val updatedReview = reviewRepository.save(review)

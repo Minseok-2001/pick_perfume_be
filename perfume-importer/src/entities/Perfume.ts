@@ -36,7 +36,7 @@ export class Perfume extends BaseEntity {
   brand!: Brand;
 
   @Property({ nullable: true })
-  description?: string;
+  content?: string;
 
   @Property({ nullable: true })
   url?: string;
@@ -65,7 +65,7 @@ export class Perfume extends BaseEntity {
   constructor(
     name: string,
     brand: Brand,
-    description?: string,
+    content?: string,
     url?: string,
     releaseYear?: number,
     gender?: Gender,
@@ -75,7 +75,7 @@ export class Perfume extends BaseEntity {
     super();
     this.name = name;
     this.brand = brand;
-    this.description = description;
+    this.content = content;
     this.url = url;
     this.releaseYear = releaseYear;
     this.gender = gender;

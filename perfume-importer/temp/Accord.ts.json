@@ -1,1 +1,59 @@
-{"data":{"properties":{"name":{"name":"name","reference":"scalar","unique":true,"getter":false,"setter":false,"type":"string","array":false},"description":{"name":"description","reference":"scalar","nullable":true,"getter":false,"setter":false,"type":"string","array":false,"optional":true},"color":{"name":"color","reference":"scalar","nullable":true,"getter":false,"setter":false,"type":"string","array":false,"optional":true},"perfumeAccords":{"name":"perfumeAccords","reference":"1:m","cascade":["persist"],"type":"PerfumeAccord","array":false}},"primaryKeys":[],"filters":{},"hooks":{},"indexes":[],"uniques":[],"className":"Accord","path":"./src/entities/Accord.ts","name":"Accord","abstract":false,"constructorParams":["name","description","color"],"toJsonParams":[],"extends":"BaseEntity","useCache":true,"collection":"accord"},"origin":"./src/entities/Accord.ts","hash":"f3f27e2cb4fd2435c18fc3fb6976924f","version":"5.9.8"}
+{
+  "data": {
+    "properties": {
+      "name": {
+        "name": "name",
+        "reference": "scalar",
+        "unique": true,
+        "getter": false,
+        "setter": false,
+        "type": "string",
+        "array": false
+      },
+      "content": {
+        "name": "content",
+        "reference": "scalar",
+        "nullable": true,
+        "getter": false,
+        "setter": false,
+        "type": "string",
+        "array": false,
+        "optional": true
+      },
+      "color": {
+        "name": "color",
+        "reference": "scalar",
+        "nullable": true,
+        "getter": false,
+        "setter": false,
+        "type": "string",
+        "array": false,
+        "optional": true
+      },
+      "perfumeAccords": {
+        "name": "perfumeAccords",
+        "reference": "1:m",
+        "cascade": ["persist"],
+        "type": "PerfumeAccord",
+        "array": false
+      }
+    },
+    "primaryKeys": [],
+    "filters": {},
+    "hooks": {},
+    "indexes": [],
+    "uniques": [],
+    "className": "Accord",
+    "path": "./src/entities/Accord.ts",
+    "name": "Accord",
+    "abstract": false,
+    "constructorParams": ["name", "content", "color"],
+    "toJsonParams": [],
+    "extends": "BaseEntity",
+    "useCache": true,
+    "collection": "accord"
+  },
+  "origin": "./src/entities/Accord.ts",
+  "hash": "f3f27e2cb4fd2435c18fc3fb6976924f",
+  "version": "5.9.8"
+}

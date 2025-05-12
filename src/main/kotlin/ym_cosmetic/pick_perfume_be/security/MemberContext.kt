@@ -22,7 +22,7 @@ class MemberContext {
         get() = _currentMember != null
 
     val memberRole: MemberRole?
-        get() = _currentMember?.role
+        get() = _currentMember?.memberRole
 
     fun setCurrentMember(member: Member) {
         this._currentMember = member

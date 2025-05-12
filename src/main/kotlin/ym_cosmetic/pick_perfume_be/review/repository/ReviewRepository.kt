@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import ym_cosmetic.pick_perfume_be.review.entity.Review
+import ym_cosmetic.pick_perfume_be.review.vo.Rating
 
 interface ReviewRepository : JpaRepository<Review, Long> {
     @Query("SELECT r FROM Review r WHERE r.member.id = :memberId AND r.rating.value >= :minRating")
@@ -16,6 +17,12 @@ interface ReviewRepository : JpaRepository<Review, Long> {
 
     fun findByMemberIdAndRatingGreaterThanEqual(
         memberId: Long,
-        rating: Int
+        rating: Rating
     ): List<Review>
+    
+    @Query("SELECT r FROM Review r JOIN FETCH r.member JOIN FETCH r.perfume WHERE r.id = :reviewId")
+    fun findByIdWithMemberAndPerfume(@Param("reviewId") reviewId: Long): Review?
+    
+    @Query("SELECT r FROM Review r JOIN FETCH r.member JOIN FETCH r.perfume")
+    fun findAllWithMemberAndPerfume(): List<Review>
 }

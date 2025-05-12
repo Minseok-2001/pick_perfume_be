@@ -39,7 +39,7 @@ class PerfumeIndexProcessor : ItemProcessor<Perfume, PerfumeDocument> {
                 DesignerDocument(
                     id = perfumeDesigner.designer.id ?: 0L,
                     name = perfumeDesigner.designer.name,
-                    role = perfumeDesigner.role.name
+                    role = perfumeDesigner.designerRole.name
                 )
             }
 
@@ -78,7 +78,7 @@ class PerfumeIndexProcessor : ItemProcessor<Perfume, PerfumeDocument> {
             return PerfumeDocument(
                 id = perfume.id ?: 0L,
                 name = perfume.name,
-                description = perfume.description ?: "",
+                content = perfume.content ?: "",
                 releaseYear = perfume.releaseYear,
                 brandName = brandName,
                 brandId = brandId,

@@ -11,7 +11,7 @@ data class Rating private constructor(val value: Int) {
         }
     }
 
-    fun getDescription(): String {
+    fun getcontent(): String {
         return when (value) {
             1 -> "Poor"
             2 -> "Below Average"

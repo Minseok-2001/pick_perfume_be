@@ -1,6 +1,5 @@
 package ym_cosmetic.pick_perfume_be.review.dto
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -9,7 +8,6 @@ import ym_cosmetic.pick_perfume_be.member.dto.MemberSummaryDto
 import ym_cosmetic.pick_perfume_be.perfume.dto.PerfumeSummaryDto
 import ym_cosmetic.pick_perfume_be.perfume.vo.Season
 import ym_cosmetic.pick_perfume_be.review.entity.Review
-import ym_cosmetic.pick_perfume_be.review.vo.Rating
 import ym_cosmetic.pick_perfume_be.review.vo.Sentiment
 import ym_cosmetic.pick_perfume_be.review.vo.TimeOfDay
 import java.time.LocalDateTime
@@ -17,7 +15,6 @@ import java.time.LocalDateTime
 /**
  * 리뷰 조회 응답 DTO
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 data class ReviewResponseDto(
     val id: Long,
     val member: MemberSummaryDto,
@@ -40,8 +37,10 @@ data class ReviewResponseDto(
             dislikeCount: Long, 
             currentUserReaction: Boolean? = null
         ): ReviewResponseDto {
+            println("Review in from: $review")
+            println("Review ID in from: ${review.id}")
             return ReviewResponseDto(
-                id = review.id!!,
+                id = review.id ?: 0,
                 member = MemberSummaryDto.from(review.member),
                 perfume = PerfumeSummaryDto.from(review.perfume),
                 content = review.content,
@@ -64,7 +63,7 @@ data class ReviewResponseDto(
  */
 data class ReviewSummaryDto(
     val id: Long,
-    val memberName: String,
+    val nickname: String,
     val perfumeName: String,
     val rating: Int,
     val content: String,
@@ -75,7 +74,7 @@ data class ReviewSummaryDto(
         fun from(review: Review, likeCount: Long): ReviewSummaryDto {
             return ReviewSummaryDto(
                 id = review.id!!,
-                memberName = review.member.nickname ?: review.member.name,
+                nickname = review.member.nickname,
                 perfumeName = review.perfume.name,
                 rating = review.rating.value,
                 content = if (review.content.length > 100) review.content.substring(0, 97) + "..." else review.content,
@@ -100,9 +99,9 @@ data class ReviewCreateRequestDto(
     @field:Max(value = 5, message = "평점은 5점 이하여야 합니다.")
     val rating: Int,
     
-    val season: String? = null,
-    val timeOfDay: String? = null,
-    val sentiment: String? = null
+    val season: Season? = null,
+    val timeOfDay: TimeOfDay? = null,
+    val sentiment: Sentiment? = null
 )
 
 /**
@@ -117,9 +116,9 @@ data class ReviewUpdateRequestDto(
     @field:Max(value = 5, message = "평점은 5점 이하여야 합니다.")
     val rating: Int,
     
-    val season: String? = null,
-    val timeOfDay: String? = null,
-    val sentiment: String? = null
+    val season: Season? = null,
+    val timeOfDay: TimeOfDay? = null,
+    val sentiment: Sentiment? = null
 )
 
 /**

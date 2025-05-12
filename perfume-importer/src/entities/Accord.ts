@@ -8,7 +8,7 @@ export class Accord extends BaseEntity {
   name!: string;
 
   @Property({ nullable: true })
-  description?: string;
+  content?: string;
 
   @Property({ nullable: true })
   color?: string;
@@ -16,10 +16,10 @@ export class Accord extends BaseEntity {
   @OneToMany(() => PerfumeAccord, (perfumeAccord) => perfumeAccord.accord)
   perfumeAccords = new Collection<PerfumeAccord>(this);
 
-  constructor(name: string, description?: string, color?: string) {
+  constructor(name: string, content?: string, color?: string) {
     super();
     this.name = name;
-    this.description = description;
+    this.content = content;
     this.color = color;
   }
 }

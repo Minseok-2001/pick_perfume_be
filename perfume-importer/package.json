@@ -1,7 +1,7 @@
 {
   "name": "perfume-importer",
   "version": "1.0.0",
-  "description": "향수 데이터 가져오기 배치 프로그램",
+  "content": "향수 데이터 가져오기 배치 프로그램",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

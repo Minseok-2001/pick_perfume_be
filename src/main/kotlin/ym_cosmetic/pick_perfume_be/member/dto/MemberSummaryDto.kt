@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.member.dto
 
+import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 
 /**
@@ -9,15 +10,15 @@ data class MemberSummaryDto(
     val id: Long,
     val name: String,
     val nickname: String?,
-    val profileImageUrl: String?
+    val profileImageUrl: ImageUrl?
 ) {
     companion object {
         fun from(member: Member): MemberSummaryDto {
             return MemberSummaryDto(
                 id = member.id!!,
-                name = member.name,
+                name = member.name ?: "",
                 nickname = member.nickname,
-                profileImageUrl = member.profileImageUrl
+                profileImageUrl = member.profileImage
             )
         }
     }

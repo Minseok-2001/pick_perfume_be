@@ -1,5 +1,310 @@
 ---
-description:
+content:
 globs:
 alwaysApply: false
 ---
+# 향수 추천 및 커뮤니티 시스템을 위한 DDD 기반 백엔드 설계 가이드라인
+
+## 기본 개발 원칙
+
+### 1. 도메인 중심 설계 (DDD)
+- **도메인 중심 설계**: 핵심 비즈니스 로직은 도메인 중심으로 구성하고, 각 도메인은 독립적으로 관리
+- **유비쿼터스 언어**: 비즈니스 도메인에서 사용하는 용어를 코드에 일관되게 반영
+- **바운디드 컨텍스트**: 향수, 회원, 리뷰, 커뮤니티 등 각 컨텍스트를 명확하게 분리
+
+### 2. 객체지향 원칙
+- **캡슐화**: 엔티티의 상태는 private으로 선언하고 메서드를 통해서만 접근
+- **단일 책임 원칙(SRP)**: 각 클래스는 단 하나의 책임만 가짐
+- **정적 팩토리 메서드**: 객체 생성은 생성자 대신 정적 팩토리 메서드 사용
+- **값 객체(VO)**: 불변성을 가진 값 객체 적극 활용
+- **풍부한 도메인 모델**: 행동과 데이터를 함께 가진 객체 설계
+
+## 프로젝트 구조
+
+### 도메인 중심 폴더 구조
+```
+src/main/kotlin/ym_cosmetic/pick_perfume_be/
+├── common/                     # 공통 유틸리티, 설정, 예외 등
+├── infrastructure/             # 인프라스트럭처 공통 요소
+├── perfume/                    # 향수 도메인
+│   ├── entity/                 # 향수 관련 엔티티
+│   ├── vo/                     # 값 객체
+│   ├── enums/                  # 열거형
+│   ├── repository/             # 레포지토리
+│   ├── service/                # 서비스
+│   ├── dto/                    # DTO
+│   └── controller/             # 컨트롤러
+├── note/                       # 향 노트 도메인
+├── brand/                      # 브랜드 도메인
+├── member/                     # 회원 도메인
+├── auth/                       # 인증 도메인
+├── review/                     # 리뷰 도메인
+├── community/                  # 커뮤니티 도메인
+│   ├── entity/                 # 커뮤니티 관련 엔티티
+│   ├── vo/                     # 값 객체
+│   ├── repository/             # 레포지토리
+│   ├── service/                # 서비스
+│   ├── dto/                    # DTO
+│   └── controller/             # 컨트롤러
+├── post/                       # 게시글 도메인
+├── vote/                       # 투표/좋아요 도메인
+├── recommendation/             # 추천 도메인
+└── search/                     # 검색 도메인
+```
+
+## 코드 작성 규칙
+
+### 엔티티 설계
+- 모든 엔티티는 private 생성자를 사용하고, 정적 팩토리 메서드로 인스턴스 생성
+- 상태 변경은 명확한 의도를 가진 메서드를 통해서만 수행
+- ID는 값 객체로 분리
+- JPA 매핑은 엔티티 내부에 구현하되 도메인 로직에 영향 없도록 함
+
+```kotlin
+@Entity
+@Table(name = "perfumes")
+class Perfume private constructor(
+    @EmbeddedId
+    val id: PerfumeId,
+    
+    @Column(nullable = false)
+    private var name: String,
+    
+    @Column
+    private var content: String,
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
+    private val brand: Brand,
+    
+    @ManyToMany
+    @JoinTable(
+        name = "perfume_notes",
+        joinColumns = [JoinColumn(name = "perfume_id")],
+        inverseJoinColumns = [JoinColumn(name = "note_id")]
+    )
+    private val notes: MutableSet<Note> = mutableSetOf()
+) {
+    companion object {
+        fun create(name: String, content: String, brand: Brand): Perfume {
+            require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
+            return Perfume(
+                id = PerfumeId(UUID.randomUUID()),
+                name = name,
+                content = content,
+                brand = brand
+            )
+        }
+    }
+    
+    fun updatecontent(content: String): Perfume {
+        this.content = content
+        return this
+    }
+    
+    fun addNote(note: Note): Perfume {
+        this.notes.add(note)
+        return this
+    }
+    
+    fun getName(): String = this.name
+    
+    fun getcontent(): String = this.content
+    
+    fun getBrand(): Brand = this.brand
+    
+    fun getNotes(): Set<Note> = this.notes.toSet()
+}
+```
+
+### 값 객체(VO) 설계
+- Kotlin의 data class와 @JvmInline value class 활용하여 불변 객체로 설계
+- 유효성 검증 로직 포함
+- 도메인 특화 연산 메서드 제공
+
+```kotlin
+@Embeddable
+data class Rating(val value: Int) {
+    init {
+        require(value in 1..5) { "평점은 1점에서 5점 사이여야 합니다." }
+    }
+    
+    fun isHighRating(): Boolean = value >= 4
+}
+
+@JvmInline
+value class PerfumeId(val value: UUID) {
+    override fun toString(): String = value.toString()
+    
+    companion object {
+        fun of(id: String): PerfumeId {
+            return try {
+                PerfumeId(UUID.fromString(id))
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException("유효하지 않은 향수 ID 형식입니다: $id")
+            }
+        }
+    }
+}
+```
+
+### 레포지토리 설계
+- 각 도메인 레이어에 적합한 레포지토리 인터페이스 정의
+- QueryDSL을 활용한 복잡한 쿼리 구현
+- 도메인 언어를 반영한 메서드 이름 사용
+
+```kotlin
+interface PerfumeRepository {
+    fun findById(id: PerfumeId): Perfume?
+    fun findByNameContaining(name: String): List<Perfume>
+    fun findByBrandId(brandId: BrandId): List<Perfume>
+    fun findByNoteTypes(noteTypes: List<NoteType>): List<Perfume>
+    fun save(perfume: Perfume): Perfume
+    fun deleteById(id: PerfumeId)
+}
+
+@Repository
+class JpaPerfumeRepository(
+    private val perfumeJpaRepository: PerfumeJpaRepository,
+    private val queryFactory: JPAQueryFactory
+) : PerfumeRepository {
+    override fun findById(id: PerfumeId): Perfume? {
+        return perfumeJpaRepository.findById(id).orElse(null)
+    }
+    
+    override fun findByNoteTypes(noteTypes: List<NoteType>): List<Perfume> {
+        return queryFactory.selectFrom(QPerfume.perfume)
+            .join(QPerfume.perfume.notes, QNote.note)
+            .where(QNote.note.type.`in`(noteTypes))
+            .fetch()
+    }
+    
+    // 나머지 메서드 구현...
+}
+```
+
+### 서비스 설계
+- 도메인 서비스: 단일 도메인 내의 비즈니스 로직 처리 
+- 애플리케이션 서비스: 여러 도메인에 걸친 조정 로직, 트랜잭션 관리
+- Command와 Query 분리
+
+```kotlin
+@Service
+class PerfumeService(
+    private val perfumeRepository: PerfumeRepository,
+    private val brandRepository: BrandRepository,
+    private val noteRepository: NoteRepository
+) {
+    fun findById(id: PerfumeId): Perfume? {
+        return perfumeRepository.findById(id)
+    }
+    
+    fun registerPerfume(command: RegisterPerfumeCommand): Perfume {
+        val brand = brandRepository.findById(command.brandId)
+            ?: throw EntityNotFoundException("브랜드를 찾을 수 없습니다: ${command.brandId}")
+            
+        val perfume = Perfume.create(
+            name = command.name,
+            content = command.content,
+            brand = brand
+        )
+        
+        command.noteIds.forEach { noteId ->
+            val note = noteRepository.findById(noteId)
+                ?: throw EntityNotFoundException("노트를 찾을 수 없습니다: $noteId")
+            perfume.addNote(note)
+        }
+        
+        return perfumeRepository.save(perfume)
+    }
+}
+```
+
+### DTO 설계
+- 각 도메인 경계 간의 데이터 전송에 사용
+- 도메인 엔티티와의 매핑 메서드 제공
+
+```kotlin
+data class PerfumeDetailDto(
+    val id: String,
+    val name: String,
+    val content: String,
+    val brandName: String,
+    val notes: List<NoteDto>
+) {
+    companion object {
+        fun from(perfume: Perfume): PerfumeDetailDto {
+            return PerfumeDetailDto(
+                id = perfume.id.toString(),
+                name = perfume.getName(),
+                content = perfume.getcontent(),
+                brandName = perfume.getBrand().getName(),
+                notes = perfume.getNotes().map { NoteDto.from(it) }
+            )
+        }
+    }
+}
+```
+
+### 컨트롤러 설계
+- RESTful API 원칙 준수
+- 적절한 HTTP 상태 코드 및 응답 반환
+- 요청 유효성 검증
+
+```kotlin
+@RestController
+@RequestMapping("/api/v1/perfumes")
+class PerfumeController(
+    private val perfumeService: PerfumeService
+) {
+    @GetMapping("/{id}")
+    fun getPerfume(@PathVariable id: String): ResponseEntity<PerfumeDetailDto> {
+        val perfumeId = PerfumeId.of(id)
+        val perfume = perfumeService.findById(perfumeId)
+            ?: return ResponseEntity.notFound().build()
+            
+        return ResponseEntity.ok(PerfumeDetailDto.from(perfume))
+    }
+    
+    @PostMapping
+    fun createPerfume(@Valid @RequestBody request: CreatePerfumeRequest): ResponseEntity<PerfumeDetailDto> {
+        val command = RegisterPerfumeCommand(
+            name = request.name,
+            content = request.content,
+            brandId = BrandId.of(request.brandId),
+            noteIds = request.noteIds.map { NoteId.of(it) }
+        )
+        
+        val perfume = perfumeService.registerPerfume(command)
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(PerfumeDetailDto.from(perfume))
+    }
+}
+```
+
+## 향수 추천 시스템을 위한 특화 가이드라인
+
+### 1. 추천 알고리즘 분리
+- 추천 알고리즘은 별도 모듈로 분리하여 도메인 로직에 영향을 주지 않도록 함
+- 추천 결과는 도메인 서비스를 통해 도메인 모델로 변환
+
+### 2. 사용자 선호도 모델링
+- 사용자 선호도는 명확한 도메인 모델로 설계
+- 향 노트, 향수 브랜드, 향수 유형 등 선호 속성 별로 모델링
+
+### 3. 커뮤니티 기능 설계
+- 향수 리뷰, 사용자 토론, 추천 등 상호작용 모델링
+- 사용자 활동 기반 데이터 수집 메커니즘 구현
+- 향수 검색, 필터링, 정렬 등 사용자 편의 기능 제공
+
+## 성능 및 확장성 고려사항
+
+### 1. 성능 최적화
+- N+1 문제 방지를 위한 페치 조인 활용
+- 읽기 성능 향상을 위한 QueryDSL 활용
+- 캐싱 전략 수립
+
+### 2. 확장성
+- 마이크로서비스 전환 가능성을 고려한 모듈 설계
+- 도메인 이벤트를 통한 느슨한 결합
+- 부하 분산 고려

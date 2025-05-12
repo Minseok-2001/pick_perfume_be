@@ -12,6 +12,7 @@ import ym_cosmetic.pick_perfume_be.member.repository.MemberPreferenceRepository
 import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.review.repository.ReviewRepository
+import ym_cosmetic.pick_perfume_be.review.vo.Rating
 import ym_cosmetic.pick_perfume_be.vote.repository.VoteRepository
 import java.time.LocalDateTime
 
@@ -107,7 +108,7 @@ class MemberPreferenceAnalysisService(
     // 선호하는 어코드 분석
     private suspend fun analyzePreferredAccords(member: Member): List<String> {
         val highRatedReviews =
-            reviewRepository.findByMemberIdAndRatingGreaterThanEqual(member.id!!, 4)
+            reviewRepository.findByMemberIdAndRatingGreaterThanEqual(member.id!!, Rating.of(4))
         val perfumeIds = highRatedReviews.map { it.perfume.id!! }
 
         val accordCounts = mutableMapOf<String, Int>()
@@ -130,7 +131,7 @@ class MemberPreferenceAnalysisService(
     // 선호하는 브랜드 분석
     private suspend fun analyzePreferredBrands(member: Member): List<String> {
         val highRatedReviews =
-            reviewRepository.findByMemberIdAndRatingGreaterThanEqual(member.id!!, 4)
+            reviewRepository.findByMemberIdAndRatingGreaterThanEqual(member.id!!, Rating.of(4))
 
         val brandCounts = mutableMapOf<String, Int>()
 

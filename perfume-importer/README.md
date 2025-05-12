@@ -73,7 +73,7 @@ npm run import
    - year: 출시 연도
    - perfumer1: 조향사 1
    - perfumer2: 조향사 2
-   - description: 설명
+   - content: 설명
 
 3. **note.csv**: 노트 정보
 

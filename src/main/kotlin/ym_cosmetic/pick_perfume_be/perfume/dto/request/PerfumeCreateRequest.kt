@@ -7,7 +7,7 @@ data class PerfumeCreateRequest(
     val name: String,
     val brandName: String,
     val gender: Gender,
-    val description: String?,
+    val content: String?,
     val releaseYear: Int?,
     val concentration: Concentration?,
     val imageUrl: String?,

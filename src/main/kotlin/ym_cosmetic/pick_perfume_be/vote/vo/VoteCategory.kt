@@ -1,6 +1,6 @@
 package ym_cosmetic.pick_perfume_be.vote.vo
 
-enum class VoteCategory(val displayName: String, val description: String) {
+enum class VoteCategory(val displayName: String, val content: String) {
     LONGEVITY("Longevity", "How long the fragrance lasts"),
     SILLAGE("Sillage", "How far the fragrance projects"),
     GENDER("Gender", "How masculine or feminine the fragrance is perceived"),

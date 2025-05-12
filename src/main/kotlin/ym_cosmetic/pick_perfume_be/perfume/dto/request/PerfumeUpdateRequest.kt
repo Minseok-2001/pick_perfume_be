@@ -5,7 +5,7 @@ import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
 data class PerfumeUpdateRequest(
     val name: String,
     val brandName: String,
-    val description: String?,
+    val content: String?,
     val releaseYear: Int?,
     val concentration: Concentration?,
     val imageUrl: String?,

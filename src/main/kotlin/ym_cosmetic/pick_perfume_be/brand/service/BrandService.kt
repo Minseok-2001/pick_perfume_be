@@ -19,7 +19,7 @@ class BrandService(
 //
 //        val brand = Brand(
 //            name = request.name,
-//            description = request.description,
+//            content = request.content,
 //            foundedYear = request.foundedYear,
 //            website = request.website,
 //            logo = request.logoUrl?.let { ImageUrl(it) },

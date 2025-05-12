@@ -14,7 +14,7 @@ export class Brand extends BaseEntity {
   countryName?: string;
 
   @Property({ nullable: true })
-  description?: string;
+  content?: string;
 
   @Property({ nullable: true })
   foundedYear?: number;
@@ -44,7 +44,7 @@ export class Brand extends BaseEntity {
     name: string,
     countryCode?: string,
     countryName?: string,
-    description?: string,
+    content?: string,
     foundedYear?: number,
     website?: string,
     designer?: string,
@@ -57,7 +57,7 @@ export class Brand extends BaseEntity {
     this.name = name;
     this.countryCode = countryCode;
     this.countryName = countryName;
-    this.description = description;
+    this.content = content;
     this.foundedYear = foundedYear;
     this.website = website;
     this.designer = designer;

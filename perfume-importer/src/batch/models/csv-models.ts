@@ -9,7 +9,7 @@ export interface PerfumeCsv {
   year: string;
   perfumer1: string;
   perfumer2: string;
-  description: string;
+  content: string;
   updated_at: string;
   review_sentiment_compound: string;
   review_keyword_top7: string;
@@ -19,7 +19,7 @@ export interface BrandCsv {
   id: string;
   name: string;
   country: string;
-  description?: string;
+  content?: string;
   founded_year?: string;
   website?: string;
   designer?: string;

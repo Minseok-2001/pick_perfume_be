@@ -15,7 +15,7 @@ class Brand(
     var name: String,
 
     @Column
-    var description: String? = null,
+    var content: String? = null,
 
     @Column
     var foundedYear: Int? = null,
@@ -46,7 +46,7 @@ class Brand(
     companion object {
         fun create(
             name: String,
-            description: String? = null,
+            content: String? = null,
             foundedYear: Int? = null,
             website: String? = null,
             logo: ImageUrl? = null,
@@ -58,7 +58,7 @@ class Brand(
         ): Brand {
             return Brand(
                 name = name,
-                description = description,
+                content = content,
                 foundedYear = foundedYear,
                 website = website,
                 logo = logo,
@@ -73,7 +73,7 @@ class Brand(
 
     fun updateDetails(
         name: String,
-        description: String?,
+        content: String?,
         foundedYear: Int?,
         website: String?,
         designer: String?,
@@ -82,7 +82,7 @@ class Brand(
         isPopular: Boolean
     ) {
         this.name = name
-        this.description = description
+        this.content = content
         this.foundedYear = foundedYear
         this.website = website
         this.designer = designer

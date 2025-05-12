@@ -27,7 +27,7 @@ class Perfume private constructor(
     var name: String,
 
     @Column(length = 5000)
-    var description: String? = null,
+    var content: String? = null,
 
     @Column
     var releaseYear: Int? = null,
@@ -87,7 +87,7 @@ class Perfume private constructor(
             name: String,
             brand: Brand,
             gender: Gender,
-            description: String? = null,
+            content: String? = null,
             releaseYear: Int? = null,
             concentration: Concentration? = null,
             image: ImageUrl? = null,
@@ -101,7 +101,7 @@ class Perfume private constructor(
                 name = name,
                 brand = brand,
                 gender = gender,
-                description = description,
+                content = content,
                 releaseYear = releaseYear,
                 concentration = concentration,
                 image = image,
@@ -147,7 +147,7 @@ class Perfume private constructor(
     fun updateDetails(
         name: String,
         brand: Brand,
-        description: String?,
+        content: String?,
         releaseYear: Int?,
         concentration: Concentration?
     ): Perfume {
@@ -155,7 +155,7 @@ class Perfume private constructor(
 
         this.name = name
         this.brand = brand
-        this.description = description
+        this.content = content
         this.releaseYear = releaseYear
         this.concentration = concentration
         this.searchSynced = false // 데이터가 변경되었으므로 검색 동기화 상태를 false로 변경
@@ -176,13 +176,13 @@ class Perfume private constructor(
     fun addDesigner(
         designer: Designer,
         role: DesignerRole,
-        description: String? = null
+        content: String? = null
     ): PerfumeDesigner {
         val perfumeDesigner = PerfumeDesigner.create(
             perfume = this,
             designer = designer,
             role = role,
-            description = description
+            content = content
         )
         designers.add(perfumeDesigner)
         this.searchSynced = false
@@ -191,7 +191,7 @@ class Perfume private constructor(
 
     fun removeDesigner(designer: Designer, role: DesignerRole) {
         designers.removeIf {
-            it.designer.id == designer.id && it.role == role
+            it.designer.id == designer.id && it.designerRole == role
         }
         this.searchSynced = false
     }
@@ -199,13 +199,13 @@ class Perfume private constructor(
     // 특정 역할의 디자이너들 조회
     fun getDesignersByRole(role: DesignerRole): List<Designer> {
         return designers
-            .filter { it.role == role }
+            .filter { it.designerRole == role }
             .map { it.designer }
     }
 
     fun getPrimaryPerfumer(): Designer? {
         return designers
-            .find { it.role == DesignerRole.PERFUMER }
+            .find { it.designerRole == DesignerRole.PERFUMER }
             ?.designer
     }
 

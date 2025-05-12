@@ -82,7 +82,7 @@ export class PerfumeImportService {
             brandName,
             countryCode,
             brandCsv.country,
-            brandCsv.description,
+            brandCsv.content,
             foundedYear,
             brandCsv.website,
             brandCsv.designer,
@@ -97,7 +97,7 @@ export class PerfumeImportService {
           // 기존 브랜드 업데이트
           brand.countryCode = countryCode;
           brand.countryName = brandCsv.country;
-          brand.description = brandCsv.description;
+          brand.content = brandCsv.content;
           brand.foundedYear = foundedYear;
           brand.website = brandCsv.website;
           brand.designer = brandCsv.designer;
@@ -175,7 +175,7 @@ export class PerfumeImportService {
           perfume = new Perfume(
             perfumeCsv.title,
             brand,
-            perfumeCsv.description,
+            perfumeCsv.content,
             perfumeCsv.url,
             releaseYear,
             gender,
@@ -189,7 +189,7 @@ export class PerfumeImportService {
           // 기존 향수 업데이트
           // perfume.name = perfumeCsv.title;
           // perfume.brand = brand;
-          // perfume.description = perfumeCsv.description;
+          // perfume.content = perfumeCsv.content;
           // perfume.url = perfumeCsv.url;
           // perfume.releaseYear = releaseYear;
           // perfume.gender = gender;

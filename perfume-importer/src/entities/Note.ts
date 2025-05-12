@@ -8,7 +8,7 @@ export class Note extends BaseEntity {
   name!: string;
 
   @Property({ nullable: true })
-  description?: string;
+  content?: string;
 
   @Property({ nullable: true })
   category?: string;
@@ -16,10 +16,10 @@ export class Note extends BaseEntity {
   @OneToMany(() => PerfumeNote, (perfumeNote) => perfumeNote.note)
   perfumeNotes = new Collection<PerfumeNote>(this);
 
-  constructor(name: string, description?: string, category?: string) {
+  constructor(name: string, content?: string, category?: string) {
     super();
     this.name = name;
-    this.description = description;
+    this.content = content;
     this.category = category;
   }
 }

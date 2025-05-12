@@ -14,7 +14,7 @@ data class PerfumeResponse(
     val id: Long,
     val name: String,
     val brand: BrandSummaryResponse,
-    val description: String?,
+    val content: String?,
     val releaseYear: Int?,
     val concentration: Concentration?,
     val imageUrl: String?,
@@ -45,7 +45,7 @@ data class PerfumeResponse(
                         PerfumeDesignerResponse(
                             designer = DesignerSummaryResponse.from(designer),
                             role = role,
-                            description = null // 설명은 엔티티에서 직접 가져올 수 없어 null로 설정
+                            content = null // 설명은 엔티티에서 직접 가져올 수 없어 null로 설정
                         )
                     )
                 }
@@ -55,7 +55,7 @@ data class PerfumeResponse(
                 id = perfume.id!!,
                 name = perfume.name,
                 brand = BrandSummaryResponse.from(perfume.brand),
-                description = perfume.description,
+                content = perfume.content,
                 releaseYear = perfume.releaseYear,
                 concentration = perfume.concentration,
                 imageUrl = perfume.image?.url,
@@ -83,5 +83,5 @@ data class PerfumeResponse(
 data class PerfumeDesignerResponse(
     val designer: DesignerSummaryResponse,
     val role: DesignerRole,
-    val description: String?
+    val content: String?
 )

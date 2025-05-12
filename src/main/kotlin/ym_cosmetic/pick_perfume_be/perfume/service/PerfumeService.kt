@@ -82,12 +82,12 @@ class PerfumeService(
             name = request.name,
             brand = brand,
             gender = request.gender,
-            description = request.description,
+            content = request.content,
             releaseYear = request.releaseYear,
             concentration = request.concentration,
             image = request.imageUrl?.let { ImageUrl(it) },
             creator = creator,
-            isAdmin = creator?.role == MemberRole.ADMIN
+            isAdmin = creator?.memberRole == MemberRole.ADMIN
         )
 
         val savedPerfume = perfumeRepository.save(perfume)
@@ -118,7 +118,7 @@ class PerfumeService(
         perfume.updateDetails(
             name = request.name,
             brand = brand,
-            description = request.description,
+            content = request.content,
             releaseYear = request.releaseYear,
             concentration = request.concentration
         )
@@ -209,7 +209,7 @@ class PerfumeService(
         designers.forEach { designerRequest ->
             val designer = getDesignerByNameOrCreate(designerRequest.designerName)
             val perfumeDesigner =
-                perfume.addDesigner(designer, designerRequest.role, designerRequest.description)
+                perfume.addDesigner(designer, designerRequest.role, designerRequest.content)
             perfumeDesignerRepository.save(perfumeDesigner)
         }
     }

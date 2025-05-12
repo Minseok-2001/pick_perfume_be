@@ -10,8 +10,9 @@ import ym_cosmetic.pick_perfume_be.security.PasswordEncoder
 @Entity
 @Table(name = "member")
 class Member(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
 
     @Column(nullable = false, unique = true)
     var email: String,
@@ -30,7 +31,7 @@ class Member(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var role: MemberRole = MemberRole.MEMBER,
+    var memberRole: MemberRole = MemberRole.MEMBER,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -53,5 +54,5 @@ class Member(
         return passwordEncoder.matches(password, this.password)
     }
 
-    fun isAdmin(): Boolean = role == MemberRole.ADMIN
+    fun isAdmin(): Boolean = memberRole == MemberRole.ADMIN
 }

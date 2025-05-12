@@ -10,7 +10,7 @@ data class VoteStatisticsResponse(
 data class VoteCategoryStatistics(
     val category: String,
     val displayName: String,
-    val description: String,
+    val content: String,
     val totalVotes: Int,
     val values: List<VoteValueStatistics>,
     val topValue: String?,
@@ -21,7 +21,7 @@ data class VoteCategoryStatistics(
             return VoteCategoryStatistics(
                 category = category.name,
                 displayName = category.displayName,
-                description = category.description,
+                content = category.content,
                 totalVotes = result.totalVotes,
                 values = category.getSortedValues().map { value ->
                     VoteValueStatistics(

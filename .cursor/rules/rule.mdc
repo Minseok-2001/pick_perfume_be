@@ -1,7 +1,7 @@
 ---
-description: 
+content: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # 향수 추천 및 커뮤니티 시스템을 위한 DDD 기반 백엔드 설계 가이드라인
 
@@ -56,17 +56,17 @@ class Perfume private constructor(
     @EmbeddedId
     val id: PerfumeId,
     private var name: String,
-    private var description: String
+    private var content: String
 ) {
     companion object {
-        fun create(name: String, description: String): Perfume {
+        fun create(name: String, content: String): Perfume {
             require(name.isNotBlank()) { "향수 이름은 비어있을 수 없습니다." }
-            return Perfume(PerfumeId(UUID.randomUUID()), name, description)
+            return Perfume(PerfumeId(UUID.randomUUID()), name, content)
         }
     }
     
-    fun updateDescription(description: String): Perfume {
-        this.description = description
+    fun updatecontent(content: String): Perfume {
+        this.content = content
         return this
     }
     
@@ -128,7 +128,7 @@ class PerfumeApplicationService(
     private val eventPublisher: ApplicationEventPublisher
 ) {
     fun registerPerfume(command: RegisterPerfumeCommand): PerfumeId {
-        val perfume = Perfume.create(command.name, command.description)
+        val perfume = Perfume.create(command.name, command.content)
         perfumeRepository.save(perfume)
         eventPublisher.publishEvent(PerfumeRegisteredEvent(perfume.id))
         return perfume.id

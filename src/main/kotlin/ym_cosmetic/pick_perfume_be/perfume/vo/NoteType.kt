@@ -1,6 +1,6 @@
 package ym_cosmetic.pick_perfume_be.perfume.vo
 
-enum class NoteType(val displayName: String, val description: String) {
+enum class NoteType(val displayName: String, val content: String) {
     TOP("Top Note", "The initial impression that quickly fades"),
     MIDDLE("Middle Note", "The heart of the fragrance that emerges after top notes fade"),
     BASE("Base Note", "The long-lasting foundation of the fragrance");

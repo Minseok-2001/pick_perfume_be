@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.perfume.dto
 
+import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 
 /**
@@ -9,8 +10,7 @@ data class PerfumeSummaryDto(
     val id: Long,
     val name: String,
     val brand: String,
-    val imageUrl: String?,
-    val averageRating: Double
+    val imageUrl: ImageUrl?,
 ) {
     companion object {
         fun from(perfume: Perfume): PerfumeSummaryDto {
@@ -18,8 +18,7 @@ data class PerfumeSummaryDto(
                 id = perfume.id!!,
                 name = perfume.name,
                 brand = perfume.brand.name,
-                imageUrl = perfume.imageUrl,
-                averageRating = perfume.averageRating ?: 0.0
+                imageUrl = perfume.image,
             )
         }
     }

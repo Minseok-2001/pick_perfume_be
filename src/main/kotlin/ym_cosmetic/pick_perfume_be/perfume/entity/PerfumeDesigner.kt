@@ -29,10 +29,10 @@ class PerfumeDesigner private constructor(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val role: DesignerRole,
+    val designerRole: DesignerRole,
 
     @Column(length = 500)
-    var description: String? = null
+    var content: String? = null
 ) : BaseTimeEntity() {
 
     companion object {
@@ -40,19 +40,19 @@ class PerfumeDesigner private constructor(
             perfume: Perfume,
             designer: Designer,
             role: DesignerRole,
-            description: String? = null
+            content: String? = null
         ): PerfumeDesigner {
             return PerfumeDesigner(
                 perfume = perfume,
                 designer = designer,
-                role = role,
-                description = description
+                designerRole = role,
+                content = content
             )
         }
     }
 
-    fun updateDescription(description: String?): PerfumeDesigner {
-        this.description = description
+    fun updatecontent(content: String?): PerfumeDesigner {
+        this.content = content
         return this
     }
 }

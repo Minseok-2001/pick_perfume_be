@@ -25,7 +25,7 @@ data class PerfumeDocument(
             InnerField(suffix = "standard", type = FieldType.Text, analyzer = "standard")
         ]
     )
-    val description: String?,
+    val content: String?,
 
     @Field(type = FieldType.Integer)
     val releaseYear: Int?,

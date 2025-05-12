@@ -23,6 +23,7 @@ class MemberController(
 
     @PostMapping()
     fun createMember(@Valid @RequestBody dto: SignupRequest): ApiResponse<MemberResponse> {
-        return ApiResponse.success(memberService.createMember(dto))
+        val createdMember = memberService.createMember(dto)
+        return ApiResponse.success(MemberResponse.from(createdMember))
     }
 }

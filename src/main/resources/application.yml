@@ -1,6 +1,4 @@
 spring:
-  main:
-    allow-bean-definition-overriding: true
   flyway:
     enabled: true
   datasource:
@@ -14,13 +12,14 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
+#        allow_update_outside_transaction: true
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
     show-sql: true
   session:
     store-type: jdbc
     jdbc:
-      initialize-schema: never
+      initialize-schema: always
   elasticsearch:
     uris: http://${elasticsearch.host:localhost}:${elasticsearch.port:9200}
     connection-timeout: 1s
@@ -34,7 +33,9 @@ logging:
     org.springframework.data.elasticsearch: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    ym_cosmetic.pick_perfume_be.batch: DEBUG
+    ym_cosmetic.pick_perfume_be : DEBUG
+    org.springframework.web : DEBUG
+    root: INFO
 
 springdoc:
   swagger-ui:
