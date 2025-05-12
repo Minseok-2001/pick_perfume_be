@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 import ym_cosmetic.pick_perfume_be.brand.entity.QBrand
 import ym_cosmetic.pick_perfume_be.member.entity.QMember
 import ym_cosmetic.pick_perfume_be.perfume.entity.*
@@ -225,6 +226,66 @@ class PerfumeRepositoryImpl(
         }
         
         return perfumes
+    }
+    
+    /**
+     * 브랜드 정보를 포함한 향수 ID 목록으로 조회
+     */
+    @Transactional(readOnly = true)
+    override fun findAllByIdsWithBrand(ids: List<Long>): List<Perfume> {
+        if (ids.isEmpty()) {
+            return emptyList()
+        }
+        
+        // 향수와 브랜드 정보 로드
+        val result = queryFactory
+            .selectFrom(perfume)
+            .leftJoin(perfume.brand, brand).fetchJoin()
+            .where(perfume.id.`in`(ids))
+            .fetch()
+            
+        // 리뷰 정보를 따로 로드하여 메모리에 준비
+        val reviewsByPerfumeId = queryFactory
+            .selectFrom(review)
+            .where(review.perfume.id.`in`(ids))
+            .fetch()
+            .groupBy { it.perfume.id }
+            
+        // 연관 엔티티 초기화
+        result.forEach { perfume ->
+            // 브랜드 속성 초기화
+            Hibernate.initialize(perfume.brand)
+            if (perfume.brand.country != null) {
+                Hibernate.initialize(perfume.brand.country)
+            }
+            if (perfume.brand.logo != null) {
+                Hibernate.initialize(perfume.brand.logo)
+            }
+            
+            // 이미지 초기화
+            if (perfume.image != null) {
+                Hibernate.initialize(perfume.image)
+            }
+            
+            // 디자이너 컬렉션 초기화를 시도 (하지만 초기화 실패해도 에러 발생 안함)
+            try {
+                Hibernate.initialize(perfume.designers)
+            } catch (e: Exception) {
+                // 초기화 실패해도 무시
+            }
+            
+            // reviews 컬렉션의 사이즈를 먼저 확인하여 안전하게 접근
+            val reviewsSize = queryFactory
+                .select(review.count())
+                .from(review)
+                .where(review.perfume.id.eq(perfume.id!!))
+                .fetchOne() ?: 0L
+            
+            // 컬렉션에 대한 연산을 통해 초기화 (직접 Hibernate.initialize 호출 대신)
+            perfume.reviews.size // 크기만 확인해도 초기화됨
+        }
+        
+        return result
     }
 
 }

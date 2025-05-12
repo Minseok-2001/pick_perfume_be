@@ -210,11 +210,25 @@ class Perfume private constructor(
     }
 
     fun calculateAverageRating(): Double {
-        if (reviews.isEmpty()) return 0.0
-        return reviews.map { it.rating.value }.average()
+        // HibernateProxy를 감지하고 안전하게 처리
+        return try {
+            if (reviews.isEmpty()) return 0.0
+            reviews.map { it.rating.value }.average()
+        } catch (e: Exception) {
+            // 세션이 닫혔거나 초기화되지 않았을 경우 기본값 반환
+            0.0
+        }
     }
 
-    fun getReviewCount(): Int = reviews.size
+    fun getReviewCount(): Int {
+        // HibernateProxy를 감지하고 안전하게 처리
+        return try {
+            reviews.size
+        } catch (e: Exception) {
+            // 세션이 닫혔거나 초기화되지 않았을 경우 기본값 반환
+            0
+        }
+    }
 
     fun getVoteResults(): Map<VoteCategory, Map<String, Int>> {
         return votes.groupBy { it.category }

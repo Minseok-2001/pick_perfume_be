@@ -1,6 +1,7 @@
 package ym_cosmetic.pick_perfume_be.recommendation.controller
 
 import kotlinx.coroutines.runBlocking
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 import ym_cosmetic.pick_perfume_be.member.entity.Member
@@ -30,6 +31,7 @@ class RecommendationController(
      * 유사 향수 추천 목록 조회
      */
     @GetMapping("/similar/{perfumeId}")
+    @Transactional
     fun getSimilarPerfumes(
         @CurrentMember member: Member,
         @PathVariable perfumeId: Long,

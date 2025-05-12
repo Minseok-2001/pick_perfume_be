@@ -133,6 +133,7 @@ class RecommendationService(
 
         val similarPerfumes = similarPerfumesDeferred.await()
         val result = convertToPerfumeSummaryResponses(similarPerfumes)
+        println("유사 향수 추천 결과: $result")
 
         // 추천 노출 이벤트 발행 (비동기)
         launch {
@@ -153,7 +154,6 @@ class RecommendationService(
     /**
      * 인기 있는 향수 가져오기
      */
-    @Transactional(readOnly = true)
     fun getPopularPerfumes(limit: Int): List<PerfumeSummaryResponse> {
         val pageable = PageRequest.of(0, limit)
         return perfumeRepository.findTopByReviewCount(pageable)
@@ -250,8 +250,9 @@ class RecommendationService(
             return emptyList()
         }
 
-        val perfumes = perfumeRepository.findAllById(perfumeIds)
-
+        // FetchJoin으로 브랜드 및 관련 정보를 함께 조회
+        val perfumes = perfumeRepository.findAllByIdsWithBrand(perfumeIds)
+        
         // ID 기준으로 맵 생성하여 원래 순서 유지
         val perfumesMap = perfumes.associateBy { it.id!! }
 
