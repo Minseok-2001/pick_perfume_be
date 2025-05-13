@@ -46,7 +46,6 @@ out/
 perfume-importer/.env
 docker-compose.prod.yml
 /.ebextensions
-.github/workflows/deploy-to-eb.yml
 deploy.sh
 Dockerrun.aws.json
 
