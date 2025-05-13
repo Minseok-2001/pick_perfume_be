@@ -7,13 +7,15 @@ COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
 
 # 의존성 다운로드
-RUN gradle dependencies --no-daemon
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+    gradle dependencies --no-daemon
 
-# 소스 코드 복사
+# 소스 코드 복사 (자주 변경되는 파일은 마지막에 복사)
 COPY src ./src
 
 # 빌드
-RUN gradle build -x test --no-daemon
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+    gradle build -x test --no-daemon
 
 # 실행 이미지
 FROM eclipse-temurin:21-jre
