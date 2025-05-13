@@ -1,13 +1,13 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "${DOCKERHUB_USERNAME}/scentist:latest",
+    "Name": "${{ msjungdev }}/${{ scentist }}:latest",
     "Update": "true"
   },
   "Ports": [
     {
-      "ContainerPort": ${AWS_CONTAINER_PORT},
-      "HostPort": ${AWS_HOST_PORT}
+      "ContainerPort": 8080,
+      "HostPort": 80
     }
   ],
   "Volumes": [
