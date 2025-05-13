@@ -39,10 +39,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.AWS_APPLICATION_NAME }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.AWS_APPLICATION_NAME }}:${{ github.sha }}
 
-      - name: Update Dockerrun.aws.json
-        run: |
-          sed -i "s|${{ secrets.AWS_APPLICATION_NAME }}-app:latest|${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.AWS_APPLICATION_NAME }}:latest|g" Dockerrun.aws.json
-
       - name: Generate deployment package
         run: |
           mkdir -p deploy
