@@ -2,17 +2,16 @@ spring:
   flyway:
     enabled: true
   datasource:
-    url: jdbc:mysql://localhost:3396/pick_perfume?&serverTimezone=UTC
-    username: dev
-    password: 1234
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3396/pick_perfume?&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:dev}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
-#        allow_update_outside_transaction: true
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
         default_batch_fetch_size: 1000
@@ -22,9 +21,11 @@ spring:
     jdbc:
       initialize-schema: always
   elasticsearch:
-    uris: http://${elasticsearch.host:localhost}:${elasticsearch.port:9200}
-    connection-timeout: 1s
-    socket-timeout: 30s
+    uris: http://${ELASTICSEARCH_HOST:localhost}:${ELASTICSEARCH_PORT:9200}
+    username: ${ELASTICSEARCH_USERNAME:}
+    password: ${ELASTICSEARCH_PASSWORD:}
+    connection-timeout: ${ELASTICSEARCH_CONNECTION_TIMEOUT:1s}
+    socket-timeout: ${ELASTICSEARCH_SOCKET_TIMEOUT:30s}
   batch:
     jdbc:
       initialize-schema: always
@@ -43,3 +44,10 @@ springdoc:
   show-actuator: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+aws:
+  access-key: ${AWS_ACCESS_KEY:}
+  secret-key: ${AWS_SECRET_KEY:}
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET:}

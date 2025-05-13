@@ -1,6 +1,28 @@
 version: "3.8"
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pick-perfume-app
+    depends_on:
+      - elasticsearch
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/pick_perfume?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-dev}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-dev_password}
+      - ELASTICSEARCH_HOST=http://elasticsearch
+      - JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/app/src
+    networks:
+      - app-network
+    restart: always
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
     container_name: pick-perfume-elasticsearch
@@ -15,8 +37,7 @@ services:
         hard: -1
     volumes:
       - es-data:/usr/share/elasticsearch/data
-      - ./src/main/resources/es-settings.json:/usr/share/elasticsearch/config/es-settings.json
-      - ./src/main/resources/analysis:/usr/share/elasticsearch/config/analysis
+      - ./user_dict.txt:/usr/share/elasticsearch/config/user_dict.txt
     ports:
       - "9200:9200"
     healthcheck:
@@ -30,20 +51,23 @@ services:
         /usr/local/bin/docker-entrypoint.sh elasticsearch"
     networks:
       - app-network
+    restart: always
 
   mysql:
     image: mysql:8.0
     container_name: pick-perfume-mysql
     ports:
-      - "3396:3306"
+      - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
       MYSQL_DATABASE: pick_perfume
-      MYSQL_USER: dev
-      MYSQL_PASSWORD: 1234
+      MYSQL_USER: ${DB_USERNAME:-dev}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-dev_password}
     volumes:
       - mysql-data:/var/lib/mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - app-network
     restart: always
 
 volumes:

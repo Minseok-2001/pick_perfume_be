@@ -44,3 +44,50 @@ out/
 .kotlin
 /perfume-importer
 perfume-importer/.env
+docker-compose.prod.yml
+/.ebextensions
+.github/workflows/deploy-to-eb.yml
+deploy.sh
+Dockerrun.aws.json
+
+### 민감한 정보 ###
+.env
+*.pem
+*.key
+*.p12
+*.jks
+*.pfx
+*.keystore
+*.cer
+*.crt
+
+### 로컬 설정 파일 ###
+application-local.yml
+application-local.properties
+application-dev.yml
+application-dev.properties
+
+### 로그 파일 ###
+*.log
+logs/
+
+### 데이터 파일 ###
+*.csv
+*.dat
+*.bak
+*.dump
+*.sql
+
+### 임시 파일 ###
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+temp/
+
+### Elastic Beanstalk 설정 ###
+# .elasticbeanstalk/
+
+### 테스트 데이터 ###
+test_data.json
+env.sh

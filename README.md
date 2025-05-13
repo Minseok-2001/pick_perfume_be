@@ -1,413 +1,176 @@
-# Pick Perfume Backend - Elasticsearch 설정 가이드
+# Pick Perfume Backend
 
-## Elasticsearch 수동 설정 방법
+향수 추천 및 커뮤니티 서비스를 위한 백엔드 서비스입니다.
 
-### 1. Elasticsearch 실행
+## 기술 스택
 
-```bash
-docker-compose up -d elasticsearch
+- Kotlin + Spring Boot
+- MySQL
+- Elasticsearch
+- Docker
+- AWS Elastic Beanstalk
+
+## 로컬 개발 환경 설정
+
+### 필수 요구사항
+
+- JDK 21
+- Docker & Docker Compose
+- Gradle
+
+### 로컬 환경 실행 방법
+
+1. 저장소 클론
+
+   ```
+   git clone https://github.com/your-username/pick_perfume_be.git
+   cd pick_perfume_be
+   ```
+
+2. 환경 변수 설정
+
+   ```
+   cp .env.example .env
+   ```
+
+   `.env` 파일을 열고 필요한 환경 변수를 설정합니다.
+
+3. Docker Compose로 의존성 서비스 실행
+
+   ```
+   docker-compose up -d
+   ```
+
+4. 애플리케이션 실행
+
+   ```
+   ./gradlew bootRun
+   ```
+
+5. API 문서 접속
+   ```
+   http://localhost:8080/docs
+   ```
+
+## 배포
+
+### AWS Elastic Beanstalk 배포
+
+프로젝트는 GitHub Actions를 통해 AWS Elastic Beanstalk에 자동으로 배포됩니다.
+`main` 브랜치에 코드가 푸시되면 자동으로 배포 프로세스가 시작됩니다.
+
+1. Docker Hub에 이미지가 빌드되어 푸시됩니다.
+2. Elastic Beanstalk은 Docker Hub에서 이미지를 가져와 실행합니다.
+
+### GitHub Secrets 설정
+
+GitHub 저장소에 다음 시크릿을 설정해야 합니다:
+
+- `DOCKERHUB_USERNAME`: Docker Hub 사용자명
+- `DOCKERHUB_TOKEN`: Docker Hub 액세스 토큰
+- `AWS_ACCESS_KEY_ID`: AWS 액세스 키
+- `AWS_SECRET_ACCESS_KEY`: AWS 시크릿 키
+- `AWS_REGION`: AWS 리전
+
+### 환경 변수 설정
+
+Elastic Beanstalk에서 다음 환경 변수를 설정해야 합니다:
+
+1. AWS Elastic Beanstalk 콘솔에 접속
+2. 애플리케이션 > 환경 선택
+3. 구성 > 소프트웨어 수정 클릭
+4. 환경 속성에 다음 변수 추가:
+   - `SPRING_DATASOURCE_URL`: 데이터베이스 URL
+   - `SPRING_DATASOURCE_USERNAME`: 데이터베이스 사용자명
+   - `SPRING_DATASOURCE_PASSWORD`: 데이터베이스 비밀번호
+   - `ELASTICSEARCH_HOST`: Elasticsearch 호스트
+   - `ELASTICSEARCH_PORT`: Elasticsearch 포트
+   - `ELASTICSEARCH_USERNAME`: Elasticsearch 사용자명
+   - `ELASTICSEARCH_PASSWORD`: Elasticsearch 비밀번호
+   - `JWT_SECRET_KEY`: JWT 비밀 키
+   - `AWS_ACCESS_KEY`: AWS 액세스 키
+   - `AWS_SECRET_KEY`: AWS 시크릿 키
+   - `AWS_S3_BUCKET`: S3 버킷 이름
+   - `SWAGGER_USERNAME`: Swagger UI 접근용 사용자명
+   - `SWAGGER_PASSWORD`: Swagger UI 접근용 비밀번호
+
+## API 문서
+
+API 문서는 Swagger UI를 통해 제공됩니다.
+배포된 환경에서는 `/docs` 경로로 접근할 수 있으며, Basic Auth 인증이 필요합니다.
+
+## 프로젝트 구조
+
+```
+src/main/kotlin/ym_cosmetic/pick_perfume_be/
+├── accord/           # 향 노트 관련 기능
+├── auth/             # 인증 관련 기능
+├── batch/            # 배치 작업 관련 기능
+├── brand/            # 브랜드 관련 기능
+├── common/           # 공통 기능 및 설정
+├── designer/         # 디자이너 관련 기능
+├── infrastructure/   # 인프라 관련 기능 (S3, ES 등)
+├── member/           # 회원 관련 기능
+├── note/             # 노트 관련 기능
+├── perfume/          # 향수 관련 기능
+├── recommendation/   # 추천 관련 기능
+├── review/           # 리뷰 관련 기능
+├── search/           # 검색 관련 기능
+├── security/         # 보안 관련 기능
+├── survey/           # 설문 관련 기능
+└── vote/             # 투표 관련 기능
 ```
 
-### 2. Nori 형태소 분석기 설치
+## 환경 설정 가이드
 
-Elasticsearch가 실행된 후 Nori 형태소 분석기를 설치합니다.
+### 로컬 개발 환경
 
-```bash
-# 현재 설치된 플러그인 확인
-curl -X GET "localhost:9200/_cat/plugins?v"
+1. 로컬에서 개발 시 `application.yml` 파일을 사용합니다.
+2. 민감한 정보는 `application-local.yml` 파일에 별도로 관리하세요 (gitignore에 포함됨).
 
-# Nori 플러그인 설치 (Elasticsearch 컨테이너 내부에서 실행)
-docker exec -it pick-perfume-elasticsearch elasticsearch-plugin install analysis-nori
+### 배포 환경 (AWS Elastic Beanstalk)
 
-# 설치 후 Elasticsearch 재시작
-docker restart pick-perfume-elasticsearch
+1. 환경변수는 Elastic Beanstalk 콘솔에서 설정합니다.
+2. 다음 환경변수를 설정해야 합니다:
+
+```
+# 데이터베이스 설정
+RDS_HOSTNAME=your_rds_hostname
+RDS_PORT=3306
+RDS_DB_NAME=your_db_name
+RDS_USERNAME=your_username
+RDS_PASSWORD=your_password
+
+# Elasticsearch 설정
+ES_HOST=your_es_host
+ES_PORT=9200
+ES_USERNAME=elastic
+ES_PASSWORD=your_es_password
+
+# JWT 설정
+JWT_SECRET=your_jwt_secret
+
+# S3 설정 (필요한 경우)
+AWS_ACCESS_KEY=your_access_key
+AWS_SECRET_KEY=your_secret_key
+S3_BUCKET_NAME=your_bucket_name
 ```
 
-### 3. 인덱스 생성 및 설정
+3. `.ebextensions/03_environment.config` 파일이 이러한 환경변수를 애플리케이션에서 사용할 수 있도록 설정합니다.
 
-#### 3.1 인덱스 생성
+### 보안 관련 주의사항
 
-```bash
-curl -X PUT "localhost:9200/perfumes" -H "Content-Type: application/json"
-```
+- 절대로 민감한 정보(DB 비밀번호, API 키 등)를 코드에 하드코딩하지 마세요.
+- 항상 환경변수나 안전한 시크릿 관리 서비스를 통해 관리하세요.
+- 로컬 개발 시 사용하는 민감 정보는 `.gitignore`에 포함된 파일에 보관하세요.
 
-#### 3.2 인덱스 설정 (분석기 설정)
+## 배포 방법
 
-```bash
-curl -X PUT "localhost:9200/perfumes/_settings" -H "Content-Type: application/json" -d'
-{
-  "index": {
-    "max_ngram_diff": 10,
-    "analysis": {
-      "analyzer": {
-        "korean": {
-          "type": "custom",
-          "tokenizer": "nori_tokenizer",
-          "filter": ["nori_part_of_speech", "lowercase", "synonym"]
-        },
-        "ngram_analyzer": {
-          "type": "custom",
-          "tokenizer": "ngram_tokenizer",
-          "filter": ["lowercase"]
-        },
-        "autocomplete": {
-          "type": "custom",
-          "tokenizer": "standard",
-          "filter": ["lowercase", "edge_ngram_filter"]
-        },
-        "text_search": {
-          "type": "custom",
-          "tokenizer": "standard",
-          "filter": ["lowercase", "synonym"]
-        }
-      },
-      "tokenizer": {
-        "nori_tokenizer": {
-          "type": "nori_tokenizer",
-          "decompound_mode": "mixed",
-          "user_dictionary": "user_dict.txt"
-        },
-        "ngram_tokenizer": {
-          "type": "ngram",
-          "min_gram": 2,
-          "max_gram": 5,
-          "token_chars": ["letter", "digit"]
-        }
-      },
-      "filter": {
-        "nori_part_of_speech": {
-          "type": "nori_part_of_speech",
-          "stoptags": [
-            "E", "IC", "J", "MAG", "MAJ", "MM", "SC", "SE", "SF", "SP", "SSC",
-            "SSO", "SY", "UNA", "UNKNOWN", "VA", "VCN", "VCP", "VSV", "VV",
-            "VX", "XPN", "XR", "XSA", "XSN", "XSV"
-          ]
-        },
-        "synonym": {
-          "type": "synonym",
-          "synonyms": [
-            "향수, 퍼퓸, perfume",
-            "남성향수, 남자향수, men's perfume, 맨즈 퍼퓸",
-            "여성향수, 여자향수, women's perfume, 우먼즈 퍼퓸",
-            "중성향수, 유니섹스향수, unisex perfume",
-            "시트러스, citrus, 감귤",
-            "플로럴, floral, 꽃향, 플라워",
-            "우디, woody, 나무향",
-            "머스크, musk, 사향",
-            "오리엔탈, oriental, 동양적인",
-            "스파이시, spicy, 향신료",
-            "프루티, fruity, 과일향",
-            "그린, green, 풀향",
-            "아쿠아, aqua, 물향, 바다향",
-            "파우더리, powdery, 분말향",
-            "달콤한, sweet, 스위트",
-            "쌉쌀한, 쓴, bitter",
-            "가죽, leather, 레더",
-            "흙냄새, earthy, 어씨",
-            "담배, tobacco, 타바코",
-            "바닐라, vanilla, 바닐라향"
-          ]
-        },
-        "edge_ngram_filter": {
-          "type": "edge_ngram",
-          "min_gram": 1,
-          "max_gram": 10
-        }
-      }
-    }
-  }
-}'
-```
+1. 코드를 빌드합니다: `./gradlew build`
+2. Docker 이미지를 생성합니다: `docker build -t scentist-app .`
+3. AWS Elastic Beanstalk에 배포합니다: `./deploy.sh`
 
-#### 3.3 사용자 사전 등록
+## Elasticsearch 설정
 
-```bash
-# 사용자 사전 파일 생성
-cat > user_dict.txt << EOL
-시트러스
-플로럴
-우디
-머스크
-오리엔탈
-스파이시
-프루티
-아쿠아
-파우더리
-바닐라
-베르가못
-라벤더
-재스민
-로즈
-페이션트
-샌달우드
-베티버
-앰버
-파출리
-시나몬
-카다멈
-아니스
-오렌지블라썸
-일랑일랑
-네롤리
-튜베로즈
-아이리스
-바이올렛
-프랑킨센스
-미르
-시더우드
-베티버
-통카빈
-코코넛
-피그
-복숭아
-자몽
-레몬
-라임
-베르가못
-오드퍼퓸
-오드뚜왈렛
-오드콜로뉴
-퍼퓸
-EOL
-
-# 사용자 사전 파일을 Elasticsearch 컨테이너에 복사
-docker cp user_dict.txt pick-perfume-elasticsearch:/usr/share/elasticsearch/config/
-
-# Elasticsearch 재시작
-docker restart pick-perfume-elasticsearch
-```
-
-### 4. 매핑 설정
-
-```bash
-curl -X PUT "localhost:9200/perfumes/_mapping" -H "Content-Type: application/json" -d'
-{
-  "properties": {
-    "id": {
-      "type": "long"
-    },
-    "name": {
-      "type": "text",
-      "analyzer": "korean",
-      "fields": {
-        "keyword": {
-          "type": "keyword"
-        },
-        "ngram": {
-          "type": "text",
-          "analyzer": "ngram_analyzer"
-        }
-      }
-    },
-    "content": {
-      "type": "text",
-      "analyzer": "korean",
-      "fields": {
-        "standard": {
-          "type": "text",
-          "analyzer": "standard"
-        }
-      }
-    },
-    "releaseYear": {
-      "type": "integer"
-    },
-    "brandName": {
-      "type": "keyword",
-      "fields": {
-        "text": {
-          "type": "text",
-          "analyzer": "korean"
-        }
-      }
-    },
-    "brandId": {
-      "type": "long"
-    },
-    "concentration": {
-      "type": "keyword"
-    },
-    "imageUrl": {
-      "type": "keyword"
-    },
-    "notes": {
-      "type": "nested",
-      "include_in_parent": true,
-      "properties": {
-        "id": {
-          "type": "long"
-        },
-        "name": {
-          "type": "text",
-          "analyzer": "korean",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            },
-            "ngram": {
-              "type": "text",
-              "analyzer": "ngram_analyzer"
-            }
-          }
-        },
-        "type": {
-          "type": "keyword"
-        }
-      }
-    },
-    "accords": {
-      "type": "nested",
-      "include_in_parent": true,
-      "properties": {
-        "id": {
-          "type": "long"
-        },
-        "name": {
-          "type": "text",
-          "analyzer": "korean",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            },
-            "ngram": {
-              "type": "text",
-              "analyzer": "ngram_analyzer"
-            }
-          }
-        }
-      }
-    },
-    "designers": {
-      "type": "nested",
-      "properties": {
-        "id": {
-          "type": "long"
-        },
-        "name": {
-          "type": "text",
-          "analyzer": "korean",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
-        },
-        "role": {
-          "type": "keyword"
-        }
-      }
-    },
-    "averageRating": {
-      "type": "double"
-    },
-    "reviewCount": {
-      "type": "integer"
-    },
-    "isApproved": {
-      "type": "boolean"
-    },
-    "seasonality": {
-      "type": "object",
-      "properties": {
-        "spring": {
-          "type": "float"
-        },
-        "summer": {
-          "type": "float"
-        },
-        "fall": {
-          "type": "float"
-        },
-        "winter": {
-          "type": "float"
-        }
-      }
-    },
-    "gender": {
-      "type": "keyword"
-    },
-    "createdAt": {
-      "type": "date",
-      "format": "date_hour_minute_second"
-    },
-    "updatedAt": {
-      "type": "date",
-      "format": "date_hour_minute_second"
-    }
-  }
-}'
-```
-
-### 5. 인덱스 상태 확인
-
-```bash
-# 인덱스 목록 확인
-curl -X GET "localhost:9200/_cat/indices?v"
-
-# 특정 인덱스 설정 확인
-curl -X GET "localhost:9200/perfumes/_settings?pretty"
-
-# 특정 인덱스 매핑 확인
-curl -X GET "localhost:9200/perfumes/_mapping?pretty"
-
-# 분석기 테스트
-curl -X POST "localhost:9200/perfumes/_analyze" -H "Content-Type: application/json" -d'
-{
-  "analyzer": "korean",
-  "text": "향수는 좋은 향기가 나는 액체입니다"
-}'
-```
-
-### 6. 인덱스 삭제 (필요시)
-
-```bash
-curl -X DELETE "localhost:9200/perfumes"
-```
-
-## 유용한 Elasticsearch API 명령어
-
-### 클러스터 상태 확인
-
-```bash
-curl -X GET "localhost:9200/_cluster/health?pretty"
-```
-
-### 노드 정보 확인
-
-```bash
-curl -X GET "localhost:9200/_nodes?pretty"
-```
-
-### 인덱스 통계 확인
-
-```bash
-curl -X GET "localhost:9200/perfumes/_stats?pretty"
-```
-
-### 인덱스 별칭 생성
-
-```bash
-curl -X POST "localhost:9200/_aliases" -H "Content-Type: application/json" -d'
-{
-  "actions": [
-    {
-      "add": {
-        "index": "perfumes",
-        "alias": "perfumes_search"
-      }
-    }
-  ]
-}'
-```
-
-### 인덱스 새로고침 (변경사항 즉시 검색 가능하게)
-
-```bash
-curl -X POST "localhost:9200/perfumes/_refresh"
-```
-
-### 인덱스 강제 병합 (성능 최적화)
-
-```bash
-curl -X POST "localhost:9200/perfumes/_forcemerge"
-```
+Elasticsearch는 향수 검색 및 추천 기능에 사용됩니다.
+초기 설정은 `es-setup.sh` 스크립트를 통해 수행할 수 있습니다.
