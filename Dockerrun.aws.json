@@ -1,20 +1,15 @@
 {
-  "AWSEBDockerrunVersion": "3",
+  "AWSEBDockerrunVersion": "1",
   "Image": {
     "Name": "441464446738.dkr.ecr.ap-northeast-2.amazonaws.com/scentist:latest",
     "Update": "true"
   },
   "Ports": [
     {
-      "ContainerPort": 8080,
-      "HostPort": 80
+      "ContainerPort": "8080",
+      "HostPort": "80"
     }
   ],
-  "Volumes": [
-    {
-      "HostDirectory": "/var/app/elasticsearch-data",
-      "ContainerDirectory": "/usr/share/elasticsearch/data"
-    }
-  ],
+  "Volumes": [],
   "Logging": "/var/log/app"
 }

@@ -1,13 +1,10 @@
 package ym_cosmetic.pick_perfume_be.search.service
 
-import co.elastic.clients.elasticsearch._types.ScoreSort
-import co.elastic.clients.elasticsearch._types.SortOrder
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery
-import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode
-import co.elastic.clients.elasticsearch._types.query_dsl.Query
+import org.apache.lucene.search.join.ScoreMode
+import org.opensearch.data.client.orhlc.NativeSearchQueryBuilder
+import org.opensearch.data.core.OpenSearchOperations
+import org.opensearch.index.query.QueryBuilders
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.elasticsearch.client.elc.NativeQuery
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.SearchHits
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.stereotype.Service
@@ -19,165 +16,111 @@ import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
 
 @Service
 class PerfumeSearchService(
-    private val elasticsearchOperations: ElasticsearchOperations
+    private val openSearchOperations: OpenSearchOperations
 ) {
     fun searchPerfumes(criteria: PerfumeSearchCriteria): PerfumeSearchPageResult {
-        val boolQuery = BoolQuery.Builder()
+        // OpenSearch QueryBuilders를 사용하여 쿼리 생성
+        val boolQueryBuilder = QueryBuilders.boolQuery()
 
         // 키워드 검색
         criteria.keyword?.let { keyword ->
-            val keywordQuery = BoolQuery.Builder()
-                .should(
-                    Query.of { q -> q.match { m -> m.field("name").query(keyword).boost(2.0f) } }
-                )
-                .should(
-                    Query.of { q -> q.match { m -> m.field("content").query(keyword) } }
-                )
-                .should(
-                    Query.of { q ->
-                        q.match { m ->
-                            m.field("brandName.text").query(keyword).boost(3.0f)
-                        }
-                    }
-                )
-                .should(
-                    Query.of { q -> q.match { m -> m.field("notes.text").query(keyword) } }
-                )
-                .should(
-                    Query.of { q -> q.match { m -> m.field("accords.text").query(keyword) } }
-                )
-                .minimumShouldMatch("1")
-                .build()
-
-            boolQuery.must(Query.of { q -> q.bool(keywordQuery) })
+            val keywordBoolQuery = QueryBuilders.boolQuery()
+            
+            keywordBoolQuery.should(QueryBuilders.matchQuery("name", keyword).boost(2.0f))
+            keywordBoolQuery.should(QueryBuilders.matchQuery("content", keyword))
+            keywordBoolQuery.should(QueryBuilders.matchQuery("brandName.text", keyword).boost(3.0f))
+            keywordBoolQuery.should(QueryBuilders.matchQuery("notes.text", keyword))
+            keywordBoolQuery.should(QueryBuilders.matchQuery("accords.text", keyword))
+            keywordBoolQuery.minimumShouldMatch(1)
+            
+            boolQueryBuilder.must(keywordBoolQuery)
         }
 
         // 브랜드 필터
         criteria.brandName?.let { brand ->
-            boolQuery.filter(
-                Query.of { q -> q.term { t -> t.field("brandName.keyword").value(brand) } }
-            )
+            boolQueryBuilder.filter(QueryBuilders.termQuery("brandName.keyword", brand))
         }
 
         // 노트 필터
         criteria.note?.let { note ->
-            boolQuery.filter(
-                Query.of { q -> q.term { t -> t.field("notes.keyword").value(note) } }
-            )
+            boolQueryBuilder.filter(QueryBuilders.termQuery("notes.keyword", note))
         }
 
         // 계절 필터
         criteria.season?.let { season ->
-            boolQuery.filter(
-                Query.of { q -> q.term { t -> t.field("season.keyword").value(season) } }
-            )
+            boolQueryBuilder.filter(QueryBuilders.termQuery("season.keyword", season))
         }
 
         // 성별 필터 추가
         criteria.gender?.let { gender ->
-            boolQuery.filter(
-                Query.of { q -> q.term { t -> t.field("gender.keyword").value(gender) } }
-            )
+            boolQueryBuilder.filter(QueryBuilders.termQuery("gender.keyword", gender))
         }
 
         // 노트 타입별 필터
         if (criteria.noteType != null && criteria.note != null) {
-            val nestedQuery = Query.of { q ->
-                q.nested { n ->
-                    n.path("notesByType")
-                        .query { nq ->
-                            nq.bool { b ->
-                                b.must(
-                                    Query.of { tq ->
-                                        tq.term { t ->
-                                            t.field("notesByType.type")
-                                                .value(criteria.noteType.name)
-                                        }
-                                    }
-                                )
-                                b.must(
-                                    Query.of { tq ->
-                                        tq.term { t ->
-                                            t.field("notesByType.notes.keyword")
-                                                .value(criteria.note)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                        .scoreMode(ChildScoreMode.None)
-                }
-            }
-            boolQuery.filter(nestedQuery)
+            val nestedQuery = QueryBuilders.nestedQuery(
+                "notesByType",
+                QueryBuilders.boolQuery()
+                    .must(QueryBuilders.termQuery("notesByType.type", criteria.noteType.name))
+                    .must(QueryBuilders.termQuery("notesByType.notes.keyword", criteria.note)),
+                ScoreMode.None
+            )
+            boolQueryBuilder.filter(nestedQuery)
         }
 
         // 어코드 필터
         criteria.accord?.let { accord ->
-            boolQuery.filter(
-                Query.of { q -> q.term { t -> t.field("accords.keyword").value(accord) } }
-            )
+            boolQueryBuilder.filter(QueryBuilders.termQuery("accords.keyword", accord))
         }
 
         // 출시 연도 범위 필터
         if (criteria.fromYear != null || criteria.toYear != null) {
-            val rangeQuery = Query.of { q ->
-                q.range { r ->
-                    r.number { n ->
-                        n.field("releaseYear")
-                        if (criteria.fromYear != null) n.gte(criteria.fromYear.toDouble())
-                        if (criteria.toYear != null) n.lte(criteria.toYear.toDouble())
-                        n
-                    }
-                }
-            }
-            boolQuery.filter(rangeQuery)
+            val rangeQueryBuilder = QueryBuilders.rangeQuery("releaseYear")
+            if (criteria.fromYear != null) rangeQueryBuilder.gte(criteria.fromYear)
+            if (criteria.toYear != null) rangeQueryBuilder.lte(criteria.toYear)
+            boolQueryBuilder.filter(rangeQueryBuilder)
         }
+        
         // 평점 범위 필터
         if (criteria.minRating != null || criteria.maxRating != null) {
-            val rangeQuery = Query.of { q ->
-                q.range { r ->
-                    r.number { n ->
-                        n.field("averageRating")
-                        if (criteria.minRating != null) n.gte(criteria.minRating)
-                        if (criteria.maxRating != null) n.lte(criteria.maxRating)
-                        n
-                    }
-                }
-            }
-            boolQuery.filter(rangeQuery)
+            val rangeQueryBuilder = QueryBuilders.rangeQuery("averageRating")
+            if (criteria.minRating != null) rangeQueryBuilder.gte(criteria.minRating)
+            if (criteria.maxRating != null) rangeQueryBuilder.lte(criteria.maxRating)
+            boolQueryBuilder.filter(rangeQueryBuilder)
         }
 
         // 쿼리 생성
-        val nativeQuery = NativeQuery.builder()
-            .withQuery(Query.of { q -> q.bool(boolQuery.build()) })
+        val nativeQueryBuilder = NativeSearchQueryBuilder()
+            .withQuery(boolQueryBuilder)
             .withPageable(criteria.pageable)
 
         // 정렬 조건 추가
         when (criteria.sortBy) {
-            "newest" -> nativeQuery.withSort { s ->
-                s.field { f ->
-                    f.field("releaseYear").order(SortOrder.Desc)
-                }
-            }
-
-            "rating" -> nativeQuery.withSort { s ->
-                s.field { f ->
-                    f.field("averageRating").order(SortOrder.Desc)
-                }
-            }
-
-            "popularity" -> nativeQuery.withSort { s ->
-                s.field { f ->
-                    f.field("reviewCount").order(SortOrder.Desc)
-                }
-            }
-
-            else -> nativeQuery.withSort { s -> s.score(ScoreSort.of { ss -> ss.order(SortOrder.Desc) }) }
+            "newest" -> nativeQueryBuilder.withSort(
+                org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Direction.DESC, "releaseYear"
+                )
+            )
+            "rating" -> nativeQueryBuilder.withSort(
+                org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Direction.DESC, "averageRating"
+                )
+            )
+            "popularity" -> nativeQueryBuilder.withSort(
+                org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Direction.DESC, "reviewCount"
+                )
+            )
+            else -> nativeQueryBuilder.withSort(
+                org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Direction.DESC, "_score"
+                )
+            )
         }
 
         // 검색 실행
-        val searchHits: SearchHits<PerfumeDocument> = elasticsearchOperations.search(
-            nativeQuery.build(),
+        val searchHits: SearchHits<PerfumeDocument> = openSearchOperations.search(
+            nativeQueryBuilder.build(),
             PerfumeDocument::class.java,
             IndexCoordinates.of("perfumes")
         )
@@ -186,7 +129,7 @@ class PerfumeSearchService(
         val content = searchHits.map { hit ->
             PerfumeSearchResult.fromDocument(hit.content)
         }.toList()
-        
+
         // 페이지네이션 정보를 포함한 결과 반환
         return PerfumeSearchPageResult.of(
             content = content,
@@ -199,73 +142,55 @@ class PerfumeSearchService(
     // 유사한 향수 찾기
     fun findSimilarPerfumes(perfumeId: String, limit: Int): List<PerfumeSearchResult> {
         // 향수 문서 가져오기
-        val perfume = elasticsearchOperations.get(perfumeId, PerfumeDocument::class.java)
+        val perfume = openSearchOperations.get(perfumeId, PerfumeDocument::class.java)
             ?: return emptyList()
 
         // 유사성 쿼리 구성
-        val boolQuery = BoolQuery.Builder()
+        val boolQueryBuilder = QueryBuilders.boolQuery()
 
         // 동일한 향수 제외
-        boolQuery.mustNot(
-            Query.of { q -> q.ids { i -> i.values(perfumeId) } }
-        )
+        boolQueryBuilder.mustNot(QueryBuilders.idsQuery().addIds(perfumeId))
 
         // 노트 유사성 (가중치 높음)
-        val notesQuery = BoolQuery.Builder()
+        val notesQuery = QueryBuilders.boolQuery()
         perfume.notes.forEach { note ->
             notesQuery.should(
-                Query.of { q ->
-                    q.term { t ->
-                        t.field("notes.name.keyword").value(note.name).boost(2.0f)
-                    }
-                }
+                QueryBuilders.termQuery("notes.name.keyword", note.name).boost(2.0f)
             )
         }
-        boolQuery.should(Query.of { q -> q.bool(notesQuery.build()) })
+        boolQueryBuilder.should(notesQuery)
 
         // 어코드 유사성
-        val accordsQuery = BoolQuery.Builder()
+        val accordsQuery = QueryBuilders.boolQuery()
         perfume.accords.forEach { accord ->
             accordsQuery.should(
-                Query.of { q ->
-                    q.term { t ->
-                        t.field("accords.name.keyword").value(accord.name).boost(1.5f)
-                    }
-                }
+                QueryBuilders.termQuery("accords.name.keyword", accord.name).boost(1.5f)
             )
         }
-        boolQuery.should(Query.of { q -> q.bool(accordsQuery.build()) })
+        boolQueryBuilder.should(accordsQuery)
 
         // 동일 브랜드 (약간의 가중치)
-        boolQuery.should(
-            Query.of { q ->
-                q.term { t ->
-                    t.field("brandName.keyword").value(perfume.brandName).boost(0.8f)
-                }
-            }
+        boolQueryBuilder.should(
+            QueryBuilders.termQuery("brandName.keyword", perfume.brandName).boost(0.8f)
         )
 
         // 농도 유사성
         perfume.concentration?.let { concentration ->
-            boolQuery.should(
-                Query.of { q ->
-                    q.term { t ->
-                        t.field("concentration.keyword").value(concentration).boost(0.5f)
-                    }
-                }
+            boolQueryBuilder.should(
+                QueryBuilders.termQuery("concentration.keyword", concentration).boost(0.5f)
             )
         }
 
         // 최소 매치 설정 (최소한 하나의 유사성은 있어야 함)
-        boolQuery.minimumShouldMatch("1")
+        boolQueryBuilder.minimumShouldMatch(1)
 
         // 쿼리 실행
-        val nativeQuery = NativeQuery.builder()
-            .withQuery(Query.of { q -> q.bool(boolQuery.build()) })
+        val nativeQuery = NativeSearchQueryBuilder()
+            .withQuery(boolQueryBuilder)
             .withPageable(PageRequest.of(0, limit))
             .build()
 
-        val searchHits = elasticsearchOperations.search(
+        val searchHits = openSearchOperations.search(
             nativeQuery,
             PerfumeDocument::class.java,
             IndexCoordinates.of("perfumes")
@@ -275,7 +200,7 @@ class PerfumeSearchService(
         val content = searchHits.map { hit ->
             PerfumeSearchResult.fromDocument(hit.content)
         }.toList()
-        
+
         return content
     }
 
@@ -284,62 +209,46 @@ class PerfumeSearchService(
         memberPreferences: MemberPreferenceDto,
         limit: Int
     ): List<PerfumeSearchResult> {
-        val boolQuery = BoolQuery.Builder()
+        val boolQueryBuilder = QueryBuilders.boolQuery()
 
         // 사용자가 이미 리뷰한 향수 제외
         if (memberPreferences.reviewedPerfumeIds.isNotEmpty()) {
-            boolQuery.mustNot(
-                Query.of { q ->
-                    q.ids { i ->
-                        i.values(memberPreferences.reviewedPerfumeIds.map { it.toString() })
-                    }
-                }
+            boolQueryBuilder.mustNot(
+                QueryBuilders.idsQuery().addIds(*memberPreferences.reviewedPerfumeIds.map { it.toString() }.toTypedArray())
             )
         }
 
         // 선호 노트 기반 추천
         if (memberPreferences.preferredNotes.isNotEmpty()) {
-            val notesQuery = BoolQuery.Builder()
+            val notesQuery = QueryBuilders.boolQuery()
             memberPreferences.preferredNotes.forEach { note ->
                 notesQuery.should(
-                    Query.of { q ->
-                        q.term { t ->
-                            t.field("notes.keyword").value(note).boost(2.0f)
-                        }
-                    }
+                    QueryBuilders.termQuery("notes.keyword", note).boost(2.0f)
                 )
             }
-            boolQuery.should(Query.of { q -> q.bool(notesQuery.build()) })
+            boolQueryBuilder.should(notesQuery)
         }
 
         // 선호 어코드 기반 추천
         if (memberPreferences.preferredAccords.isNotEmpty()) {
-            val accordsQuery = BoolQuery.Builder()
+            val accordsQuery = QueryBuilders.boolQuery()
             memberPreferences.preferredAccords.forEach { accord ->
                 accordsQuery.should(
-                    Query.of { q ->
-                        q.term { t ->
-                            t.field("accords.keyword").value(accord).boost(1.5f)
-                        }
-                    }
+                    QueryBuilders.termQuery("accords.keyword", accord).boost(1.5f)
                 )
             }
-            boolQuery.should(Query.of { q -> q.bool(accordsQuery.build()) })
+            boolQueryBuilder.should(accordsQuery)
         }
 
         // 선호 브랜드 기반 추천
         if (memberPreferences.preferredBrands.isNotEmpty()) {
-            val brandsQuery = BoolQuery.Builder()
+            val brandsQuery = QueryBuilders.boolQuery()
             memberPreferences.preferredBrands.forEach { brand ->
                 brandsQuery.should(
-                    Query.of { q ->
-                        q.term { t ->
-                            t.field("brandName.keyword").value(brand).boost(1.0f)
-                        }
-                    }
+                    QueryBuilders.termQuery("brandName.keyword", brand).boost(1.0f)
                 )
             }
-            boolQuery.should(Query.of { q -> q.bool(brandsQuery.build()) })
+            boolQueryBuilder.should(brandsQuery)
         }
 
         // 최소 하나 이상 일치해야 함
@@ -347,16 +256,16 @@ class PerfumeSearchService(
             memberPreferences.preferredAccords.isNotEmpty() ||
             memberPreferences.preferredBrands.isNotEmpty()
         ) {
-            boolQuery.minimumShouldMatch("1")
+            boolQueryBuilder.minimumShouldMatch(1)
         }
 
         // 쿼리 실행
-        val nativeQuery = NativeQuery.builder()
-            .withQuery(Query.of { q -> q.bool(boolQuery.build()) })
+        val nativeQuery = NativeSearchQueryBuilder()
+            .withQuery(boolQueryBuilder)
             .withPageable(PageRequest.of(0, limit))
             .build()
 
-        val searchHits = elasticsearchOperations.search(
+        val searchHits = openSearchOperations.search(
             nativeQuery,
             PerfumeDocument::class.java,
             IndexCoordinates.of("perfumes")
@@ -366,7 +275,7 @@ class PerfumeSearchService(
         val content = searchHits.map { hit ->
             PerfumeSearchResult.fromDocument(hit.content)
         }.toList()
-        
+
         return content
     }
 }

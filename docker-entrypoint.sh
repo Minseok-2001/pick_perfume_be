@@ -22,4 +22,4 @@ if [ -n "$ELASTICSEARCH_HOST" ]; then
 fi
 
 # Spring Boot 애플리케이션 실행
-exec java ${JAVA_OPTS:--Xms512m -Xmx1024m} -jar app.jar 
+exec java ${JAVA_OPTS:--Xms1024m -Xmx1024m} -jar app.jar 

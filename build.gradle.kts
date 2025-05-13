@@ -7,6 +7,11 @@ plugins {
     kotlin("kapt") version "1.9.25"
 }
 
+kapt {
+    correctErrorTypes = true
+}
+
+
 group = "ym_cosmetic"
 version = "0.0.1-SNAPSHOT"
 
@@ -67,8 +72,17 @@ dependencies {
     // AWS S3
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.589")
 
-    // ES
-    implementation("org.springframework.data:spring-data-elasticsearch:5.4.5")
+    // OpenSearch (기존 Elasticsearch 대체)
+    implementation("org.opensearch.client:spring-data-opensearch-starter:1.6.3") {
+        exclude(group = "org.opensearch.client", module = "opensearch-rest-high-level-client")
+    }
+    implementation("org.opensearch.client:opensearch-java:2.11.1")
+    testImplementation("org.opensearch.client:spring-data-opensearch-test-autoconfigure:1.6.3") {
+        exclude(group = "org.opensearch.client", module = "opensearch-rest-high-level-client")
+    }
+    implementation("org.opensearch.client:spring-data-opensearch:1.6.3")
+    implementation("org.opensearch.client:opensearch-java:2.11.1")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.7.3")
 
