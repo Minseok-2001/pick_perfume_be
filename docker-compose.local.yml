@@ -2,40 +2,35 @@ version: "3.8"
 
 services:
   app:
-    image: ${DOCKERHUB_USERNAME}/scentist:latest
-    container_name: scentist-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pick-perfume-app
     depends_on:
       - elasticsearch
       - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DB_PORT:-3306}/scentist?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/pick_perfume?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-dev}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-dev_password}
       - ELASTICSEARCH_HOST=http://elasticsearch
-      - JAVA_OPTS=-Xms1024m -Xmx2048m
-      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "80:8080"
+      - "8080:8080"
+    volumes:
+      - ./src:/app/src
     networks:
       - app-network
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 2G
-        reservations:
-          cpus: "1"
-          memory: 1G
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
-    container_name: scentist-elasticsearch
+    container_name: pick-perfume-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
         soft: -1
@@ -47,9 +42,9 @@ services:
       - "9200:9200"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: >
       bash -c "
         elasticsearch-plugin install analysis-nori --batch || true &&
@@ -57,35 +52,23 @@ services:
     networks:
       - app-network
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
-        reservations:
-          memory: 1G
 
   mysql:
     image: mysql:8.0
-    container_name: scentist-mysql
+    container_name: pick-perfume-mysql
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: scentist
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: pick_perfume
       MYSQL_USER: ${DB_USERNAME:-dev}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-dev_password}
     volumes:
       - mysql-data:/var/lib/mysql
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=256M --max-connections=1000
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
       - app-network
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
 
 volumes:
   mysql-data:

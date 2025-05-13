@@ -44,10 +44,7 @@ out/
 .kotlin
 /perfume-importer
 perfume-importer/.env
-docker-compose.prod.yml
-/.ebextensions
 deploy.sh
-Dockerrun.aws.json
 
 ### 민감한 정보 ###
 .env

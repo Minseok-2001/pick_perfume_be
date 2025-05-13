@@ -1,0 +1,20 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "${DOCKERHUB_USERNAME}/scentist:latest",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": ${AWS_CONTAINER_PORT},
+      "HostPort": ${AWS_HOST_PORT}
+    }
+  ],
+  "Volumes": [
+    {
+      "HostDirectory": "/var/app/elasticsearch-data",
+      "ContainerDirectory": "/usr/share/elasticsearch/data"
+    }
+  ],
+  "Logging": "/var/log/app"
+}
