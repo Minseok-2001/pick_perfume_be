@@ -1,12 +1,8 @@
 {
   "AWSEBDockerrunVersion": "3",
   "Image": {
-    "Name": "msjungdev/scentist:latest",
+    "Name": "441464446738.dkr.ecr.ap-northeast-2.amazonaws.com/scentist:latest",
     "Update": "true"
-  },
-  "Authentication": {
-    "Bucket": "elasticbeanstalk-ap-northeast-2-441464446738",
-    "Key": ".dockercfg"
   },
   "Ports": [
     {

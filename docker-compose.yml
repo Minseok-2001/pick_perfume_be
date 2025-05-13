@@ -2,16 +2,11 @@ version: "3.8"
 
 services:
   app:
-    image: ${DOCKERHUB_USERNAME}/scentist:latest
+    image: 441464446738.dkr.ecr.ap-northeast-2.amazonaws.com/scentist:latest
     container_name: scentist-app
     depends_on:
       - elasticsearch
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DB_PORT:-3306}/scentist?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-dev}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - ELASTICSEARCH_HOST=http://elasticsearch
       - JAVA_OPTS=-Xms1024m -Xmx2048m
       - SPRING_PROFILES_ACTIVE=prod
     ports:

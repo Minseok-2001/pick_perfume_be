@@ -1,0 +1,43 @@
+# Docker 자격 증명 파일
+.dockercfg
+.docker/config.json
+perfume-import/
+
+# 환경 변수 파일
+.env
+.env.*
+*.env
+
+# 보안 키 및 인증서
+*.pem
+*.key
+*.crt
+*.cer
+
+*.csv
+csv
+
+*.env
+env.sh
+deploy.sh
+ec2-setup.sh
+
+*.zip
+
+
+# 로그 파일
+logs/
+*.log
+
+# 기타 민감한 정보가 포함된 파일
+secrets.yml
+credentials.json
+
+
+.gradle
+.git
+.idea
+build
+!app/build/libs/*.jar
+*.md
+*.log

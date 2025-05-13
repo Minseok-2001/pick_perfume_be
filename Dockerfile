@@ -7,15 +7,13 @@ COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
 
 # 의존성 다운로드
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    gradle dependencies --no-daemon
+RUN gradle dependencies --no-daemon
 
 # 소스 코드 복사 (자주 변경되는 파일은 마지막에 복사)
 COPY src ./src
 
 # 빌드
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    gradle build -x test --no-daemon
+RUN gradle build -x test --no-daemon
 
 # 실행 이미지
 FROM eclipse-temurin:21-jre
@@ -24,7 +22,7 @@ WORKDIR /app
 
 # 환경 변수 설정
 ENV SPRING_PROFILES_ACTIVE=prod
-ENV TZ=Asia/Seoul
+ENV TZ=UTC
 
 # 빌드 결과물 복사
 COPY --from=build /app/build/libs/*.jar app.jar
