@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-arm64
 
     steps:
       - name: Checkout code
@@ -67,7 +67,6 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r .ebextensions deploy/
-          cp docker-compose.yml deploy/
           cp mapping.json settings.json deploy/
           cd deploy && zip -r ../deploy.zip .
 
