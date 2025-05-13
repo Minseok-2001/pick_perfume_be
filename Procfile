@@ -1,0 +1,1 @@
+web: java -Dserver.port=5000 -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE $JAVA_TOOL_OPTIONS -jar build/libs/*.jar 

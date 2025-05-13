@@ -174,3 +174,48 @@ S3_BUCKET_NAME=your_bucket_name
 
 Elasticsearch는 향수 검색 및 추천 기능에 사용됩니다.
 초기 설정은 `es-setup.sh` 스크립트를 통해 수행할 수 있습니다.
+
+## 배포 방법
+
+### AWS Elastic Beanstalk 배포 (Java 플랫폼)
+
+도커 없이 AWS Elastic Beanstalk의 Java 21 Corretto 플랫폼을 사용하여 배포할 수 있습니다.
+
+#### 배포 준비
+
+1. AWS CLI가 설치되어 있고 적절한 권한이 설정되어 있어야 합니다.
+2. 배포 스크립트에 실행 권한이 있어야 합니다:
+   ```bash
+   chmod +x deploy-eb.sh
+   ```
+
+#### 배포 실행
+
+다음 명령어로 배포를 실행합니다:
+
+```bash
+./deploy-eb.sh
+```
+
+필요한 경우 환경 변수를 설정하여 배포 대상을 변경할 수 있습니다:
+
+```bash
+EB_ENV_NAME=my-env EB_APP_NAME=my-app AWS_REGION=ap-northeast-2 ./deploy-eb.sh
+```
+
+#### 배포 구성
+
+배포 설정은 `.ebextensions` 디렉토리에 있는 설정 파일로 관리됩니다:
+
+- `01_java.config`: Java 환경 설정
+- `02_elasticsearch.config`: Elasticsearch 설정
+- `03_files.config`: 파일 복사 설정
+- `04_logging.config`: 로깅 설정
+
+#### 배포 내용
+
+이 배포 방식은 다음과 같은 장점이 있습니다:
+
+1. 도커 없이 직접 Java 애플리케이션으로 배포하여 배포 시간 단축
+2. AWS Elastic Beanstalk의 관리형 Java 21 Corretto 환경 활용
+3. 필요한 설정 파일 및 스크립트 자동 배포
