@@ -1,7 +1,7 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "${{ msjungdev }}/${{ scentist }}:latest",
+    "Name": "msjungdev/scentist:latest",
     "Update": "true"
   },
   "Ports": [
