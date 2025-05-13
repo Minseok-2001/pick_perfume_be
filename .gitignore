@@ -88,3 +88,4 @@ temp/
 test_data.json
 env.sh
 .dockercfg
+/actions-runner
