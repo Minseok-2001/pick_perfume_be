@@ -24,7 +24,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew clean build -x test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -35,9 +35,19 @@ jobs:
 
       - name: Generate deployment package
         run: |
+          echo "Listing build directory contents:"
+          find build -name "*.jar" | xargs ls -la
+
           mkdir -p deploy
           cp -r .ebextensions deploy/
-          cp -r build/libs/*.jar deploy/application.jar
+          # 정확한 JAR 파일 경로를 찾아 복사
+          jarfile=$(find build -name "*.jar" -not -path "*/tmp/*" | head -n 1)
+          if [ -z "$jarfile" ]; then
+            echo "JAR 파일을 찾을 수 없습니다."
+            exit 1
+          fi
+          echo "Found JAR file: $jarfile"
+          cp "$jarfile" deploy/application.jar
           cp Procfile deploy/
           cp mapping.json settings.json deploy/
           cd deploy && zip -r ../deploy.zip .
