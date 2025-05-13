@@ -4,6 +4,10 @@
     "Name": "msjungdev/scentist:latest",
     "Update": "true"
   },
+  "Authentication": {
+    "Bucket": "elasticbeanstalk-ap-northeast-2-441464446738",
+    "Key": ".dockercfg"
+  },
   "Ports": [
     {
       "ContainerPort": 8080,
