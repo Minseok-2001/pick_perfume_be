@@ -87,3 +87,4 @@ temp/
 ### 테스트 데이터 ###
 test_data.json
 env.sh
+.dockercfg
