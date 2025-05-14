@@ -2,9 +2,9 @@ package ym_cosmetic.pick_perfume_be.search.service
 
 import org.apache.lucene.search.join.ScoreMode
 import org.opensearch.data.client.orhlc.NativeSearchQueryBuilder
-import org.opensearch.data.core.OpenSearchOperations
 import org.opensearch.index.query.QueryBuilders
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.SearchHits
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.stereotype.Service
@@ -16,7 +16,7 @@ import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
 
 @Service
 class PerfumeSearchService(
-    private val openSearchOperations: OpenSearchOperations
+    private val openSearchOperations: ElasticsearchOperations
 ) {
     fun searchPerfumes(criteria: PerfumeSearchCriteria): PerfumeSearchPageResult {
         // OpenSearch QueryBuilders를 사용하여 쿼리 생성
