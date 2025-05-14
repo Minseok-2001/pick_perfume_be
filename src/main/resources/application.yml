@@ -23,7 +23,7 @@ spring:
     jdbc:
       initialize-schema: always
   elasticsearch:
-    uris: http://${ELASTICSEARCH_HOST:localhost}:${ELASTICSEARCH_PORT:9200}
+    uris: ${ELASTICSEARCH_HOST:}
     username: ${ELASTICSEARCH_USERNAME:}
     password: ${ELASTICSEARCH_PASSWORD:}
     connection-timeout: ${ELASTICSEARCH_CONNECTION_TIMEOUT:1s}
