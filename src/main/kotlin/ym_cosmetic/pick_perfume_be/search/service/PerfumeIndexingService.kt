@@ -3,8 +3,8 @@ package ym_cosmetic.pick_perfume_be.search.service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.opensearch.data.core.OpenSearchOperations
 import org.slf4j.LoggerFactory
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder
 import org.springframework.stereotype.Service
@@ -21,7 +21,7 @@ import ym_cosmetic.pick_perfume_be.search.repository.PerfumeSearchRepository
 class PerfumeIndexingService(
     private val perfumeRepository: PerfumeRepository,
     private val perfumeSearchRepository: PerfumeSearchRepository,
-    private val openSearchOperations: OpenSearchOperations,
+    private val openSearchOperations: ElasticsearchOperations,
     private val perfumeDocumentMapper: PerfumeDocumentMapper
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
