@@ -1,6 +1,6 @@
 package ym_cosmetic.pick_perfume_be.security
 
-import org.mindrot.jbcrypt.BCrypt
+import org.springframework.security.crypto.bcrypt.BCrypt
 import org.springframework.stereotype.Component
 
 @Component
