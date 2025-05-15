@@ -9,6 +9,7 @@ import ym_cosmetic.pick_perfume_be.auth.dto.LoginResponse
 import ym_cosmetic.pick_perfume_be.member.MemberService
 import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
 import ym_cosmetic.pick_perfume_be.security.PasswordEncoder
+import ym_cosmetic.pick_perfume_be.security.config.SessionConfig
 import ym_cosmetic.pick_perfume_be.security.interceptor.AuthenticationInterceptor
 
 @Service
@@ -31,6 +32,9 @@ class AuthService(
         if (!member.isCredentialValid(dto.password, passwordEncoder)) {
             throw IllegalArgumentException("Invalid password")
         }
+
+        SessionConfig.removeConcurrentSession(member.id ?: throw IllegalArgumentException("Invalid session ID"))
+
 
         val httpRequest =
             (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
