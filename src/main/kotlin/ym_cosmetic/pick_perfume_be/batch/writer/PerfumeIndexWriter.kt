@@ -1,9 +1,9 @@
 package ym_cosmetic.pick_perfume_be.batch.writer
 
-import org.opensearch.data.core.OpenSearchOperations
 import org.slf4j.LoggerFactory
 import org.springframework.batch.item.Chunk
 import org.springframework.batch.item.ItemWriter
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder
 import org.springframework.stereotype.Component
@@ -12,7 +12,7 @@ import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
 
 @Component
 class PerfumeIndexWriter(
-    private val opensearchOperations: OpenSearchOperations,
+    private val opensearchOperations: ElasticsearchOperations,
     private val perfumeRepository: PerfumeRepository
 ) : ItemWriter<PerfumeDocument> {
 

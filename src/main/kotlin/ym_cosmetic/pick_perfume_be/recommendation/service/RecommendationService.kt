@@ -133,7 +133,6 @@ class RecommendationService(
 
         val similarPerfumes = similarPerfumesDeferred.await()
         val result = convertToPerfumeSummaryResponses(similarPerfumes)
-        println("유사 향수 추천 결과: $result")
 
         // 추천 노출 이벤트 발행 (비동기)
         launch {
