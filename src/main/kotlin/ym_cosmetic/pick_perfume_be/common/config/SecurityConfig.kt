@@ -11,6 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 import ym_cosmetic.pick_perfume_be.common.exception.UnauthorizedException
 import ym_cosmetic.pick_perfume_be.security.filter.CsrfFilter
 import ym_cosmetic.pick_perfume_be.security.filter.SecurityHeadersFilter
+import ym_cosmetic.pick_perfume_be.security.filter.SessionExpirationCheckFilter
 import ym_cosmetic.pick_perfume_be.security.filter.XssFilter
 import java.util.*
 
@@ -52,12 +53,25 @@ class SecurityConfig {
         registration.addUrlPatterns("/*")
         return registration
     }
+    
+    @Bean
+    fun sessionExpirationCheckFilterRegistration(
+        filter: SessionExpirationCheckFilter
+    ): FilterRegistrationBean<SessionExpirationCheckFilter?> {
+        val registration: FilterRegistrationBean<SessionExpirationCheckFilter?> =
+            FilterRegistrationBean<SessionExpirationCheckFilter?>(filter)
+        registration.order = 4
+        registration.addUrlPatterns("/*")
+        // 정적 리소스는 제외
+        registration.addInitParameter("excludePatterns", "/css/*,/js/*,/images/*,/favicon.ico")
+        return registration
+    }
 
     @Bean
     fun swaggerSecurityFilterRegistration(): FilterRegistrationBean<SwaggerSecurityFilter> {
         val registration = FilterRegistrationBean<SwaggerSecurityFilter>()
         registration.filter = SwaggerSecurityFilter(swaggerUsername, swaggerPassword)
-        registration.order = 4
+        registration.order = 5
         registration.addUrlPatterns("/docs/*", "/swagger-ui/*", "/api-docs/*")
         return registration
     }
