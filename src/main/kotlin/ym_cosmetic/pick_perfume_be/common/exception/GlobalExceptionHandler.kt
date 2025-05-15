@@ -21,14 +21,38 @@ class GlobalExceptionHandler {
         )
     }
 
-//    @ExceptionHandler(Exception::class)
-//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-//    @ResponseBody
-//    fun handleGenericException(ex: Exception): ApiResponse<Nothing> {
-//        return ApiResponse.error(
-//            message = "An unexpected error occurred: ${ex.message}",
-//            code = "INTERNAL_SERVER_ERROR",
-//            status = HttpStatus.INTERNAL_SERVER_ERROR.value()
-//        )
-//    }
+    @ExceptionHandler(UnauthorizedException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    fun handleUnauthorizedException(ex: UnauthorizedException): ApiResponse<Nothing> {
+        return ApiResponse.error(
+            message = ex.message ?: "Unauthorized",
+            code = "UNAUTHORIZED",
+            status = HttpStatus.UNAUTHORIZED.value()
+        )
+    }
+
+    @ExceptionHandler(InvalidRequestException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    fun handleInvalidRequestException(ex: InvalidRequestException): ApiResponse<Nothing> {
+        return ApiResponse.error(
+            message = ex.message ?: "Invalid request",
+            code = "INVALID_REQUEST",
+            status = HttpStatus.BAD_REQUEST.value()
+        )
+    }
+
+    @ExceptionHandler(ForbiddenException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    fun handleForbiddenException(ex: ForbiddenException): ApiResponse<Nothing> {
+        return ApiResponse.error(
+            message = ex.message ?: "Forbidden",
+            code = "FORBIDDEN",
+            status = HttpStatus.FORBIDDEN.value()
+        )
+    }
+
+    
 }
