@@ -30,6 +30,7 @@ class WebMvcConfig(
             .allowedOriginPatterns(
                 "http://localhost:3000",
                 "https://scentist.link",
+                "https://www.scentist.link",
                 "http://localhost:3001"
             )
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
