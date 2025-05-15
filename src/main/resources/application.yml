@@ -21,7 +21,7 @@ spring:
   session:
     store-type: jdbc
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
       schema: classpath:org/springframework/session/jdbc/schema-mysql.sql
       table-name: SPRING_SESSION
     timeout: 3600 # 세션 타임아웃 (초)
@@ -33,7 +33,7 @@ spring:
     socket-timeout: ${ELASTICSEARCH_SOCKET_TIMEOUT:30s}
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
 
 springdoc:
   swagger-ui:

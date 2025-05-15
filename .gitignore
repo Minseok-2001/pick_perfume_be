@@ -72,7 +72,6 @@ logs/
 *.dat
 *.bak
 *.dump
-*.sql
 
 ### 임시 파일 ###
 .DS_Store
