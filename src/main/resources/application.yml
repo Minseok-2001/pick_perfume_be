@@ -22,6 +22,9 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: always
+      schema: classpath:org/springframework/session/jdbc/schema-mysql.sql
+      table-name: SPRING_SESSION
+    timeout: 3600 # 세션 타임아웃 (초)
   elasticsearch:
     uris: ${ELASTICSEARCH_HOST:http://localhost:9200}
     username: ${ELASTICSEARCH_USERNAME:}
@@ -49,3 +52,21 @@ aws:
   region: ${AWS_REGION:ap-northeast-2}
   s3:
     bucket: ${AWS_S3_BUCKET:}
+
+
+
+app:
+  session:
+    cookie:
+      secure: true # HTTPS에서만 쿠키 전송
+      same-site: Lax # SameSite 설정
+      domain: ${APP_DOMAIN:} # 쿠키 도메인 (환경변수에서 가져옴)
+    max-sessions-per-user: 1 # 사용자당 최대 세션 수
+    expire-oldest-session: true # 최대 세션 수 초과 시 가장 오래된 세션 만료
+    idle-timeout-minutes: 30 # 세션 비활성 타임아웃 (분)
+    cleanup-cron: 0 0 */1 * * * # 만료된 세션 정리 주기 (1시간마다)
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: lax
