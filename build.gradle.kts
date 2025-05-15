@@ -74,9 +74,9 @@ dependencies {
 
     // OpenSearch
     implementation("org.opensearch.client:spring-data-opensearch:1.6.3")
-    implementation("org.opensearch.client:spring-data-opensearch-starter:1.6.3")
-    implementation("org.opensearch.client:opensearch-rest-high-level-client:2.9.0")
-    implementation("org.opensearch.client:opensearch-java:2.11.1")
+//    implementation("org.opensearch.client:spring-data-opensearch-starter:1.6.3")
+//    implementation("org.opensearch.client:opensearch-rest-high-level-client:2.11.1")
+//    implementation("org.opensearch.client:opensearch-java:2.11.1")
     implementation("jakarta.json:jakarta.json-api:2.1.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

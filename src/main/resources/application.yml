@@ -37,6 +37,7 @@ logging:
     org.springframework.data.elasticsearch: DEBUG
     org.opensearch.client: DEBUG
     org.opensearch.data: DEBUG
+#    org.springframework.beans: DEBUG
 
 springdoc:
   swagger-ui:
