@@ -78,7 +78,11 @@ class VoteService(
             .orElseThrow { EntityNotFoundException("Perfume not found with id: $perfumeId") }
 
         // 이미 해당 카테고리에 투표했는지 확인 - 락 획득을 위해 for update 사용
-        val existingVote = voteRepository.findByMemberIdAndPerfumeIdAndCategoryForUpdate(memberId, perfumeId, category)
+        val existingVote = voteRepository.findByMemberIdAndPerfumeIdAndCategoryForUpdate(
+            memberId,
+            perfumeId,
+            category
+        )
         val statistics = getVoteStatistics(perfumeId)
 
         if (existingVote != null) {

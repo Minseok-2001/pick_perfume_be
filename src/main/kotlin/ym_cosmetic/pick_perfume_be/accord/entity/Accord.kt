@@ -17,7 +17,7 @@ class Accord(
 
     @Column
     var color: String? = null,
-    ) : BaseTimeEntity() {
+) : BaseTimeEntity() {
     companion object {
         fun create(
             name: String,

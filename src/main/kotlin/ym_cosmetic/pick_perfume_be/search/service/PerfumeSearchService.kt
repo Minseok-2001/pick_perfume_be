@@ -101,16 +101,19 @@ class PerfumeSearchService(
                     org.springframework.data.domain.Sort.Direction.DESC, "releaseYear"
                 )
             )
+
             "rating" -> nativeQueryBuilder.withSort(
                 org.springframework.data.domain.Sort.by(
                     org.springframework.data.domain.Sort.Direction.DESC, "averageRating"
                 )
             )
+
             "popularity" -> nativeQueryBuilder.withSort(
                 org.springframework.data.domain.Sort.by(
                     org.springframework.data.domain.Sort.Direction.DESC, "reviewCount"
                 )
             )
+
             else -> nativeQueryBuilder.withSort(
                 org.springframework.data.domain.Sort.by(
                     org.springframework.data.domain.Sort.Direction.DESC, "_score"
@@ -214,7 +217,9 @@ class PerfumeSearchService(
         // 사용자가 이미 리뷰한 향수 제외
         if (memberPreferences.reviewedPerfumeIds.isNotEmpty()) {
             boolQueryBuilder.mustNot(
-                QueryBuilders.idsQuery().addIds(*memberPreferences.reviewedPerfumeIds.map { it.toString() }.toTypedArray())
+                QueryBuilders.idsQuery()
+                    .addIds(*memberPreferences.reviewedPerfumeIds.map { it.toString() }
+                        .toTypedArray())
             )
         }
 

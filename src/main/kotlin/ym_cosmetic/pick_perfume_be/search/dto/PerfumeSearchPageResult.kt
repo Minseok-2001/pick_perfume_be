@@ -10,7 +10,12 @@ data class PerfumeSearchPageResult(
     val totalPages: Int
 ) {
     companion object {
-        fun of(content: List<PerfumeSearchResult>, totalCount: Long, page: Int, size: Int): PerfumeSearchPageResult {
+        fun of(
+            content: List<PerfumeSearchResult>,
+            totalCount: Long,
+            page: Int,
+            size: Int
+        ): PerfumeSearchPageResult {
             val totalPages = if (size > 0) ceil(totalCount.toDouble() / size).toInt() else 0
             return PerfumeSearchPageResult(
                 content = content,

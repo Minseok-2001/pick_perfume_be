@@ -249,11 +249,11 @@ class RecommendationService(
 
         // 검색 결과에서 향수 ID 목록 추출
         val perfumeIds = searchResults.map { it.id }
-        
+
         try {
             // FetchJoin으로 브랜드 및 관련 정보를 함께 조회
             val perfumes = perfumeRepository.findAllByIdsWithBrand(perfumeIds)
-            
+
             // ID 기준으로 맵 생성하여 원래 순서 유지
             val perfumesMap = perfumes.associateBy { it.id!! }
 
@@ -262,12 +262,12 @@ class RecommendationService(
             }
         } catch (e: Exception) {
             logger.error("Error converting search results to responses: ${e.message}", e)
-            
+
             // 에러 발생 시 ID로 개별 조회하여 변환 시도
             return searchResults.mapNotNull { result ->
                 try {
-                    perfumeRepository.findById(result.id).orElse(null)?.let { 
-                        PerfumeSummaryResponse.from(it) 
+                    perfumeRepository.findById(result.id).orElse(null)?.let {
+                        PerfumeSummaryResponse.from(it)
                     }
                 } catch (ex: Exception) {
                     logger.error("Failed to convert perfume ID ${result.id}: ${ex.message}")

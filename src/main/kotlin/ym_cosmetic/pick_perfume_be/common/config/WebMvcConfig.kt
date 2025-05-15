@@ -27,7 +27,11 @@ class WebMvcConfig(
 
     override fun addCorsMappings(registry: CorsRegistry) {
         registry.addMapping("/**")
-            .allowedOriginPatterns("http://localhost:3000", "https://scentist.link", "http://localhost:3001")
+            .allowedOriginPatterns(
+                "http://localhost:3000",
+                "https://scentist.link",
+                "http://localhost:3001"
+            )
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true)

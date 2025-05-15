@@ -9,11 +9,11 @@ class SurveyResponseChoice(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "choice_id")
     val choiceId: Long? = null,
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "response_id", nullable = false)
     val response: SurveyResponse,
-    
+
     @Column(name = "option_text", nullable = false)
     val optionText: String
 )

@@ -32,19 +32,25 @@ class SurveyTemplate(
 
     @Column(name = "sort_order", nullable = false)
     val sortOrder: Int,
-    
+
     @OneToMany(mappedBy = "template", cascade = [CascadeType.ALL], orphanRemoval = true)
     val options: MutableList<SurveyTemplateOption> = mutableListOf(),
-    
+
     @OneToOne(mappedBy = "template", cascade = [CascadeType.ALL], orphanRemoval = true)
     var scale: SurveyTemplateScale? = null
 ) {
     // 편의 메서드
     fun addOption(option: String): SurveyTemplate {
-        options.add(SurveyTemplateOption(template = this, optionText = option, sortOrder = options.size))
+        options.add(
+            SurveyTemplateOption(
+                template = this,
+                optionText = option,
+                sortOrder = options.size
+            )
+        )
         return this
     }
-    
+
     fun setScale(min: Int, max: Int): SurveyTemplate {
         scale = SurveyTemplateScale(template = this, min = min, max = max)
         return this

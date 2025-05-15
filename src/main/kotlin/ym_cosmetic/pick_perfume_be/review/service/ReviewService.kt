@@ -30,10 +30,10 @@ class ReviewService(
     fun createReview(memberId: Long, request: ReviewCreateRequestDto): ReviewResponseDto {
         val member = memberRepository.findById(memberId)
             .orElseThrow { EntityNotFoundException("회원", memberId) }
-        
+
         val perfume = perfumeRepository.findById(request.perfumeId)
             .orElseThrow { EntityNotFoundException("향수", request.perfumeId) }
-        
+
         val review = Review(
             member = member,
             perfume = perfume,
@@ -43,7 +43,7 @@ class ReviewService(
             timeOfDay = request.timeOfDay,
             sentiment = request.sentiment,
         )
-        
+
         val savedReview = reviewRepository.save(review)
 
         return ReviewResponseDto.from(
@@ -61,7 +61,7 @@ class ReviewService(
     fun getReviewById(reviewId: Long, currentUserId: Long?): ReviewResponseDto {
         val review = reviewRepository.findByIdWithMemberAndPerfume(reviewId)
             ?: throw EntityNotFoundException("리뷰", reviewId)
-        
+
         val likeCount = reviewReactionService.countLikesByReviewId(reviewId)
         val dislikeCount = reviewReactionService.countDislikesByReviewId(reviewId)
         val currentUserReaction = if (currentUserId != null) {
@@ -69,7 +69,7 @@ class ReviewService(
         } else {
             null
         }
-        
+
         return ReviewResponseDto.from(
             review = review,
             likeCount = likeCount,
@@ -82,15 +82,19 @@ class ReviewService(
      * 리뷰 수정
      */
     @Transactional
-    fun updateReview(reviewId: Long, memberId: Long, request: ReviewUpdateRequestDto): ReviewResponseDto {
+    fun updateReview(
+        reviewId: Long,
+        memberId: Long,
+        request: ReviewUpdateRequestDto
+    ): ReviewResponseDto {
         val review = reviewRepository.findById(reviewId)
             .orElseThrow { EntityNotFoundException("리뷰", reviewId) }
-        
+
         // 리뷰 작성자와 현재 사용자가 다른 경우 예외 처리
         if (review.member.id != memberId) {
             throw ForbiddenException("리뷰 수정 권한이 없습니다.")
         }
-        
+
         review.update(
             content = request.content,
             rating = Rating.of(request.rating),
@@ -98,13 +102,13 @@ class ReviewService(
             timeOfDay = request.timeOfDay,
             sentiment = request.sentiment
         )
-        
+
         val updatedReview = reviewRepository.save(review)
-        
+
         val likeCount = reviewReactionService.countLikesByReviewId(reviewId)
         val dislikeCount = reviewReactionService.countDislikesByReviewId(reviewId)
         val userReaction = reviewReactionService.getUserReactionForReview(memberId, reviewId)
-        
+
         return ReviewResponseDto.from(
             review = updatedReview,
             likeCount = likeCount,
@@ -120,12 +124,12 @@ class ReviewService(
     fun deleteReview(reviewId: Long, memberId: Long) {
         val review = reviewRepository.findById(reviewId)
             .orElseThrow { EntityNotFoundException("리뷰", reviewId) }
-        
+
         // 리뷰 작성자와 현재 사용자가 다른 경우 예외 처리
         if (review.member.id != memberId) {
             throw ForbiddenException("리뷰 삭제 권한이 없습니다.")
         }
-        
+
         reviewRepository.delete(review)
     }
 
@@ -136,15 +140,18 @@ class ReviewService(
     fun searchReviews(searchDto: ReviewSearchDto, currentUserId: Long?): Page<ReviewSummaryDto> {
         val sort = when (searchDto.sortBy.lowercase()) {
             "rating" -> Sort.by(getSortDirection(searchDto.sortDirection), "rating.value")
-            "likecount" -> Sort.by(getSortDirection(searchDto.sortDirection), "id") // 실제로는 더 복잡한 정렬 로직 필요
+            "likecount" -> Sort.by(
+                getSortDirection(searchDto.sortDirection),
+                "id"
+            ) // 실제로는 더 복잡한 정렬 로직 필요
             else -> Sort.by(getSortDirection(searchDto.sortDirection), "createdAt")
         }
-        
+
         val pageable: Pageable = PageRequest.of(searchDto.page, searchDto.size, sort)
-        
+
         // TODO: 실제 구현에서는 QueryDSL 등을 사용하여 더 효율적인 검색 기능 구현
         val reviewPage = reviewRepository.findAll(pageable)
-        
+
         return reviewPage.map { review ->
             val likeCount = reviewReactionService.countLikesByReviewId(review.id!!)
             ReviewSummaryDto.from(review, likeCount)
@@ -155,9 +162,13 @@ class ReviewService(
      * 특정 향수의 리뷰 목록 조회
      */
     @Transactional(readOnly = true)
-    fun getReviewsByPerfumeId(perfumeId: Long, pageable: Pageable, currentUserId: Long?): Page<ReviewResponseDto> {
+    fun getReviewsByPerfumeId(
+        perfumeId: Long,
+        pageable: Pageable,
+        currentUserId: Long?
+    ): Page<ReviewResponseDto> {
         val reviewPage = reviewRepository.findAll(pageable)
-        
+
         return reviewPage.map { review ->
             reviewReactionService.countLikesByReviewId(review.id!!)
             ReviewResponseDto.from(
@@ -180,7 +191,7 @@ class ReviewService(
     fun getReviewsByMemberId(memberId: Long, pageable: Pageable): Page<ReviewSummaryDto> {
         // TODO: memberId로 리뷰 목록 조회하는 Repository 메소드 구현 필요
         val reviewPage = reviewRepository.findAll(pageable)
-        
+
         return reviewPage.map { review ->
             val likeCount = reviewReactionService.countLikesByReviewId(review.id!!)
             ReviewSummaryDto.from(review, likeCount)

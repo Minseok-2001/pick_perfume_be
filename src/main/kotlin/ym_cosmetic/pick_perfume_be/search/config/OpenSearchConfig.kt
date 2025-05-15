@@ -18,7 +18,7 @@ class OpenSearchConfig(
     @Value("\${spring.elasticsearch.password:}") private val password: String?,
     @Value("\${spring.elasticsearch.connection-timeout:5s}") private val connectionTimeout: String,
     @Value("\${spring.elasticsearch.socket-timeout:60s}") private val socketTimeout: String
-): AbstractOpenSearchConfiguration() {
+) : AbstractOpenSearchConfiguration() {
 
 
     @Bean

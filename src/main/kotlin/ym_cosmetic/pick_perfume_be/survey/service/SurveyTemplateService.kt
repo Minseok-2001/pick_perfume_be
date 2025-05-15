@@ -18,7 +18,8 @@ class SurveyTemplateService(
      */
     @Transactional(readOnly = true)
     fun getAllTemplates(): List<SurveyTemplateResponse> {
-        return surveyTemplateRepository.findAllByOrderBySortOrderAsc().map { SurveyTemplateResponse.fromEntity(it) }
+        return surveyTemplateRepository.findAllByOrderBySortOrderAsc()
+            .map { SurveyTemplateResponse.fromEntity(it) }
     }
 
     /**
@@ -46,7 +47,8 @@ class SurveyTemplateService(
      */
     @Transactional(readOnly = true)
     fun getTemplatesByType(type: QuestionType): List<SurveyTemplateResponse> {
-        return surveyTemplateRepository.findByQuestionType(type).map { SurveyTemplateResponse.fromEntity(it) }
+        return surveyTemplateRepository.findByQuestionType(type)
+            .map { SurveyTemplateResponse.fromEntity(it) }
     }
 
     /**
@@ -58,10 +60,10 @@ class SurveyTemplateService(
         surveyTemplateRepository.findByQuestionKey(request.questionKey)?.let {
             throw IllegalArgumentException("이미 존재하는 질문 키입니다: ${request.questionKey}")
         }
-        
+
         // 질문 유형에 따른 유효성 검사
         validateTemplateRequest(request)
-        
+
         // 템플릿 저장
         val template = surveyTemplateRepository.save(request.toEntity())
         return SurveyTemplateResponse.fromEntity(template)
@@ -93,6 +95,7 @@ class SurveyTemplateService(
                     }
                 }
             }
+
             QuestionType.SLIDER -> {
                 if (request.scale == null) {
                     throw IllegalArgumentException("슬라이더 질문에는 범위(scale)가 필요합니다.")
@@ -101,6 +104,7 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("슬라이더 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+
             QuestionType.MATRIX_SLIDER -> {
                 if (request.options.isNullOrEmpty()) {
                     throw IllegalArgumentException("행렬 슬라이더 질문에는 항목(options)이 필요합니다.")
@@ -112,6 +116,7 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("슬라이더 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+
             QuestionType.NUMERIC_INPUT -> {
                 if (request.scale == null) {
                     throw IllegalArgumentException("숫자 입력 질문에는 범위(scale)가 필요합니다.")
@@ -120,11 +125,13 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("숫자 입력 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+
             QuestionType.COLOR_PICKER -> {
                 if (request.options.isNullOrEmpty()) {
                     throw IllegalArgumentException("색상 선택 질문에는 최소 하나 이상의 색상이 필요합니다.")
                 }
             }
+
             QuestionType.PERFUME_RATING_SLIDER -> {
                 if (request.scale == null) {
                     throw IllegalArgumentException("향수 평점 슬라이더 질문에는 범위(scale)가 필요합니다.")
@@ -151,6 +158,7 @@ class SurveyTemplateService(
                     }
                 }
             }
+
             QuestionType.SLIDER -> {
                 if (request.scale == null) {
                     throw IllegalArgumentException("슬라이더 질문에는 범위(scale)가 필요합니다.")
@@ -159,6 +167,7 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("슬라이더 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+
             QuestionType.MATRIX_SLIDER -> {
                 if (request.options.isNullOrEmpty()) {
                     throw IllegalArgumentException("행렬 슬라이더 질문에는 항목(options)이 필요합니다.")
@@ -170,6 +179,7 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("슬라이더 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+
             QuestionType.NUMERIC_INPUT -> {
                 if (request.scale == null) {
                     throw IllegalArgumentException("숫자 입력 질문에는 범위(scale)가 필요합니다.")
@@ -178,11 +188,13 @@ class SurveyTemplateService(
                     throw IllegalArgumentException("숫자 입력 최소값은 최대값보다 작아야 합니다.")
                 }
             }
+
             QuestionType.COLOR_PICKER -> {
                 if (request.options.isNullOrEmpty()) {
                     throw IllegalArgumentException("색상 선택 질문에는 최소 하나 이상의 색상이 필요합니다.")
                 }
             }
+
             QuestionType.PERFUME_RATING_SLIDER -> {
                 if (request.scale == null) {
                     throw IllegalArgumentException("향수 평점 슬라이더 질문에는 범위(scale)가 필요합니다.")
