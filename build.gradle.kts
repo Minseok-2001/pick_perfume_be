@@ -72,16 +72,12 @@ dependencies {
     // AWS S3
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.589")
 
-    // OpenSearch (기존 Elasticsearch 대체)
-    implementation("org.opensearch.client:spring-data-opensearch-starter:1.6.3") {
-        exclude(group = "org.opensearch.client", module = "opensearch-rest-high-level-client")
-    }
-    implementation("org.opensearch.client:opensearch-java:2.11.1")
-    testImplementation("org.opensearch.client:spring-data-opensearch-test-autoconfigure:1.6.3") {
-        exclude(group = "org.opensearch.client", module = "opensearch-rest-high-level-client")
-    }
+    // OpenSearch
     implementation("org.opensearch.client:spring-data-opensearch:1.6.3")
+    implementation("org.opensearch.client:spring-data-opensearch-starter:1.6.3")
+    implementation("org.opensearch.client:opensearch-rest-high-level-client:2.9.0")
     implementation("org.opensearch.client:opensearch-java:2.11.1")
+    implementation("jakarta.json:jakarta.json-api:2.1.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.7.3")
