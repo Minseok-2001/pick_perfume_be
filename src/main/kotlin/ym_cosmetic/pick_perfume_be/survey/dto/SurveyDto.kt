@@ -106,23 +106,27 @@ data class ResponseSubmitDto(
             QuestionType.SINGLE_CHOICE -> choiceAnswers != null && choiceAnswers.size == 1
             QuestionType.MULTIPLE_CHOICE -> {
                 choiceAnswers != null &&
-                (question.maxSelections == null || choiceAnswers.size <= question.maxSelections!!)
+                        (question.maxSelections == null || choiceAnswers.size <= question.maxSelections!!)
             }
+
             QuestionType.SLIDER -> {
                 sliderAnswer != null &&
-                question.scale?.let { sliderAnswer in it.min..it.max } ?: false
+                        question.scale?.let { sliderAnswer in it.min..it.max } ?: false
             }
+
             QuestionType.MATRIX_SLIDER -> matrixAnswers != null && matrixAnswers.isNotEmpty()
             QuestionType.NUMERIC_INPUT -> {
                 sliderAnswer != null &&
-                question.scale?.let { sliderAnswer in it.min..it.max } ?: false
+                        question.scale?.let { sliderAnswer in it.min..it.max } ?: false
             }
+
             QuestionType.COLOR_PICKER -> {
                 choiceAnswers != null && choiceAnswers.size == 1
             }
+
             QuestionType.PERFUME_RATING_SLIDER -> {
                 sliderAnswer != null &&
-                question.scale?.let { sliderAnswer in it.min..it.max } ?: false
+                        question.scale?.let { sliderAnswer in it.min..it.max } ?: false
             }
         }
     }

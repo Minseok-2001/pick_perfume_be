@@ -11,18 +11,18 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class OpenApiConfig {
-    
+
     @Value("\${SWAGGER_USERNAME:admin}")
     private lateinit var swaggerUsername: String
-    
+
     @Value("\${SWAGGER_PASSWORD:password}")
     private lateinit var swaggerPassword: String
-    
+
     @Bean
     fun openAPI(): OpenAPI {
         val securitySchemeName = "bearer-key"
         val basicAuthSchemeName = "basicAuth"
-        
+
         return OpenAPI()
             .components(
                 Components()

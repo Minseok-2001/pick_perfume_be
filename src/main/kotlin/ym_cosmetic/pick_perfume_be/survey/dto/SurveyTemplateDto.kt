@@ -1,7 +1,9 @@
 package ym_cosmetic.pick_perfume_be.survey.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import ym_cosmetic.pick_perfume_be.survey.entity.*
+import ym_cosmetic.pick_perfume_be.survey.entity.QuestionType
+import ym_cosmetic.pick_perfume_be.survey.entity.SurveyTemplate
+import ym_cosmetic.pick_perfume_be.survey.entity.SurveyTemplateScale
 
 /**
  * 설문 템플릿 응답 DTO
@@ -19,7 +21,7 @@ data class SurveyTemplateResponse(
 ) {
     companion object {
         private val objectMapper = ObjectMapper()
-        
+
         fun fromEntity(template: SurveyTemplate): SurveyTemplateResponse {
             // 옵션 처리 로직
             val options = when {
@@ -34,12 +36,13 @@ data class SurveyTemplateResponse(
                         }
                     }
                 }
+
                 else -> {
                     // 일반적인 경우 텍스트 옵션 목록 반환
                     template.options.sortedBy { it.sortOrder }.map { it.optionText }
                 }
             }
-            
+
             return SurveyTemplateResponse(
                 questionId = template.questionId ?: 0L,
                 questionKey = template.questionKey,
@@ -66,14 +69,16 @@ data class ScaleDto(
 ) {
     companion object {
         private val objectMapper = ObjectMapper()
-        
+
         fun fromEntity(scale: SurveyTemplateScale): ScaleDto {
             val parsedLabels = try {
-                scale.labels?.let { objectMapper.readValue(it, Array<String>::class.java)?.toList() }
+                scale.labels?.let {
+                    objectMapper.readValue(it, Array<String>::class.java)?.toList()
+                }
             } catch (e: Exception) {
                 null
             }
-            
+
             return ScaleDto(
                 min = scale.min,
                 max = scale.max,
@@ -106,13 +111,13 @@ data class SurveyTemplateCreateRequest(
             required = required,
             sortOrder = sortOrder
         )
-        
+
         // 옵션 추가
         options?.forEach { template.addOption(it) }
-        
+
         // 스케일 추가
         scale?.let { template.setScale(it.min, it.max) }
-        
+
         return template
     }
 }

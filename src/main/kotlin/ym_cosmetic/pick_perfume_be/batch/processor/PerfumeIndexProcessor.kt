@@ -59,7 +59,6 @@ class PerfumeIndexProcessor : ItemProcessor<Perfume, PerfumeDocument> {
             }
 
 
-
             val gender = perfume.gender.name
 
             // 평균 평점 계산

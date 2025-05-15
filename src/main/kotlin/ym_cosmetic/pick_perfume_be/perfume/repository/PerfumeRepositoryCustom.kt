@@ -23,7 +23,7 @@ interface PerfumeRepositoryCustom {
 
     fun findTopByReviewCount(pageable: Pageable): Page<Perfume>
     fun findAllWithDetails(): List<Perfume>
-    
+
     /**
      * 브랜드 정보를 포함한 향수 ID 목록으로 조회
      */

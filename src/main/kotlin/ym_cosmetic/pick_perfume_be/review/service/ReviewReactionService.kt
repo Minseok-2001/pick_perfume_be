@@ -22,16 +22,21 @@ class ReviewReactionService(
      * 리뷰에 리액션 추가 또는 수정
      */
     @Transactional
-    fun reactToReview(memberId: Long, reviewId: Long, request: ReviewReactionRequestDto): ReviewReactionResponseDto {
+    fun reactToReview(
+        memberId: Long,
+        reviewId: Long,
+        request: ReviewReactionRequestDto
+    ): ReviewReactionResponseDto {
         val member = memberRepository.findById(memberId)
             .orElseThrow { EntityNotFoundException("회원", memberId) }
-        
+
         val review = reviewRepository.findById(reviewId)
             .orElseThrow { EntityNotFoundException("리뷰", reviewId) }
-        
+
         // 기존 리액션이 있는지 확인
-        val existingReaction = reviewReactionRepository.findByMemberIdAndReviewId(memberId, reviewId)
-        
+        val existingReaction =
+            reviewReactionRepository.findByMemberIdAndReviewId(memberId, reviewId)
+
         val reaction = if (existingReaction != null) {
             // 기존 리액션이 있으면 업데이트
             existingReaction.isLike = request.isLike
@@ -44,7 +49,7 @@ class ReviewReactionService(
                 isLike = request.isLike
             )
         }
-        
+
         val savedReaction = reviewReactionRepository.save(reaction)
         return ReviewReactionResponseDto.from(savedReaction)
     }
@@ -56,7 +61,7 @@ class ReviewReactionService(
     fun deleteReaction(memberId: Long, reviewId: Long) {
         val reaction = reviewReactionRepository.findByMemberIdAndReviewId(memberId, reviewId)
             ?: throw EntityNotFoundException("해당 리뷰에 대한 리액션을 찾을 수 없습니다.")
-        
+
         reviewReactionRepository.delete(reaction)
     }
 
@@ -97,7 +102,7 @@ class ReviewReactionService(
         } else {
             null
         }
-        
+
         return ReviewReactionStatsDto(
             reviewId = reviewId,
             likeCount = likeCount,

@@ -25,10 +25,10 @@ class SurveyResponse(
 
     @Column(name = "slider_answer")
     val sliderAnswer: Int? = null,
-    
+
     @OneToMany(mappedBy = "response", cascade = [CascadeType.ALL], orphanRemoval = true)
     val choiceAnswers: MutableList<SurveyResponseChoice> = mutableListOf(),
-    
+
     @OneToMany(mappedBy = "response", cascade = [CascadeType.ALL], orphanRemoval = true)
     val matrixAnswers: MutableList<SurveyResponseMatrix> = mutableListOf()
 ) : BaseTimeEntity() {
@@ -37,7 +37,7 @@ class SurveyResponse(
         choiceAnswers.add(SurveyResponseChoice(response = this, optionText = option))
         return this
     }
-    
+
     fun addMatrixAnswer(key: String, value: Int): SurveyResponse {
         matrixAnswers.add(SurveyResponseMatrix(response = this, optionKey = key, value = value))
         return this

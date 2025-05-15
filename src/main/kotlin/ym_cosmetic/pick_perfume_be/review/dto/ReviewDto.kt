@@ -32,9 +32,9 @@ data class ReviewResponseDto(
 ) {
     companion object {
         fun from(
-            review: Review, 
-            likeCount: Long, 
-            dislikeCount: Long, 
+            review: Review,
+            likeCount: Long,
+            dislikeCount: Long,
             currentUserReaction: Boolean? = null
         ): ReviewResponseDto {
             println("Review in from: $review")
@@ -77,7 +77,10 @@ data class ReviewSummaryDto(
                 nickname = review.member.nickname,
                 perfumeName = review.perfume.name,
                 rating = review.rating.value,
-                content = if (review.content.length > 100) review.content.substring(0, 97) + "..." else review.content,
+                content = if (review.content.length > 100) review.content.substring(
+                    0,
+                    97
+                ) + "..." else review.content,
                 likeCount = likeCount,
                 createdAt = review.createdAt
             )
@@ -90,15 +93,15 @@ data class ReviewSummaryDto(
  */
 data class ReviewCreateRequestDto(
     val perfumeId: Long,
-    
+
     @field:NotBlank(message = "리뷰 내용은 필수입니다.")
     @field:Size(min = 10, max = 10000, message = "리뷰 내용은 10자 이상 10000자 이하로 작성해주세요.")
     val content: String,
-    
+
     @field:Min(value = 1, message = "평점은 1점 이상이어야 합니다.")
     @field:Max(value = 5, message = "평점은 5점 이하여야 합니다.")
     val rating: Int,
-    
+
     val season: Season? = null,
     val timeOfDay: TimeOfDay? = null,
     val sentiment: Sentiment? = null
@@ -111,11 +114,11 @@ data class ReviewUpdateRequestDto(
     @field:NotBlank(message = "리뷰 내용은 필수입니다.")
     @field:Size(min = 10, max = 10000, message = "리뷰 내용은 10자 이상 10000자 이하로 작성해주세요.")
     val content: String,
-    
+
     @field:Min(value = 1, message = "평점은 1점 이상이어야 합니다.")
     @field:Max(value = 5, message = "평점은 5점 이하여야 합니다.")
     val rating: Int,
-    
+
     val season: Season? = null,
     val timeOfDay: TimeOfDay? = null,
     val sentiment: Sentiment? = null

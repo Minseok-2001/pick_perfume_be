@@ -104,6 +104,7 @@ class PerfumeIndexingService(
             throw e
         }
     }
+
     // 트랜잭션 내에서 데이터 로드
     @Transactional(readOnly = true)
     suspend fun loadPerfumeDocuments(): List<PerfumeDocument> {

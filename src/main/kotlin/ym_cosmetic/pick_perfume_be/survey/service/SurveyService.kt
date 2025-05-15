@@ -28,13 +28,13 @@ class SurveyService(
             imageUrl = request.imageUrl,
             status = SurveyStatus.SUBMITTED
         )
-        
+
         // 설문 저장
         val savedSurvey = surveyRepository.save(survey)
-        
+
         // 응답 처리
         val responses = mutableListOf<SurveyAnswerDto>()
-        
+
         for (responseDto in request.responses) {
             // 템플릿 조회
             val template = surveyTemplateRepository.findById(responseDto.questionId)
@@ -45,28 +45,33 @@ class SurveyService(
             if (!responseDto.validate(template)) {
                 throw IllegalArgumentException("잘못된 응답 형식입니다: ${template.questionKey}")
             }
-            
+
             // 응답 엔티티 생성
             val response = SurveyResponse(
                 survey = savedSurvey,
                 question = template,
                 sliderAnswer = responseDto.sliderAnswer
             )
-            
+
             // 선택형 응답 추가
             responseDto.choiceAnswers?.forEach { response.addChoiceAnswer(it) }
-            
+
             // 행렬형 응답 추가
-            responseDto.matrixAnswers?.forEach { (key, value) -> response.addMatrixAnswer(key, value) }
-            
+            responseDto.matrixAnswers?.forEach { (key, value) ->
+                response.addMatrixAnswer(
+                    key,
+                    value
+                )
+            }
+
             // 응답 저장
             val savedResponse = surveyResponseRepository.save(response)
             savedSurvey.responses.add(savedResponse)
-            
+
             // DTO 변환
             responses.add(SurveyAnswerDto.fromEntity(savedResponse))
         }
-        
+
         return SurveyResponseDto.fromEntity(savedSurvey, responses)
     }
 
@@ -77,9 +82,9 @@ class SurveyService(
     fun getSurveyById(id: Long): SurveyResponseDto {
         val survey = surveyRepository.findById(id)
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $id") }
-        
+
         val responses = survey.responses.map { SurveyAnswerDto.fromEntity(it) }
-        
+
         return SurveyResponseDto.fromEntity(survey, responses)
     }
 
@@ -108,7 +113,7 @@ class SurveyService(
     fun updateSurveyStatus(id: Long, status: SurveyStatus): SurveyResponseDto {
         val survey = surveyRepository.findById(id)
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $id") }
-        
+
         // 새 설문 객체 생성 (상태 변경)
         val updatedSurvey = Survey(
             surveyId = survey.surveyId,
@@ -117,10 +122,10 @@ class SurveyService(
             status = status,
             responses = survey.responses
         )
-        
+
         val savedSurvey = surveyRepository.save(updatedSurvey)
         val responses = savedSurvey.responses.map { SurveyAnswerDto.fromEntity(it) }
-        
+
         return SurveyResponseDto.fromEntity(savedSurvey, responses)
     }
 
@@ -150,7 +155,7 @@ class SurveyService(
     fun analyzeSurvey(id: Long): SurveyAnalysisResult {
         surveyRepository.findById(id)
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $id") }
-        
+
         // 실제 모델이 구현되면 해당 로직으로 대체
         // 현재는 임의의 추천 결과 반환
         val recommendations = listOf(
@@ -171,10 +176,10 @@ class SurveyService(
                 matchingFactors = listOf("플로럴", "과일향", "달콤함")
             )
         )
-        
+
         // 설문 상태 업데이트
         updateSurveyStatus(id, SurveyStatus.PROCESSED)
-        
+
         return SurveyAnalysisResult(
             surveyId = id,
             recommendations = recommendations

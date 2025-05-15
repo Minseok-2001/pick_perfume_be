@@ -19,10 +19,10 @@ interface ReviewRepository : JpaRepository<Review, Long> {
         memberId: Long,
         rating: Rating
     ): List<Review>
-    
+
     @Query("SELECT r FROM Review r JOIN FETCH r.member JOIN FETCH r.perfume WHERE r.id = :reviewId")
     fun findByIdWithMemberAndPerfume(@Param("reviewId") reviewId: Long): Review?
-    
+
     @Query("SELECT r FROM Review r JOIN FETCH r.member JOIN FETCH r.perfume")
     fun findAllWithMemberAndPerfume(): List<Review>
 }
