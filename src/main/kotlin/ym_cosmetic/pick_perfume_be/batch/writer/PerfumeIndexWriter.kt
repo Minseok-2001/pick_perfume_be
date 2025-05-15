@@ -1,9 +1,9 @@
 package ym_cosmetic.pick_perfume_be.batch.writer
 
+import org.opensearch.data.core.OpenSearchOperations
 import org.slf4j.LoggerFactory
 import org.springframework.batch.item.Chunk
 import org.springframework.batch.item.ItemWriter
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder
 import org.springframework.stereotype.Component
@@ -12,7 +12,7 @@ import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
 
 @Component
 class PerfumeIndexWriter(
-    private val elasticsearchOperations: ElasticsearchOperations,
+    private val opensearchOperations: OpenSearchOperations,
     private val perfumeRepository: PerfumeRepository
 ) : ItemWriter<PerfumeDocument> {
 
@@ -36,7 +36,7 @@ class PerfumeIndexWriter(
                     .build()
 
                 // 인덱싱 요청
-                val result = elasticsearchOperations.index(
+                val result = opensearchOperations.index(
                     indexQuery,
                     IndexCoordinates.of(indexName)
                 )
@@ -48,7 +48,7 @@ class PerfumeIndexWriter(
             }
 
             // 인덱스 리프레시 (즉시 검색 가능)
-            elasticsearchOperations.indexOps(IndexCoordinates.of(indexName)).refresh()
+            opensearchOperations.indexOps(IndexCoordinates.of(indexName)).refresh()
 
         } catch (e: Exception) {
             logger.error("향수 인덱싱 중 오류 발생", e)

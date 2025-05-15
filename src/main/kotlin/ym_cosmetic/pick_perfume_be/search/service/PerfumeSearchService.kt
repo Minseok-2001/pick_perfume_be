@@ -16,7 +16,7 @@ import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
 
 @Service
 class PerfumeSearchService(
-    private val openSearchOperations: ElasticsearchOperations
+    private val openSearchOperations: ElasticsearchOperations,
 ) {
     fun searchPerfumes(criteria: PerfumeSearchCriteria): PerfumeSearchPageResult {
         // OpenSearch QueryBuilders를 사용하여 쿼리 생성
@@ -25,14 +25,14 @@ class PerfumeSearchService(
         // 키워드 검색
         criteria.keyword?.let { keyword ->
             val keywordBoolQuery = QueryBuilders.boolQuery()
-            
+
             keywordBoolQuery.should(QueryBuilders.matchQuery("name", keyword).boost(2.0f))
             keywordBoolQuery.should(QueryBuilders.matchQuery("content", keyword))
             keywordBoolQuery.should(QueryBuilders.matchQuery("brandName.text", keyword).boost(3.0f))
             keywordBoolQuery.should(QueryBuilders.matchQuery("notes.text", keyword))
             keywordBoolQuery.should(QueryBuilders.matchQuery("accords.text", keyword))
             keywordBoolQuery.minimumShouldMatch(1)
-            
+
             boolQueryBuilder.must(keywordBoolQuery)
         }
 
@@ -80,7 +80,7 @@ class PerfumeSearchService(
             if (criteria.toYear != null) rangeQueryBuilder.lte(criteria.toYear)
             boolQueryBuilder.filter(rangeQueryBuilder)
         }
-        
+
         // 평점 범위 필터
         if (criteria.minRating != null || criteria.maxRating != null) {
             val rangeQueryBuilder = QueryBuilders.rangeQuery("averageRating")

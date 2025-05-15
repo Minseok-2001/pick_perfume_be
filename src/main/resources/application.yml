@@ -23,10 +23,10 @@ spring:
     jdbc:
       initialize-schema: always
   elasticsearch:
-    uris: ${ELASTICSEARCH_HOST:}
+    uris: ${ELASTICSEARCH_HOST:http://localhost:9200}
     username: ${ELASTICSEARCH_USERNAME:}
     password: ${ELASTICSEARCH_PASSWORD:}
-    connection-timeout: ${ELASTICSEARCH_CONNECTION_TIMEOUT:1s}
+    connection-timeout: ${ELASTICSEARCH_CONNECTION_TIMEOUT:5s}
     socket-timeout: ${ELASTICSEARCH_SOCKET_TIMEOUT:30s}
   batch:
     jdbc:
@@ -35,6 +35,8 @@ spring:
 logging:
   level:
     org.springframework.data.elasticsearch: DEBUG
+    org.opensearch.client: DEBUG
+    org.opensearch.data: DEBUG
 
 springdoc:
   swagger-ui:
