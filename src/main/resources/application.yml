@@ -11,10 +11,10 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
         default_batch_fetch_size: 1000
     show-sql: true
@@ -31,13 +31,6 @@ spring:
   batch:
     jdbc:
       initialize-schema: always
-
-logging:
-  level:
-    org.springframework.data.elasticsearch: DEBUG
-    org.opensearch.client: DEBUG
-    org.opensearch.data: DEBUG
-#    org.springframework.beans: DEBUG
 
 springdoc:
   swagger-ui:

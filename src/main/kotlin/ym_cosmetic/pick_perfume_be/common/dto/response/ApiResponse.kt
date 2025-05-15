@@ -1,9 +1,6 @@
 package ym_cosmetic.pick_perfume_be.common.dto.response
 
 import org.slf4j.MDC
-import ym_cosmetic.pick_perfume_be.common.exception.EntityNotFoundException
-import ym_cosmetic.pick_perfume_be.common.exception.InvalidRequestException
-import ym_cosmetic.pick_perfume_be.common.exception.UnauthorizedException
 import java.time.LocalDateTime
 
 data class ApiResponse<T>(
@@ -26,34 +23,6 @@ data class ApiResponse<T>(
                 success = false,
                 error = ApiError(message, code, status)
             )
-        }
-
-        fun <T> fromException(ex: Exception): ApiResponse<T> {
-            return when (ex) {
-                is EntityNotFoundException -> error(
-                    message = ex.message ?: "Entity not found",
-                    code = "ENTITY_NOT_FOUND",
-                    status = 404
-                )
-
-                is InvalidRequestException -> error(
-                    message = ex.message ?: "Invalid request",
-                    code = "INVALID_REQUEST",
-                    status = 400
-                )
-
-                is UnauthorizedException -> error(
-                    message = ex.message ?: "Unauthorized",
-                    code = "UNAUTHORIZED",
-                    status = 401
-                )
-
-                else -> error(
-                    message = "An unexpected error occurred: ${ex.message}",
-                    code = "INTERNAL_SERVER_ERROR",
-                    status = 500
-                )
-            }
         }
     }
 
