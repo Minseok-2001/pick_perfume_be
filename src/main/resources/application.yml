@@ -2,7 +2,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   flyway:
-    enabled: false
+    enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3396/pick_perfume?&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:dev}
@@ -16,7 +16,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
-        default_batch_fetch_size: 1000
+        default_batch_fetch_size: 100
     show-sql: true
   session:
     store-type: jdbc
