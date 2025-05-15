@@ -3,6 +3,7 @@ spring:
     allow-bean-definition-overriding: true
   flyway:
     enabled: true
+    baseline-on-migrate: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3396/pick_perfume?&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:dev}
