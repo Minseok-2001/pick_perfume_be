@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Component
 import org.springframework.web.method.HandlerMethod
 import org.springframework.web.servlet.HandlerInterceptor
+import ym_cosmetic.pick_perfume_be.common.exception.ForbiddenException
+import ym_cosmetic.pick_perfume_be.common.exception.UnauthorizedException
 import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import ym_cosmetic.pick_perfume_be.security.MemberContext
 import ym_cosmetic.pick_perfume_be.security.RequireRole
@@ -30,9 +32,7 @@ class RoleCheckInterceptor(
         }
 
         if (!memberContext.isAuthenticated) {
-            response.status = HttpServletResponse.SC_UNAUTHORIZED
-            response.writer.write("인증이 필요합니다.")
-            return false
+            throw UnauthorizedException("로그인이 필요합니다.")
         }
 
         val memberRole: MemberRole? = memberContext.memberRole
@@ -42,8 +42,6 @@ class RoleCheckInterceptor(
             }
         }
 
-        response.status = HttpServletResponse.SC_FORBIDDEN
-        response.writer.write("해당 기능에 접근 권한이 없습니다.")
-        return false
+        throw ForbiddenException("권한이 없습니다.")
     }
 }
