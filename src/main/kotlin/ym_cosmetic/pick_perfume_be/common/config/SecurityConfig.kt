@@ -8,7 +8,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.filter.OncePerRequestFilter
-import ym_cosmetic.pick_perfume_be.common.exception.UnauthorizedException
 import ym_cosmetic.pick_perfume_be.security.filter.CsrfFilter
 import ym_cosmetic.pick_perfume_be.security.filter.SecurityHeadersFilter
 import ym_cosmetic.pick_perfume_be.security.filter.XssFilter
@@ -84,7 +83,8 @@ class SecurityConfig {
                 }
             }
 
-            throw UnauthorizedException("Unauthorized")
+            response.setHeader("WWW-Authenticate", "Basic realm=\"Swagger UI\"")
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
         }
     }
 }
