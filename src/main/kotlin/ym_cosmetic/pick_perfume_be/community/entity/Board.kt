@@ -22,7 +22,7 @@ class Board private constructor(
     private var displayName: String,
 
     @Column
-    private var description: String? = null,
+    private var content: String? = null,
 
     @Column(nullable = false)
     private var isActive: Boolean = true,
@@ -42,7 +42,7 @@ class Board private constructor(
         fun create(
             name: String,
             displayName: String,
-            description: String? = null,
+            content: String? = null,
             displayOrder: Int = 0
         ): Board {
             require(name.isNotBlank()) { "게시판 이름은 비어있을 수 없습니다." }
@@ -51,17 +51,17 @@ class Board private constructor(
             return Board(
                 name = name.lowercase().trim(),
                 displayName = displayName,
-                description = description,
+                content = content,
                 displayOrder = displayOrder
             )
         }
     }
 
-    fun update(displayName: String, description: String?, displayOrder: Int): Board {
+    fun update(displayName: String, content: String?, displayOrder: Int): Board {
         require(displayName.isNotBlank()) { "게시판 표시 이름은 비어있을 수 없습니다." }
 
         this.displayName = displayName
-        this.description = description
+        this.content = content
         this.displayOrder = displayOrder
         this.updatedAt = LocalDateTime.now()
 
@@ -79,7 +79,7 @@ class Board private constructor(
     // 게터
     fun getName(): String = this.name
     fun getDisplayName(): String = this.displayName
-    fun getDescription(): String? = this.description
+    fun getDescription(): String? = this.content
     fun isActive(): Boolean = this.isActive
     fun getDisplayOrder(): Int = this.displayOrder
 } 

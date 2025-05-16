@@ -3,9 +3,7 @@ CREATE TABLE board
         board_id      BIGINT AUTO_INCREMENT NOT NULL,
         name          VARCHAR(255)          NOT NULL,
         display_name  VARCHAR(255)          NOT NULL,
-        `
-               description
-               `     VARCHAR(255)          NULL,
+        content       TEXT                  NULL,
         is_active     BIT(1)                NOT NULL,
         display_order INT                   NOT NULL,
         created_at    datetime              NOT NULL,
