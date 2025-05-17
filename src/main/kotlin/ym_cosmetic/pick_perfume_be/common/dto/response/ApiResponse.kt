@@ -7,6 +7,7 @@ data class ApiResponse<T>(
     val success: Boolean,
     val data: T? = null,
     val error: ApiError? = null,
+    val message: String? = null,
     val timestamp: LocalDateTime = LocalDateTime.now(),
     val requestId: String? = MDC.get("requestId")
 ) {
@@ -15,6 +16,14 @@ data class ApiResponse<T>(
             return ApiResponse(
                 success = true,
                 data = data
+            )
+        }
+
+        fun <T> success(message: String, data: T): ApiResponse<T> {
+            return ApiResponse(
+                success = true,
+                data = data,
+                message = message
             )
         }
 
