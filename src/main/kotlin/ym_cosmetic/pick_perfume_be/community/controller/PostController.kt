@@ -14,6 +14,9 @@ import ym_cosmetic.pick_perfume_be.community.dto.request.PostUpdateRequest
 import ym_cosmetic.pick_perfume_be.community.dto.response.PageResponse
 import ym_cosmetic.pick_perfume_be.community.dto.response.PostListResponse
 import ym_cosmetic.pick_perfume_be.community.dto.response.PostResponse
+import ym_cosmetic.pick_perfume_be.community.dto.response.RankingPostResponse
+import ym_cosmetic.pick_perfume_be.community.enums.PeriodType
+import ym_cosmetic.pick_perfume_be.community.enums.RankingType
 import ym_cosmetic.pick_perfume_be.community.service.PostsService
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.security.CurrentMember
@@ -26,25 +29,34 @@ class PostController(
     private val postService: PostsService
 ) {
 
-
     @PostMapping
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
     fun createPost(
         @Valid @RequestBody request: PostCreateRequest,
         @CurrentMember member: Member
     ): ApiResponse<Long> {
-        val postId = postService.createPost(request, member)
-        return ApiResponse.success(postId)
+            val postId = postService.createPost(request, member)
+            return ApiResponse.success("게시글이 등록되었습니다.", postId)
+
     }
 
     @GetMapping("/{postId}")
     @Operation(summary = "게시글 조회", description = "특정 게시글을 조회합니다.")
     fun getPost(
         @PathVariable postId: Long,
-        @CurrentMember @OptionalAuth member: Member?
+        @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PostResponse> {
-        val post = postService.getPost(postId, member)
-        return ApiResponse.success(post)
+            val post = postService.getPost(postId, currentMember)
+            return ApiResponse.success("게시글 조회 성공", post)
+    }
+
+    @PostMapping("/{postId}/view")
+    @Operation(summary = "게시글 조회수 증가", description = "특정 게시글의 조회수를 증가시킵니다.")
+    fun incrementViewCount(
+        @PathVariable postId: Long
+    ): ApiResponse<Nothing?> {
+            postService.incrementViewCount(postId)
+            return ApiResponse.success("조회수 증가 성공", null)
     }
 
     @PutMapping("/{postId}")
@@ -54,8 +66,9 @@ class PostController(
         @Valid @RequestBody request: PostUpdateRequest,
         @CurrentMember member: Member
     ): ApiResponse<Long> {
-        val updatedPostId = postService.updatePost(postId, request, member)
-        return ApiResponse.success(updatedPostId)
+            val updatedPostId = postService.updatePost(postId, request, member)
+            return ApiResponse.success("게시글이 수정되었습니다.", updatedPostId)
+
     }
 
     @DeleteMapping("/{postId}")
@@ -64,8 +77,9 @@ class PostController(
         @PathVariable postId: Long,
         @CurrentMember member: Member
     ): ApiResponse<Long> {
-        val deletedPostId = postService.deletePost(postId, member)
-        return ApiResponse.success(deletedPostId)
+            val deletedPostId = postService.deletePost(postId, member)
+            return ApiResponse.success("게시글이 삭제되었습니다.", deletedPostId)
+
     }
 
     @GetMapping
@@ -76,10 +90,27 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember @OptionalAuth member: Member?
+        @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-        val posts = postService.getPosts(pageable, member)
-        return ApiResponse.success(posts)
+            val posts = postService.getPosts(pageable, currentMember)
+            return ApiResponse.success("게시글 목록 조회 성공", posts)
+    }
+
+    @GetMapping("/ranking")
+    @Operation(
+        summary = "랭킹 게시글 조회",
+        description = "인기 게시글을 조회합니다. periodType: DAILY, WEEKLY, MONTHLY, rankingType: VIEWS, LIKES, COMMENTS"
+    )
+    fun getRankingPosts(
+        @RequestParam(required = false, defaultValue = "WEEKLY") periodType: PeriodType,
+        @RequestParam(required = false, defaultValue = "VIEWS") rankingType: RankingType,
+        @RequestParam(required = false) boardId: Long?,
+        @PageableDefault(size = 10) pageable: Pageable,
+        @OptionalAuth @CurrentMember currentMember: Member?
+    ): ApiResponse<List<RankingPostResponse>> {
+            val posts = postService.getRankingPosts(periodType, rankingType, pageable, boardId, currentMember)
+            return ApiResponse.success("랭킹 게시글 조회 성공", posts)
+
     }
 
     @GetMapping("/board/{boardId}")
@@ -91,10 +122,11 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember @OptionalAuth member: Member?
+        @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-        val posts = postService.getPostsByBoard(boardId, pageable, member)
-        return ApiResponse.success(posts)
+            val posts = postService.getPostsByBoard(boardId, pageable, currentMember)
+            return ApiResponse.success("게시판별 게시글 목록 조회 성공", posts)
+
     }
 
     @GetMapping("/member/{memberId}")
@@ -106,10 +138,10 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember @OptionalAuth member: Member?
+        @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-        val posts = postService.getPostsByMember(memberId, pageable, member)
-        return ApiResponse.success(posts)
+            val posts = postService.getPostsByMember(memberId, pageable, currentMember)
+            return ApiResponse.success("사용자별 게시글 목록 조회 성공", posts)
     }
 
     @GetMapping("/search")
@@ -121,44 +153,20 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember @OptionalAuth member: Member?
+        @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-        val posts = postService.searchPosts(condition, pageable, member)
-        return ApiResponse.success(posts)
+            val posts = postService.searchPosts(condition, pageable, currentMember)
+            return ApiResponse.success("게시글 검색 성공", posts)
     }
 
     @PostMapping("/{postId}/like")
     @Operation(summary = "게시글 좋아요", description = "특정 게시글에 좋아요를 추가합니다.")
-    fun likePost(
+    fun toggleLike(
         @PathVariable postId: Long,
         @CurrentMember member: Member
-    ): ApiResponse<Long> {
-        val likedPostId = postService.likePost(postId, member)
-        return ApiResponse.success(likedPostId)
-    }
-
-    @DeleteMapping("/{postId}/like")
-    @Operation(summary = "게시글 좋아요 취소", description = "특정 게시글의 좋아요를 취소합니다.")
-    fun unlikePost(
-        @PathVariable postId: Long,
-        @CurrentMember member: Member
-    ): ApiResponse<Long> {
-        val unlikedPostId = postService.unlikePost(postId, member)
-        return ApiResponse.success(unlikedPostId)
-    }
-
-    @GetMapping("/top")
-    @Operation(
-        summary = "인기 게시글 조회",
-        description = "인기 게시글을 조회합니다. timeRange: daily, weekly, monthly"
-    )
-    fun getTopPosts(
-        @RequestParam(required = false) boardId: Long?,
-        @RequestParam(defaultValue = "weekly") timeRange: String,
-        @RequestParam(defaultValue = "10") limit: Int,
-        @CurrentMember @OptionalAuth member: Member?
-    ): ApiResponse<List<PostListResponse>> {
-        val topPosts = postService.getTopPosts(boardId, timeRange, limit, member)
-        return ApiResponse.success(topPosts)
+    ): ApiResponse<Boolean>{
+            val isLiked = postService.toggleLike(postId, member)
+            val message = if (isLiked) "게시글 좋아요 성공" else "게시글 좋아요 취소 성공"
+            return ApiResponse.success(message, isLiked)
     }
 } 
