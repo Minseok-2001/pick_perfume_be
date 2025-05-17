@@ -11,6 +11,8 @@ interface PostLikeRepository : JpaRepository<PostLike, Long> {
     
     fun existsByPostIdAndMemberId(postId: Long, memberId: Long): Boolean
     
+    fun findByPostIdAndMemberId(postId: Long, memberId: Long): PostLike?
+    
     fun deleteByPostIdAndMemberId(postId: Long, memberId: Long)
     
     @Query("SELECT COUNT(pl) FROM PostLike pl WHERE pl.post.id = :postId")
