@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.*
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 import ym_cosmetic.pick_perfume_be.community.dto.request.CommentCreateRequest
 import ym_cosmetic.pick_perfume_be.community.dto.request.CommentUpdateRequest
+import ym_cosmetic.pick_perfume_be.community.dto.response.CommentResponse
+import ym_cosmetic.pick_perfume_be.community.dto.response.PageResponse
 import ym_cosmetic.pick_perfume_be.community.service.CommentService
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.security.CurrentMember
+import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 
 @RestController
 @RequestMapping("/api")
@@ -41,7 +44,7 @@ class CommentController(
             sort = ["createdAt"],
             direction = Sort.Direction.ASC
         ) pageable: Pageable,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<Any> {
         val comments = commentService.getCommentsByPostId(postId, pageable, member)
         return ApiResponse.success(comments)
@@ -56,8 +59,8 @@ class CommentController(
             sort = ["createdAt"],
             direction = Sort.Direction.ASC
         ) pageable: Pageable,
-        @CurrentMember member: Member?
-    ): ApiResponse<Any> {
+        @CurrentMember @OptionalAuth member: Member?
+    ): ApiResponse<PageResponse<CommentResponse>> {
         val replies = commentService.getCommentRepliesByParentId(parentId, pageable, member)
         return ApiResponse.success(replies)
     }
