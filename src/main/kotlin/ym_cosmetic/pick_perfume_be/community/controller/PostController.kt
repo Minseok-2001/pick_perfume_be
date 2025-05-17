@@ -17,6 +17,7 @@ import ym_cosmetic.pick_perfume_be.community.dto.response.PostResponse
 import ym_cosmetic.pick_perfume_be.community.service.PostsService
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.security.CurrentMember
+import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 
 @RestController
 @RequestMapping("/api/posts")
@@ -24,6 +25,7 @@ import ym_cosmetic.pick_perfume_be.security.CurrentMember
 class PostController(
     private val postService: PostsService
 ) {
+
 
     @PostMapping
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
@@ -89,7 +91,7 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
         val posts = postService.getPostsByBoard(boardId, pageable, member)
         return ApiResponse.success(posts)

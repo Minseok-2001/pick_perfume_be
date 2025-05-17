@@ -12,7 +12,7 @@ import ym_cosmetic.pick_perfume_be.member.entity.Member
 interface PostsService {
 
     fun createPost(request: PostCreateRequest, member: Member): Long
-
+    
     fun getPost(postId: Long, currentMember: Member?): PostResponse
 
     fun updatePost(postId: Long, request: PostUpdateRequest, member: Member): Long
