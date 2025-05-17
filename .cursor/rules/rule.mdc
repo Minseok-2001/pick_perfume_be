@@ -1,5 +1,5 @@
 ---
-content: 
+description: 
 globs: 
 alwaysApply: true
 ---
@@ -239,6 +239,7 @@ RestController:
 5. Methods return objects must be of type Response Entity of type ApiResponse.
 6. All class method logic must be implemented in a try..catch block(s).
 7. Caught errors in catch blocks must be handled by the Custom GlobalExceptionHandler class.
+8. Do not use try-catch AND ResponseEntity we only use ApiResponse.
 
 ApiResponse Class (/ApiResponse.java):
 

@@ -8,6 +8,7 @@ import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.recommendation.service.RecommendationService
 import ym_cosmetic.pick_perfume_be.security.CurrentMember
+import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 
 @RestController
 @RequestMapping("/api/recommendations")
@@ -33,12 +34,12 @@ class RecommendationController(
     @GetMapping("/similar/{perfumeId}")
     @Transactional
     fun getSimilarPerfumes(
-        @CurrentMember member: Member,
+        @CurrentMember @OptionalAuth member: Member?,
         @PathVariable perfumeId: Long,
         @RequestParam(defaultValue = "5") limit: Int
     ): ApiResponse<List<PerfumeSummaryResponse>> = runBlocking {
         val recommendations =
-            recommendationService.getSimilarPerfumes(member.id!!, perfumeId, limit)
+            recommendationService.getSimilarPerfumes(member?.id, perfumeId, limit)
         ApiResponse.success(recommendations)
     }
 

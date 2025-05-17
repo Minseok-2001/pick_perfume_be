@@ -29,8 +29,10 @@ class CurrentMemberArgumentResolver(private val memberService: MemberService) :
         val memberId = RequestContextHolder.currentRequestAttributes()
             .getAttribute(MEMBER_ID_SESSION_KEY, RequestAttributes.SCOPE_SESSION) as Long?
 
+        val isOptional = parameter.hasParameterAnnotation(OptionalAuth::class.java)
+
         if (memberId == null) {
-            if (parameter.getParameterType() == Long::class.java) {
+            if (parameter.getParameterType() == Long::class.java || isOptional) {
                 return null
             }
             throw UnauthorizedException("로그인이 필요합니다.")
