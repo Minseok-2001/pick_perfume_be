@@ -41,7 +41,7 @@ class PostController(
     @Operation(summary = "게시글 조회", description = "특정 게시글을 조회합니다.")
     fun getPost(
         @PathVariable postId: Long,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PostResponse> {
         val post = postService.getPost(postId, member)
         return ApiResponse.success(post)
@@ -76,7 +76,7 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
         val posts = postService.getPosts(pageable, member)
         return ApiResponse.success(posts)
@@ -106,7 +106,7 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
         val posts = postService.getPostsByMember(memberId, pageable, member)
         return ApiResponse.success(posts)
@@ -121,7 +121,7 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC
         ) pageable: Pageable,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
         val posts = postService.searchPosts(condition, pageable, member)
         return ApiResponse.success(posts)
@@ -156,7 +156,7 @@ class PostController(
         @RequestParam(required = false) boardId: Long?,
         @RequestParam(defaultValue = "weekly") timeRange: String,
         @RequestParam(defaultValue = "10") limit: Int,
-        @CurrentMember member: Member?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<List<PostListResponse>> {
         val topPosts = postService.getTopPosts(boardId, timeRange, limit, member)
         return ApiResponse.success(topPosts)
