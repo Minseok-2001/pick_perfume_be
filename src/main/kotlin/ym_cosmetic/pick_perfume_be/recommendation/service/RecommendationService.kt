@@ -112,18 +112,20 @@ class RecommendationService(
      */
     @Transactional(readOnly = true)
     suspend fun getSimilarPerfumes(
-        memberId: Long,
+        memberId: Long?,
         perfumeId: Long,
         limit: Int = 5
     ): List<PerfumeSummaryResponse> = coroutineScope {
         // 조회 이벤트 발행 (비동기)
-        launch {
-            eventPublisher.publishEvent(
-                PerfumeViewedEvent(
-                    memberId = memberId,
-                    perfumeId = perfumeId
+        if(memberId != null) {
+            launch {
+                eventPublisher.publishEvent(
+                    PerfumeViewedEvent(
+                        memberId = memberId,
+                        perfumeId = perfumeId
+                    )
                 )
-            )
+            }
         }
 
         // 유사한 향수 검색 (비동기)
@@ -134,16 +136,17 @@ class RecommendationService(
         val similarPerfumes = similarPerfumesDeferred.await()
         val result = convertToPerfumeSummaryResponses(similarPerfumes)
 
-        // 추천 노출 이벤트 발행 (비동기)
-        launch {
-            result.forEach { perfume ->
-                eventPublisher.publishEvent(
-                    RecommendationImpressionEvent(
-                        memberId = memberId,
-                        perfumeId = perfume.id,
-                        recommendationType = "similar"
+        if(memberId != null) {
+            launch {
+                result.forEach { perfume ->
+                    eventPublisher.publishEvent(
+                        RecommendationImpressionEvent(
+                            memberId = memberId,
+                            perfumeId = perfume.id,
+                            recommendationType = "similar"
+                        )
                     )
-                )
+                }
             }
         }
 
