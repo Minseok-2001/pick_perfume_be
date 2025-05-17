@@ -18,7 +18,7 @@ import ym_cosmetic.pick_perfume_be.security.CurrentMember
 import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/comments")
 @Tag(name = "댓글 API", description = "댓글 관련 API")
 class CommentController(
     private val commentService: CommentService
