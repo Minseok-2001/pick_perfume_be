@@ -16,6 +16,7 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.service.PerfumeService
 import ym_cosmetic.pick_perfume_be.security.CurrentMember
+import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 import ym_cosmetic.pick_perfume_be.security.RequireRole
 
 @RestController
@@ -26,20 +27,18 @@ class PerfumeController(
     @GetMapping
     fun getAllPerfumes(
         @PageableDefault(size = 20) pageable: Pageable,
-        @RequestParam query: String?
+        @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<Page<PerfumeSummaryResponse>> {
-        val perfumes = if (query.isNullOrBlank()) {
-            perfumeService.findAllPerfumes(pageable)
-        } else {
-            perfumeService.searchPerfumes(query, pageable)
-        }
-
+        val perfumes = perfumeService.findAllApprovedPerfumes(pageable, member)
         return ApiResponse.success(perfumes)
     }
 
     @GetMapping("/{id}")
-    fun getPerfumeById(@PathVariable id: Long): ApiResponse<PerfumeResponse> {
-        return ApiResponse.success(perfumeService.findPerfumeById(id))
+    fun getPerfumeById(
+        @PathVariable id: Long,
+        @CurrentMember @OptionalAuth member: Member?
+    ): ApiResponse<PerfumeResponse> {
+        return ApiResponse.success(perfumeService.findPerfumeById(id, member))
     }
 
     @PostMapping
@@ -82,5 +81,21 @@ class PerfumeController(
     ): ApiResponse<String> {
         val imageUrl = perfumeService.uploadPerfumeImage(id, file)
         return ApiResponse.success(imageUrl)
+    }
+    
+    @PostMapping("/{id}/like")
+    fun likePerfume(
+        @PathVariable id: Long,
+        @CurrentMember member: Member
+    ): ApiResponse<Boolean> {
+        return ApiResponse.success(perfumeService.likePerfume(id, member))
+    }
+    
+    @DeleteMapping("/{id}/like")
+    fun unlikePerfume(
+        @PathVariable id: Long,
+        @CurrentMember member: Member
+    ): ApiResponse<Boolean> {
+        return ApiResponse.success(perfumeService.unlikePerfume(id, member))
     }
 }

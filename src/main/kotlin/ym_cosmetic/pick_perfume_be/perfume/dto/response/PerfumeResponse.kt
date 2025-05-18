@@ -27,11 +27,12 @@ data class PerfumeResponse(
     val reviewCount: Int,
     val creatorNickname: String?,
     val isApproved: Boolean,
+    val isLiked: Boolean,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ) {
     companion object {
-        fun from(perfume: Perfume): PerfumeResponse {
+        fun from(perfume: Perfume, isLiked: Boolean = false): PerfumeResponse {
             val notes = perfume.getNotes()
 
             // 디자이너 처리
@@ -72,6 +73,7 @@ data class PerfumeResponse(
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
                 creatorNickname = perfume.creator?.nickname,
+                isLiked = isLiked,
                 isApproved = perfume.isApproved,
                 createdAt = perfume.createdAt,
                 updatedAt = perfume.updatedAt

@@ -19,6 +19,7 @@ import ym_cosmetic.pick_perfume_be.perfume.entity.*
 import ym_cosmetic.pick_perfume_be.review.entity.QReview
 
 @Repository
+
 class PerfumeRepositoryImpl(
     private val queryFactory: JPAQueryFactory
 ) : QuerydslRepositorySupport(Perfume::class.java), PerfumeRepositoryCustom {
@@ -37,7 +38,9 @@ class PerfumeRepositoryImpl(
             .fetchOne()
     }
 
-    override fun findAllApprovedWithCreatorAndBrand(pageable: Pageable): Page<Perfume> {
+    override fun findAllApprovedWithCreatorAndBrand(
+        pageable: Pageable,
+    ): Page<Perfume> {
         val query = queryFactory
             .selectFrom(perfume)
             .leftJoin(perfume.creator, creator).fetchJoin()
