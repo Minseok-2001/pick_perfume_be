@@ -18,7 +18,7 @@ import ym_cosmetic.pick_perfume_be.security.CurrentMember
 import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 
 @RestController
-@RequestMapping("/api/comments")
+@RequestMapping("/api")
 @Tag(name = "댓글 API", description = "댓글 관련 API")
 class CommentController(
     private val commentService: CommentService
@@ -50,7 +50,7 @@ class CommentController(
         return ApiResponse.success(comments)
     }
 
-    @GetMapping("/{parentId}/replies")
+    @GetMapping("/comments/{parentId}/replies")
     @Operation(summary = "대댓글 조회", description = "특정 댓글의 대댓글 목록을 조회합니다.")
     fun getCommentReplies(
         @PathVariable parentId: Long,
