@@ -35,8 +35,8 @@ class PostController(
         @Valid @RequestBody request: PostCreateRequest,
         @CurrentMember member: Member
     ): ApiResponse<Long> {
-            val postId = postService.createPost(request, member)
-            return ApiResponse.success("게시글이 등록되었습니다.", postId)
+        val postId = postService.createPost(request, member)
+        return ApiResponse.success("게시글이 등록되었습니다.", postId)
 
     }
 
@@ -46,8 +46,8 @@ class PostController(
         @PathVariable postId: Long,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PostResponse> {
-            val post = postService.getPost(postId, currentMember)
-            return ApiResponse.success("게시글 조회 성공", post)
+        val post = postService.getPost(postId, currentMember)
+        return ApiResponse.success("게시글 조회 성공", post)
     }
 
     @PostMapping("/{postId}/view")
@@ -55,8 +55,8 @@ class PostController(
     fun incrementViewCount(
         @PathVariable postId: Long
     ): ApiResponse<Nothing?> {
-            postService.incrementViewCount(postId)
-            return ApiResponse.success("조회수 증가 성공", null)
+        postService.incrementViewCount(postId)
+        return ApiResponse.success("조회수 증가 성공", null)
     }
 
     @PutMapping("/{postId}")
@@ -66,8 +66,8 @@ class PostController(
         @Valid @RequestBody request: PostUpdateRequest,
         @CurrentMember member: Member
     ): ApiResponse<Long> {
-            val updatedPostId = postService.updatePost(postId, request, member)
-            return ApiResponse.success("게시글이 수정되었습니다.", updatedPostId)
+        val updatedPostId = postService.updatePost(postId, request, member)
+        return ApiResponse.success("게시글이 수정되었습니다.", updatedPostId)
 
     }
 
@@ -77,8 +77,8 @@ class PostController(
         @PathVariable postId: Long,
         @CurrentMember member: Member
     ): ApiResponse<Long> {
-            val deletedPostId = postService.deletePost(postId, member)
-            return ApiResponse.success("게시글이 삭제되었습니다.", deletedPostId)
+        val deletedPostId = postService.deletePost(postId, member)
+        return ApiResponse.success("게시글이 삭제되었습니다.", deletedPostId)
 
     }
 
@@ -92,8 +92,8 @@ class PostController(
         ) pageable: Pageable,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-            val posts = postService.getPosts(pageable, currentMember)
-            return ApiResponse.success("게시글 목록 조회 성공", posts)
+        val posts = postService.getPosts(pageable, currentMember)
+        return ApiResponse.success("게시글 목록 조회 성공", posts)
     }
 
     @GetMapping("/ranking")
@@ -108,8 +108,9 @@ class PostController(
         @PageableDefault(size = 10) pageable: Pageable,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<List<RankingPostResponse>> {
-            val posts = postService.getRankingPosts(periodType, rankingType, pageable, boardId, currentMember)
-            return ApiResponse.success("랭킹 게시글 조회 성공", posts)
+        val posts =
+            postService.getRankingPosts(periodType, rankingType, pageable, boardId, currentMember)
+        return ApiResponse.success("랭킹 게시글 조회 성공", posts)
 
     }
 
@@ -124,8 +125,8 @@ class PostController(
         ) pageable: Pageable,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-            val posts = postService.getPostsByBoard(boardId, pageable, currentMember)
-            return ApiResponse.success("게시판별 게시글 목록 조회 성공", posts)
+        val posts = postService.getPostsByBoard(boardId, pageable, currentMember)
+        return ApiResponse.success("게시판별 게시글 목록 조회 성공", posts)
 
     }
 
@@ -140,8 +141,8 @@ class PostController(
         ) pageable: Pageable,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-            val posts = postService.getPostsByMember(memberId, pageable, currentMember)
-            return ApiResponse.success("사용자별 게시글 목록 조회 성공", posts)
+        val posts = postService.getPostsByMember(memberId, pageable, currentMember)
+        return ApiResponse.success("사용자별 게시글 목록 조회 성공", posts)
     }
 
     @GetMapping("/search")
@@ -155,18 +156,29 @@ class PostController(
         ) pageable: Pageable,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PageResponse<PostListResponse>> {
-            val posts = postService.searchPosts(condition, pageable, currentMember)
-            return ApiResponse.success("게시글 검색 성공", posts)
+        val posts = postService.searchPosts(condition, pageable, currentMember)
+        return ApiResponse.success("게시글 검색 성공", posts)
     }
 
     @PostMapping("/{postId}/like")
     @Operation(summary = "게시글 좋아요", description = "특정 게시글에 좋아요를 추가합니다.")
-    fun toggleLike(
+    fun likePost(
         @PathVariable postId: Long,
         @CurrentMember member: Member
-    ): ApiResponse<Boolean>{
-            val isLiked = postService.toggleLike(postId, member)
-            val message = if (isLiked) "게시글 좋아요 성공" else "게시글 좋아요 취소 성공"
-            return ApiResponse.success(message, isLiked)
+    ): ApiResponse<Boolean> {
+        val isLiked = postService.toggleLike(postId, member)
+        val message = if (isLiked) "게시글 좋아요 성공" else "게시글 좋아요 취소 성공"
+        return ApiResponse.success(message, isLiked)
+    }
+
+    @DeleteMapping("/{postId}/like")
+    @Operation(summary = "게시글 좋아요 취소", description = "특정 게시글에 좋아요를 취소합니다.")
+    fun unlikePost(
+        @PathVariable postId: Long,
+        @CurrentMember member: Member
+    ): ApiResponse<Boolean> {
+        val isLiked = postService.toggleLike(postId, member)
+        val message = if (isLiked) "게시글 좋아요 성공" else "게시글 좋아요 취소 성공"
+        return ApiResponse.success(message, isLiked)
     }
 } 
