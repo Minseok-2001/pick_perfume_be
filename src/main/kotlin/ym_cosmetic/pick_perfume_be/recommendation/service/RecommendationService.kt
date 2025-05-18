@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 import ym_cosmetic.pick_perfume_be.common.event.PerfumeViewedEvent
 import ym_cosmetic.pick_perfume_be.common.event.RecommendationClickedEvent
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
+import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeLikeRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.recommendation.event.RecommendationImpressionEvent
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchCriteria
@@ -24,7 +25,8 @@ class RecommendationService(
     private val perfumeRepository: PerfumeRepository,
     private val perfumeSearchService: PerfumeSearchService,
     private val memberPreferenceService: MemberPreferenceService,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val perfumeLikeRepository: PerfumeLikeRepository
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(RecommendationService::class.java)
@@ -74,9 +76,9 @@ class RecommendationService(
 
             // 6. 충분한 추천이 없으면 인기 향수로 보완
             val result = if (recommendedPerfumes.isEmpty()) {
-                getPopularPerfumes(limit)
+                getPopularPerfumes(limit, memberId)
             } else {
-                convertToPerfumeSummaryResponses(recommendedPerfumes)
+                convertToPerfumeSummaryResponses(recommendedPerfumes, memberId)
             }
 
             // 7. 추천 노출 이벤트 발행 (비동기)
@@ -103,7 +105,7 @@ class RecommendationService(
                 e
             )
             // 에러 발생 시 인기 향수 반환
-            return@coroutineScope getPopularPerfumes(limit)
+            return@coroutineScope getPopularPerfumes(limit, memberId)
         }
     }
 
@@ -117,7 +119,7 @@ class RecommendationService(
         limit: Int = 5
     ): List<PerfumeSummaryResponse> = coroutineScope {
         // 조회 이벤트 발행 (비동기)
-        if(memberId != null) {
+        if (memberId != null) {
             launch {
                 eventPublisher.publishEvent(
                     PerfumeViewedEvent(
@@ -134,9 +136,9 @@ class RecommendationService(
         }
 
         val similarPerfumes = similarPerfumesDeferred.await()
-        val result = convertToPerfumeSummaryResponses(similarPerfumes)
+        val result = convertToPerfumeSummaryResponses(similarPerfumes, memberId)
 
-        if(memberId != null) {
+        if (memberId != null) {
             launch {
                 result.forEach { perfume ->
                     eventPublisher.publishEvent(
@@ -156,11 +158,23 @@ class RecommendationService(
     /**
      * 인기 있는 향수 가져오기
      */
-    fun getPopularPerfumes(limit: Int): List<PerfumeSummaryResponse> {
+    fun getPopularPerfumes(limit: Int, memberId: Long? = null): List<PerfumeSummaryResponse> {
         val pageable = PageRequest.of(0, limit)
-        return perfumeRepository.findTopByReviewCount(pageable)
-            .map { PerfumeSummaryResponse.from(it) }
-            .content
+        val perfumes = perfumeRepository.findTopByReviewCount(pageable).content
+
+        // 회원이 좋아요한 향수 ID 목록 조회
+        val likedPerfumeIds = if (memberId != null) {
+            perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
+        } else {
+            emptySet()
+        }
+
+        return perfumes.map { perfume ->
+            PerfumeSummaryResponse.from(
+                perfume = perfume,
+                isLiked = likedPerfumeIds.contains(perfume.id)
+            )
+        }
     }
 
     /**
@@ -174,10 +188,20 @@ class RecommendationService(
     ): List<PerfumeSummaryResponse> = coroutineScope {
         val pageable = PageRequest.of(0, limit)
 
+        // 회원이 좋아요한 향수 ID 목록 조회
+        val likedPerfumeIds = perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
+
         val perfumesDeferred = async {
-            perfumeRepository.findByBrandNameOrderByAverageRatingDesc(brandName, pageable)
-                .map { PerfumeSummaryResponse.from(it) }
-                .content
+            val perfumes = perfumeRepository.findByBrandNameOrderByAverageRatingDesc(
+                brandName,
+                pageable
+            ).content
+            perfumes.map { perfume ->
+                PerfumeSummaryResponse.from(
+                    perfume = perfume,
+                    isLiked = likedPerfumeIds.contains(perfume.id)
+                )
+            }
         }
 
         val result = perfumesDeferred.await()
@@ -224,7 +248,7 @@ class RecommendationService(
         // content 필드에서 실제 결과 리스트 추출
         val searchResults = searchPageResult.content
 
-        val result = convertToPerfumeSummaryResponses(searchResults)
+        val result = convertToPerfumeSummaryResponses(searchResults, memberId)
 
         // 추천 노출 이벤트 발행 (비동기)
         launch {
@@ -245,13 +269,23 @@ class RecommendationService(
     /**
      * 검색 결과를 PerfumeSummaryResponse로 변환
      */
-    private fun convertToPerfumeSummaryResponses(searchResults: List<PerfumeSearchResult>): List<PerfumeSummaryResponse> {
+    private fun convertToPerfumeSummaryResponses(
+        searchResults: List<PerfumeSearchResult>,
+        memberId: Long? = null
+    ): List<PerfumeSummaryResponse> {
         if (searchResults.isEmpty()) {
             return emptyList()
         }
 
         // 검색 결과에서 향수 ID 목록 추출
         val perfumeIds = searchResults.map { it.id }
+
+        // 회원이 좋아요한 향수 ID 목록 조회
+        val likedPerfumeIds = if (memberId != null) {
+            perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
+        } else {
+            emptySet()
+        }
 
         try {
             // FetchJoin으로 브랜드 및 관련 정보를 함께 조회
@@ -261,7 +295,12 @@ class RecommendationService(
             val perfumesMap = perfumes.associateBy { it.id!! }
 
             return searchResults.mapNotNull { result ->
-                perfumesMap[result.id]?.let { PerfumeSummaryResponse.from(it) }
+                perfumesMap[result.id]?.let {
+                    PerfumeSummaryResponse.from(
+                        perfume = it,
+                        isLiked = likedPerfumeIds.contains(it.id)
+                    )
+                }
             }
         } catch (e: Exception) {
             logger.error("Error converting search results to responses: ${e.message}", e)
@@ -270,7 +309,10 @@ class RecommendationService(
             return searchResults.mapNotNull { result ->
                 try {
                     perfumeRepository.findById(result.id).orElse(null)?.let {
-                        PerfumeSummaryResponse.from(it)
+                        PerfumeSummaryResponse.from(
+                            perfume = it,
+                            isLiked = likedPerfumeIds.contains(it.id)
+                        )
                     }
                 } catch (ex: Exception) {
                     logger.error("Failed to convert perfume ID ${result.id}: ${ex.message}")
@@ -328,6 +370,9 @@ class RecommendationService(
         memberId: Long,
         limit: Int = 10
     ): List<PerfumeSummaryResponse> = coroutineScope {
+        // 회원이 좋아요한 향수 ID 목록 조회
+        val likedPerfumeIds = perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
+        
         // 1. 사용자 선호도 기반 추천 (비동기)
         val preferenceBasedRecsDeferred = async {
             val preferences = memberPreferenceService.getMemberPreferences(memberId)
@@ -376,7 +421,8 @@ class RecommendationService(
 
         // 1. 우선 선호도 기반 추천 추가 (60%)
         val preferenceBasedCount = (limit * 0.6).toInt()
-        val convertedPreferenceRecs = convertToPerfumeSummaryResponses(preferenceBasedRecs)
+        val convertedPreferenceRecs =
+            convertToPerfumeSummaryResponses(preferenceBasedRecs, memberId)
 
         convertedPreferenceRecs.forEach { perfume ->
             if (combinedPerfumeIds.size < preferenceBasedCount && !combinedPerfumeIds.contains(
@@ -397,12 +443,17 @@ class RecommendationService(
                 )
             ) {
                 combinedPerfumeIds.add(perfume.id!!)
-                combinedResults.add(PerfumeSummaryResponse.from(perfume))
+                combinedResults.add(
+                    PerfumeSummaryResponse.from(
+                        perfume = perfume,
+                        isLiked = likedPerfumeIds.contains(perfume.id)
+                    )
+                )
             }
         }
 
         // 3. 계절 요소 추가 (10%)
-        val convertedSeasonalRecs = convertToPerfumeSummaryResponses(seasonalRecs)
+        val convertedSeasonalRecs = convertToPerfumeSummaryResponses(seasonalRecs, memberId)
 
         convertedSeasonalRecs.forEach { perfume ->
             if (combinedResults.size < limit && !combinedPerfumeIds.contains(perfume.id)) {
@@ -414,7 +465,7 @@ class RecommendationService(
         // 4. 부족한 경우 인기 향수로 채우기
         if (combinedResults.size < limit) {
             val remainingCount = limit - combinedResults.size
-            val additionalPopular = getPopularPerfumes(remainingCount * 2)
+            val additionalPopular = getPopularPerfumes(remainingCount * 2, memberId)
                 .filter { perfume -> !combinedPerfumeIds.contains(perfume.id) }
                 .take(remainingCount)
 

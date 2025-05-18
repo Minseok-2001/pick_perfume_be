@@ -62,7 +62,7 @@ class BoardController(
             description = request.description,
             displayOrder = request.displayOrder
         )
-        return ApiResponse.success(boardId)
+        return ApiResponse.success("게시판 생성 성공", boardId)
     }
 
     @RequireRole(MemberRole.ADMIN)

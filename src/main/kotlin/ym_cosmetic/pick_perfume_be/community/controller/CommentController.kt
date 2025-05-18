@@ -45,12 +45,12 @@ class CommentController(
             direction = Sort.Direction.ASC
         ) pageable: Pageable,
         @CurrentMember @OptionalAuth member: Member?
-    ): ApiResponse<Any> {
+    ): ApiResponse<PageResponse<CommentResponse>> {
         val comments = commentService.getCommentsByPostId(postId, pageable, member)
         return ApiResponse.success(comments)
     }
 
-    @GetMapping("/comments/{parentId}/replies")
+    @GetMapping("/{parentId}/replies")
     @Operation(summary = "대댓글 조회", description = "특정 댓글의 대댓글 목록을 조회합니다.")
     fun getCommentReplies(
         @PathVariable parentId: Long,

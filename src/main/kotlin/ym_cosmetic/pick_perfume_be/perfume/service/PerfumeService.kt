@@ -15,6 +15,7 @@ import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.designer.entity.Designer
 import ym_cosmetic.pick_perfume_be.designer.repository.DesignerRepository
 import ym_cosmetic.pick_perfume_be.infrastructure.s3.S3Service
+import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
 import ym_cosmetic.pick_perfume_be.note.entity.Note
@@ -25,10 +26,8 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
-import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeAccordRepository
-import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeDesignerRepository
-import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeNoteRepository
-import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
+import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeLike
+import ym_cosmetic.pick_perfume_be.perfume.repository.*
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeCreatedEvent
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeDeletedEvent
@@ -46,27 +45,32 @@ class PerfumeService(
     private val perfumeDesignerRepository: PerfumeDesignerRepository,
     private val memberRepository: MemberRepository,
     private val s3Service: S3Service,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val perfumeLikeRepository: PerfumeLikeRepository
 
 ) {
     @Transactional(readOnly = true)
-    fun findPerfumeById(id: Long): PerfumeResponse {
+    fun findPerfumeById(id: Long, member: Member?): PerfumeResponse {
         val perfume = perfumeRepository.findByIdWithCreatorAndBrand(id)
             ?: throw EntityNotFoundException("Perfume not found with id: $id")
 
-        return PerfumeResponse.from(perfume)
+        val isLiked = checkIfPerfumeLikedByMember(id, member)
+
+
+        return PerfumeResponse.from(perfume, isLiked)
     }
 
     @Transactional(readOnly = true)
-    fun findAllPerfumes(pageable: Pageable): Page<PerfumeSummaryResponse> {
-        return perfumeRepository.findAllApprovedWithCreatorAndBrand(pageable)
-            .map { PerfumeSummaryResponse.from(it) }
-    }
+    fun findAllApprovedPerfumes(pageable: Pageable, member: Member?): Page<PerfumeSummaryResponse> {
+        val perfumePage = perfumeRepository.findAllApprovedWithCreatorAndBrand(pageable)
+        val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
 
-    @Transactional(readOnly = true)
-    fun searchPerfumes(query: String, pageable: Pageable): Page<PerfumeSummaryResponse> {
-        return perfumeRepository.findByNameContainingOrBrandNameContaining(query, query, pageable)
-            .map { PerfumeSummaryResponse.from(it) }
+        return perfumePage.map { perfume ->
+            PerfumeSummaryResponse.from(
+                perfume = perfume,
+                isLiked = likedPerfumeIds.contains(perfume.id)
+            )
+        }
     }
 
     @Transactional
@@ -175,6 +179,23 @@ class PerfumeService(
         eventPublisher.publishEvent(PerfumeDeletedEvent(id))
     }
 
+    private fun checkIfPerfumeLikedByMember(perfumeId: Long, member: Member?): Boolean {
+        if (member == null || member.id == null) {
+            return false
+        }
+
+        return perfumeLikeRepository.existsByPerfumeIdAndMemberId(perfumeId, member.id!!)
+    }
+
+    private fun getLikedPerfumeIdsByMember(member: Member?): Set<Long> {
+        if (member == null || member.id == null) {
+            return emptySet()
+        }
+
+        return perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
+    }
+
+
     private fun getBrandByNameOrCreate(brandName: String): Brand {
         return brandRepository.findByNameIgnoreCase(brandName)
             ?: brandRepository.save(Brand(name = brandName))
@@ -236,5 +257,37 @@ class PerfumeService(
 
         // 새 디자이너 추가
         addPerfumeDesigners(perfume, designers)
+    }
+
+    @Transactional
+    fun likePerfume(perfumeId: Long, member: Member): Boolean {
+        if (member.id == null) {
+            throw IllegalArgumentException("인증된 사용자만 좋아요를 할 수 있습니다.")
+        }
+
+        val perfume = perfumeRepository.findById(perfumeId)
+            .orElseThrow { EntityNotFoundException("해당 향수를 찾을 수 없습니다: $perfumeId") }
+            
+        if (perfumeLikeRepository.existsByPerfumeIdAndMemberId(perfumeId, member.id!!)) {
+            return true // 이미 좋아요 상태
+        }
+        
+        val perfumeLike = PerfumeLike.create(perfume, member)
+        perfumeLikeRepository.save(perfumeLike)
+        
+        return true
+    }
+    
+    @Transactional
+    fun unlikePerfume(perfumeId: Long, member: Member): Boolean {
+        if (member.id == null) {
+            throw IllegalArgumentException("인증된 사용자만 좋아요 취소를 할 수 있습니다.")
+        }
+        
+        perfumeLikeRepository.findByPerfumeIdAndMemberId(perfumeId, member.id!!)?.let {
+            perfumeLikeRepository.delete(it)
+        }
+        
+        return false
     }
 }
