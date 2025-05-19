@@ -70,3 +70,15 @@ server:
     session:
       cookie:
         same-site: lax
+
+cloudflare:
+    r2:
+      account:
+        id: ${CLOUDFLARE_R2_ACCOUNT_ID:}
+      access:
+        key: ${CLOUDFLARE_R2_ACCESS_KEY_ID:}
+        secret: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:}
+      bucket:
+        name: ${CLOUDFLARE_R2_BUCKET_NAME:scentist}
+      public:
+        url: ${CLOUDFLARE_R2_PUBLIC_URL:}

@@ -104,6 +104,11 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core:5.8.0")
     testImplementation("io.mockk:mockk:1.13.9")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // AWS S3 SDK
+    implementation("software.amazon.awssdk:s3:2.23.11")
+    // S3 Presigned URL 생성을 위한 의존성
+    implementation("software.amazon.awssdk:s3-transfer-manager:2.23.11")
 }
 
 kotlin {
