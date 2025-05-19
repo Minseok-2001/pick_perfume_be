@@ -2,6 +2,7 @@ package ym_cosmetic.pick_perfume_be.perfume.repository
 
 import com.querydsl.core.types.Order
 import com.querydsl.core.types.OrderSpecifier
+import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.JPAExpressions
@@ -13,13 +14,18 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import ym_cosmetic.pick_perfume_be.accord.entity.QAccord
 import ym_cosmetic.pick_perfume_be.brand.entity.QBrand
 import ym_cosmetic.pick_perfume_be.member.entity.QMember
+import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.AccordStat
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.BrandStat
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.GenderStat
 import ym_cosmetic.pick_perfume_be.perfume.entity.*
+import ym_cosmetic.pick_perfume_be.perfume.enums.Gender
 import ym_cosmetic.pick_perfume_be.review.entity.QReview
 
 @Repository
-
 class PerfumeRepositoryImpl(
     private val queryFactory: JPAQueryFactory
 ) : QuerydslRepositorySupport(Perfume::class.java), PerfumeRepositoryCustom {
@@ -28,6 +34,8 @@ class PerfumeRepositoryImpl(
     private val creator = QMember.member
     private val brand = QBrand.brand
     private val review = QReview.review
+    private val perfumeAccord = QPerfumeAccord.perfumeAccord
+    private val accord = QAccord.accord
 
     override fun findByIdWithCreatorAndBrand(id: Long): Perfume? {
         return queryFactory
@@ -289,6 +297,114 @@ class PerfumeRepositoryImpl(
         }
 
         return result
+    }
+
+    override fun findAllApprovedWithFilter(
+        filter: PerfumeFilterRequest, 
+        pageable: Pageable
+    ): Page<Perfume> {
+        val conditions = mutableListOf<BooleanExpression>()
+        
+        // 기본 조건: 승인된 향수만
+        conditions.add(perfume.isApproved.isTrue)
+        
+        // 브랜드 ID로 필터링
+        filter.brandIds?.takeIf { it.isNotEmpty() }?.let { brandIds ->
+            conditions.add(perfume.brand.id.`in`(brandIds))
+        }
+        
+        // 성별로 필터링
+        filter.genders?.takeIf { it.isNotEmpty() }?.let { genders ->
+            conditions.add(perfume.gender.`in`(genders))
+        }
+        
+        // 어코드로 필터링
+        filter.accordIds?.takeIf { it.isNotEmpty() }?.let { accordIds ->
+            val perfumesWithAccords = JPAExpressions
+                .select(perfumeAccord.perfume.id)
+                .from(perfumeAccord)
+                .where(perfumeAccord.accord.id.`in`(accordIds))
+                
+            conditions.add(perfume.id.`in`(perfumesWithAccords))
+        }
+        
+        val query = queryFactory
+            .selectFrom(perfume)
+            .leftJoin(perfume.creator, creator).fetchJoin()
+            .leftJoin(perfume.brand, brand).fetchJoin()
+            .where(conditions.reduce { acc, expr -> acc.and(expr) })
+            .orderBy(perfume.id.desc())
+            .offset(pageable.offset)
+            .limit(pageable.pageSize.toLong())
+            
+        val content = query.fetch()
+        val total = queryFactory
+            .select(perfume.count())
+            .from(perfume)
+            .where(conditions.reduce { acc, expr -> acc.and(expr) })
+            .fetchOne() ?: 0L
+            
+        return PageImpl(content, pageable, total)
+    }
+    
+    override fun findTopBrandStats(limit: Int): List<BrandStat> {
+        return queryFactory
+            .select(
+                Projections.constructor(
+                    BrandStat::class.java,
+                    brand.id,
+                    brand.name,
+                    perfume.count()
+                )
+            )
+            .from(perfume)
+            .join(perfume.brand, brand)
+            .where(perfume.isApproved.isTrue)
+            .groupBy(brand.id, brand.name)
+            .orderBy(perfume.count().desc())
+            .limit(limit.toLong())
+            .fetch()
+    }
+    
+    override fun findGenderStats(): List<GenderStat> {
+        val result = queryFactory
+            .select(
+                Projections.constructor(
+                    GenderStat::class.java,
+                    perfume.gender,
+                    perfume.count()
+                )
+            )
+            .from(perfume)
+            .where(perfume.isApproved.isTrue)
+            .groupBy(perfume.gender)
+            .fetch()
+            
+        // 모든 성별에 대한 통계를 제공하기 위해, 결과에 없는 성별은 0으로 추가
+        val resultMap = result.associateBy { it.gender }
+        return Gender.entries.map { gender ->
+            resultMap[gender] ?: GenderStat(gender, 0L)
+        }
+    }
+    
+    override fun findTopAccordStats(limit: Int): List<AccordStat> {
+        return queryFactory
+            .select(
+                Projections.constructor(
+                    AccordStat::class.java,
+                    accord.id,
+                    accord.name,
+                    perfumeAccord.count()
+                )
+            )
+            .from(perfumeAccord)
+            .join(perfumeAccord.accord, accord)
+            .join(perfumeAccord.perfume, perfume)
+            .where(perfume.isApproved.isTrue)
+            .groupBy(accord.id, accord.name)
+            .orderBy(perfumeAccord.count().desc())
+            .limit(limit.toLong())
+            .fetch()
     }
 
 }
