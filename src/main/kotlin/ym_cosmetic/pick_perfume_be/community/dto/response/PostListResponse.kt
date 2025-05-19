@@ -21,14 +21,15 @@ data class PostListResponse(
             likeCount: Long,
             commentCount: Long,
             thumbnailPerfume: String? = null,
-            isLikedByCurrentUser: Boolean = false
+            isLikedByCurrentUser: Boolean = false,
+            viewCount: Long = 0
         ): PostListResponse {
             return PostListResponse(
                 id = post.id,
                 title = post.getTitle(),
                 board = BoardResponse.from(post.getBoard()),
                 createdAt = post.createdAt,
-                viewCount = post.getViewCount(),
+                viewCount = viewCount,
                 likeCount = likeCount,
                 commentCount = commentCount,
                 author = PostAuthorResponse.from(post.getMember()),

@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.community.service
 
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,11 +16,13 @@ import ym_cosmetic.pick_perfume_be.community.dto.response.RankingPostResponse
 import ym_cosmetic.pick_perfume_be.community.entity.Post
 import ym_cosmetic.pick_perfume_be.community.entity.PostLike
 import ym_cosmetic.pick_perfume_be.community.entity.PostPerfumeEmbed
+import ym_cosmetic.pick_perfume_be.community.entity.PostView
 import ym_cosmetic.pick_perfume_be.community.enums.PeriodType
 import ym_cosmetic.pick_perfume_be.community.enums.RankingType
 import ym_cosmetic.pick_perfume_be.community.repository.*
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -30,7 +33,8 @@ class PostsService(
     private val perfumeRepository: PerfumeRepository,
     private val postLikeRepository: PostLikeRepository,
     private val commentRepository: CommentRepository,
-    private val postPerfumeEmbedRepository: PostPerfumeEmbedRepository
+    private val postPerfumeEmbedRepository: PostPerfumeEmbedRepository,
+    private val postViewRepository: PostViewRepository
 ) {
 
     fun createPost(request: PostCreateRequest, member: Member): Long {
@@ -58,18 +62,22 @@ class PostsService(
         return savedPost.id
     }
 
-    @Transactional
-    fun getPost(postId: Long, currentMember: Member?): PostResponse {
+    /**
+     * 게시물 상세 조회 (조회수 증가 X)
+     */
+    @Transactional(readOnly = true)
+    fun getPostWithoutIncreasingViewCount(postId: Long, currentMember: Member?): PostResponse {
         val post = postRepository.findByIdAndIsDeletedFalse(postId)
             .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
-
-        post.increaseViewCount()
 
         // 좋아요 수 조회
         val likeCount = postLikeRepository.countByPostId(postId)
 
         // 댓글 수 조회
         val commentCount = commentRepository.countByPostId(postId)
+        
+        // 조회수 조회 (PostView 테이블에서)
+        val viewCount = postViewRepository.countByPostId(postId)
 
         // 임베딩된 향수 정보 조회
         val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(postId)
@@ -84,8 +92,114 @@ class PostsService(
             likeCount,
             commentCount,
             embeddedPerfumes,
-            isLikedByCurrentUser
+            isLikedByCurrentUser,
+            viewCount
         )
+    }
+
+    /**
+     * 게시물 상세 조회 (조회수 증가 O)
+     */
+    @Transactional
+    fun getPost(postId: Long, currentMember: Member?, request: HttpServletRequest): PostResponse {
+        val post = postRepository.findByIdAndIsDeletedFalse(postId)
+            .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
+
+        // 조회수 처리 - 하루에 한 번만 카운트
+        increasePostViewCount(post, currentMember, request)
+
+        // 좋아요 수 조회
+        val likeCount = postLikeRepository.countByPostId(postId)
+
+        // 댓글 수 조회
+        val commentCount = commentRepository.countByPostId(postId)
+        
+        // 조회수 조회 (PostView 테이블에서)
+        val viewCount = postViewRepository.countByPostId(postId)
+
+        // 임베딩된 향수 정보 조회
+        val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(postId)
+
+        // 현재 사용자의 좋아요 여부 확인
+        val isLikedByCurrentUser = currentMember?.let {
+            postLikeRepository.existsByPostIdAndMemberId(postId, it.id!!)
+        } ?: false
+
+        return PostResponse.from(
+            post,
+            likeCount,
+            commentCount,
+            embeddedPerfumes,
+            isLikedByCurrentUser,
+            viewCount
+        )
+    }
+    
+    /**
+     * 게시물 조회수만 증가
+     */
+    @Transactional
+    fun increasePostViewCount(postId: Long, currentMember: Member?, request: HttpServletRequest): Long {
+        val post = postRepository.findByIdAndIsDeletedFalse(postId)
+            .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
+            
+        return increasePostViewCount(post, currentMember, request)
+    }
+    
+    /**
+     * 게시물 조회수 증가 처리 (내부 메서드)
+     */
+    private fun increasePostViewCount(post: Post, currentMember: Member?, request: HttpServletRequest): Long {
+        val today = LocalDate.now()
+        val ipAddress = extractClientIp(request)
+        
+        // 이미 조회했는지 확인
+        val alreadyViewed = if (currentMember != null && currentMember.id != null) {
+            // 로그인 사용자의 경우 회원 ID로 확인
+            postViewRepository.existsByPostIdAndMemberIdAndViewDate(post.id, currentMember.id!!, today)
+        } else if (ipAddress != null) {
+            // 비로그인 사용자의 경우 IP 주소로 확인
+            postViewRepository.existsByPostIdAndIpAddressAndViewDate(post.id, ipAddress, today)
+        } else {
+            false
+        }
+        
+        // 아직 조회하지 않았으면 조회수 추가
+        if (!alreadyViewed) {
+            postViewRepository.save(PostView.create(post, currentMember, ipAddress))
+        }
+        
+        return postViewRepository.countByPostId(post.id)
+    }
+    
+    /**
+     * 클라이언트 IP 주소 추출
+     */
+    private fun extractClientIp(request: HttpServletRequest): String? {
+        var ip = request.getHeader("X-Forwarded-For")
+        
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("Proxy-Client-IP")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("WL-Proxy-Client-IP")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("HTTP_CLIENT_IP")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.remoteAddr
+        }
+        
+        // 여러 프록시를 거친 경우 첫 번째 IP만 사용
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim()
+        }
+        
+        return ip
     }
 
     /**
@@ -99,7 +213,7 @@ class PostsService(
         val existingLike = postLikeRepository.findByPostIdAndMemberId(postId, member.id!!)
 
         return if (existingLike != null) {
-            // 좋아요가 이미 있으면 삭제
+            // 이미 좋아요가 있으면 삭제 (좋아요 취소)
             postLikeRepository.delete(existingLike)
             false
         } else {

@@ -1,7 +1,6 @@
 package ym_cosmetic.pick_perfume_be.community.entity
 
 import jakarta.persistence.*
-import org.hibernate.annotations.ColumnDefault
 import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedBy
@@ -41,9 +40,6 @@ class Post private constructor(
     )
     private var board: Board,
 
-    @Column(nullable = false)
-    private var viewCount: Long = 0,
-
     @CreatedDate
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
@@ -59,11 +55,6 @@ class Post private constructor(
     @LastModifiedBy
     @Column
     var updatedBy: String? = null,
-
-    @Version
-    @Column(nullable = false)
-    @ColumnDefault("0")
-    var version: Long = 0L,
 
     @Column(nullable = false)
     private var isDeleted: Boolean = false,
@@ -94,13 +85,6 @@ class Post private constructor(
         return this
     }
 
-
-    @Synchronized
-    fun increaseViewCount(): Long {
-        viewCount += 1
-        return viewCount
-    }
-
     fun delete() {
         this.isDeleted = true
     }
@@ -114,6 +98,5 @@ class Post private constructor(
     fun getContent(): String = this.content
     fun getMember(): Member = this.member
     fun getBoard(): Board = this.board
-    fun getViewCount(): Long = this.viewCount
     fun isDeleted(): Boolean = this.isDeleted
 } 

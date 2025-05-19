@@ -21,14 +21,15 @@ data class RankingPostResponse(
             likeCount: Long,
             commentCount: Long,
             thumbnailUrl: String?,
-            isLikedByCurrentUser: Boolean
+            isLikedByCurrentUser: Boolean,
+            viewCount: Long = 0
         ): RankingPostResponse {
             return RankingPostResponse(
                 id = post.id,
                 title = post.getTitle(),
                 memberNickname = post.getMember().nickname,
                 memberId = post.getMember().id!!,
-                viewCount = post.getViewCount(),
+                viewCount = viewCount,
                 likeCount = likeCount,
                 commentCount = commentCount,
                 createdAt = post.createdAt,
