@@ -11,9 +11,12 @@ import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeCreateRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
 import ym_cosmetic.pick_perfume_be.perfume.service.PerfumeService
 import ym_cosmetic.pick_perfume_be.security.CurrentMember
 import ym_cosmetic.pick_perfume_be.security.OptionalAuth
@@ -31,6 +34,23 @@ class PerfumeController(
     ): ApiResponse<Page<PerfumeSummaryResponse>> {
         val perfumes = perfumeService.findAllApprovedPerfumes(pageable, member)
         return ApiResponse.success(perfumes)
+    }
+    
+    @GetMapping("/filtered")
+    fun getFilteredPerfumes(
+        @ModelAttribute filter: PerfumeFilterRequest?,
+        @RequestParam(defaultValue = "false") includeStats: Boolean,
+        @PageableDefault(size = 20) pageable: Pageable,
+        @CurrentMember @OptionalAuth member: Member?
+    ): ApiResponse<PerfumePageResponse> {
+        val result = perfumeService.findAllPerfumesWithFilter(filter, pageable, member, includeStats)
+        return ApiResponse.success(result)
+    }
+    
+    @GetMapping("/stats")
+    fun getPerfumeStats(): ApiResponse<PerfumeSummaryStats> {
+        val stats = perfumeService.getPerfumeStatistics()
+        return ApiResponse.success(stats)
     }
 
     @GetMapping("/{id}")

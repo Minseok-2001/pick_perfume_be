@@ -23,8 +23,11 @@ import ym_cosmetic.pick_perfume_be.note.repository.NoteRepository
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeCreateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeDesignerRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeLike
 import ym_cosmetic.pick_perfume_be.perfume.repository.*
@@ -71,6 +74,55 @@ class PerfumeService(
                 isLiked = likedPerfumeIds.contains(perfume.id)
             )
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun findAllPerfumesWithFilter(
+        filter: PerfumeFilterRequest?, 
+        pageable: Pageable, 
+        member: Member?,
+        includeStats: Boolean = false
+    ): PerfumePageResponse {
+        // 필터가 없는 경우 기본 조회
+        val perfumePage = if (filter == null) {
+            perfumeRepository.findAllApprovedWithCreatorAndBrand(pageable)
+        } else {
+            perfumeRepository.findAllApprovedWithFilter(filter, pageable)
+        }
+        
+        val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
+        
+        val perfumesPage = perfumePage.map { perfume ->
+            PerfumeSummaryResponse.from(
+                perfume = perfume,
+                isLiked = likedPerfumeIds.contains(perfume.id)
+            )
+        }
+        
+        // 통계 정보 포함 여부에 따라 반환
+        val stats = if (includeStats) {
+            getPerfumeStatistics()
+        } else {
+            null
+        }
+        
+        return PerfumePageResponse(
+            perfumes = perfumesPage,
+            stats = stats
+        )
+    }
+    
+    @Transactional(readOnly = true)
+    fun getPerfumeStatistics(): PerfumeSummaryStats {
+        val brandStats = perfumeRepository.findTopBrandStats(10)
+        val genderStats = perfumeRepository.findGenderStats()
+        val accordStats = perfumeRepository.findTopAccordStats(10)
+        
+        return PerfumeSummaryStats(
+            brandStats = brandStats,
+            genderStats = genderStats,
+            accordStats = accordStats
+        )
     }
 
     @Transactional
