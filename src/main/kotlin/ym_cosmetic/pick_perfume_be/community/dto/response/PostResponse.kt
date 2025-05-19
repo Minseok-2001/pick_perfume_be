@@ -26,7 +26,7 @@ data class PostResponse(
             commentCount: Long,
             embeddedPerfumes: List<PostPerfumeEmbed>,
             isLikedByCurrentUser: Boolean = false,
-            viewCount: Long = 0
+            viewCount: Long
         ): PostResponse {
             return PostResponse(
                 id = post.id,
