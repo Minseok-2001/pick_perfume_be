@@ -22,11 +22,11 @@ import ym_cosmetic.pick_perfume_be.note.entity.Note
 import ym_cosmetic.pick_perfume_be.note.repository.NoteRepository
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeCreateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeDesignerRequest
-import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
-import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeLike
@@ -58,28 +58,33 @@ class PerfumeService(
             ?: throw EntityNotFoundException("Perfume not found with id: $id")
 
         val isLiked = checkIfPerfumeLikedByMember(id, member)
+        val likeCount = getPerfumeLikeCount(id)
 
-
-        return PerfumeResponse.from(perfume, isLiked)
+        return PerfumeResponse.from(perfume, isLiked, likeCount)
     }
 
     @Transactional(readOnly = true)
     fun findAllApprovedPerfumes(pageable: Pageable, member: Member?): Page<PerfumeSummaryResponse> {
         val perfumePage = perfumeRepository.findAllApprovedWithCreatorAndBrand(pageable)
         val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
+        
+        // 모든 향수 ID에 대한 좋아요 카운트를 조회
+        val perfumeIds = perfumePage.content.map { it.id!! }
+        val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
 
         return perfumePage.map { perfume ->
             PerfumeSummaryResponse.from(
                 perfume = perfume,
-                isLiked = likedPerfumeIds.contains(perfume.id)
+                isLiked = likedPerfumeIds.contains(perfume.id),
+                likeCount = likeCounts[perfume.id] ?: 0
             )
         }
     }
 
     @Transactional(readOnly = true)
     fun findAllPerfumesWithFilter(
-        filter: PerfumeFilterRequest?, 
-        pageable: Pageable, 
+        filter: PerfumeFilterRequest?,
+        pageable: Pageable,
         member: Member?,
         includeStats: Boolean = false
     ): PerfumePageResponse {
@@ -89,35 +94,40 @@ class PerfumeService(
         } else {
             perfumeRepository.findAllApprovedWithFilter(filter, pageable)
         }
-        
+
         val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
         
+        // 모든 향수 ID에 대한 좋아요 카운트를 조회
+        val perfumeIds = perfumePage.content.map { it.id!! }
+        val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
+
         val perfumesPage = perfumePage.map { perfume ->
             PerfumeSummaryResponse.from(
                 perfume = perfume,
-                isLiked = likedPerfumeIds.contains(perfume.id)
+                isLiked = likedPerfumeIds.contains(perfume.id),
+                likeCount = likeCounts[perfume.id] ?: 0
             )
         }
-        
+
         // 통계 정보 포함 여부에 따라 반환
         val stats = if (includeStats) {
             getPerfumeStatistics()
         } else {
             null
         }
-        
+
         return PerfumePageResponse(
             perfumes = perfumesPage,
             stats = stats
         )
     }
-    
+
     @Transactional(readOnly = true)
     fun getPerfumeStatistics(): PerfumeSummaryStats {
-        val brandStats = perfumeRepository.findTopBrandStats(10)
+        val brandStats = perfumeRepository.findTopBrandStats(20)
         val genderStats = perfumeRepository.findGenderStats()
-        val accordStats = perfumeRepository.findTopAccordStats(10)
-        
+        val accordStats = perfumeRepository.findTopAccordStats(20)
+
         return PerfumeSummaryStats(
             brandStats = brandStats,
             genderStats = genderStats,
@@ -247,6 +257,9 @@ class PerfumeService(
         return perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
     }
 
+    private fun getPerfumeLikeCount(perfumeId: Long): Int {
+        return perfumeLikeRepository.countByPerfumeId(perfumeId)
+    }
 
     private fun getBrandByNameOrCreate(brandName: String): Brand {
         return brandRepository.findByNameIgnoreCase(brandName)
@@ -319,27 +332,27 @@ class PerfumeService(
 
         val perfume = perfumeRepository.findById(perfumeId)
             .orElseThrow { EntityNotFoundException("해당 향수를 찾을 수 없습니다: $perfumeId") }
-            
+
         if (perfumeLikeRepository.existsByPerfumeIdAndMemberId(perfumeId, member.id!!)) {
             return true // 이미 좋아요 상태
         }
-        
+
         val perfumeLike = PerfumeLike.create(perfume, member)
         perfumeLikeRepository.save(perfumeLike)
-        
+
         return true
     }
-    
+
     @Transactional
     fun unlikePerfume(perfumeId: Long, member: Member): Boolean {
         if (member.id == null) {
             throw IllegalArgumentException("인증된 사용자만 좋아요 취소를 할 수 있습니다.")
         }
-        
+
         perfumeLikeRepository.findByPerfumeIdAndMemberId(perfumeId, member.id!!)?.let {
             perfumeLikeRepository.delete(it)
         }
-        
+
         return false
     }
 }

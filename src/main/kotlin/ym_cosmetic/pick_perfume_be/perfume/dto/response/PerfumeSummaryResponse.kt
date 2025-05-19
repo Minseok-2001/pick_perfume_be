@@ -15,11 +15,12 @@ data class PerfumeSummaryResponse(
     val averageRating: Double,
     val reviewCount: Int,
     val isLiked: Boolean = false,
+    val likeCount: Int = 0,
     val creatorNickname: String?,
     val createdAt: LocalDateTime
 ) {
     companion object {
-        fun from(perfume: Perfume, isLiked: Boolean): PerfumeSummaryResponse {
+        fun from(perfume: Perfume, isLiked: Boolean, likeCount: Int = 0): PerfumeSummaryResponse {
             return PerfumeSummaryResponse(
                 id = perfume.id!!,
                 name = perfume.name,
@@ -28,6 +29,7 @@ data class PerfumeSummaryResponse(
                 concentration = perfume.concentration,
                 imageUrl = perfume.image?.url,
                 isLiked = isLiked,
+                likeCount = likeCount,
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
                 creatorNickname = perfume.creator?.nickname,
