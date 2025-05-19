@@ -48,13 +48,6 @@ springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-aws:
-  access-key: ${AWS_ACCESS_KEY:}
-  secret-key: ${AWS_SECRET_KEY:}
-  region: ${AWS_REGION:ap-northeast-2}
-  s3:
-    bucket: ${AWS_S3_BUCKET:}
-
 app:
   session:
     cookie:

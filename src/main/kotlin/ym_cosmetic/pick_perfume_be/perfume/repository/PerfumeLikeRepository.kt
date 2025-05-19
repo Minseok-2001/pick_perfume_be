@@ -11,4 +11,6 @@ interface PerfumeLikeRepository : JpaRepository<PerfumeLike, Long> {
     fun findPerfumeIdsByMemberId(memberId: Long): Set<Long>
     
     fun findByPerfumeIdAndMemberId(perfumeId: Long, memberId: Long): PerfumeLike?
+    
+    fun countByPerfumeId(perfumeId: Long): Int
 }
