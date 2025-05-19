@@ -1,6 +1,7 @@
 package ym_cosmetic.pick_perfume_be.community.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.ColumnDefault
 import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedBy
@@ -59,8 +60,13 @@ class Post private constructor(
     @Column
     var updatedBy: String? = null,
 
+    @Version
     @Column(nullable = false)
-    private var isDeleted: Boolean = false
+    @ColumnDefault("0")
+    var version: Long = 0L,
+
+    @Column(nullable = false)
+    private var isDeleted: Boolean = false,
 ) {
     companion object {
         fun create(title: String, content: String, member: Member, board: Board): Post {
@@ -88,8 +94,11 @@ class Post private constructor(
         return this
     }
 
-    fun incrementViewCount() {
-        this.viewCount++
+
+    @Synchronized
+    fun increaseViewCount(): Long {
+        viewCount += 1
+        return viewCount
     }
 
     fun delete() {

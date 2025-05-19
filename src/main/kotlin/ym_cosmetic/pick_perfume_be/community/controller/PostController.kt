@@ -50,14 +50,6 @@ class PostController(
         return ApiResponse.success("게시글 조회 성공", post)
     }
 
-    @PostMapping("/{postId}/view")
-    @Operation(summary = "게시글 조회수 증가", description = "특정 게시글의 조회수를 증가시킵니다.")
-    fun incrementViewCount(
-        @PathVariable postId: Long
-    ): ApiResponse<Nothing?> {
-        postService.incrementViewCount(postId)
-        return ApiResponse.success("조회수 증가 성공", null)
-    }
 
     @PutMapping("/{postId}")
     @Operation(summary = "게시글 수정", description = "특정 게시글을 수정합니다.")

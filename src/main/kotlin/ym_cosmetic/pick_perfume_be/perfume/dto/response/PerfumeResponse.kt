@@ -29,6 +29,7 @@ data class PerfumeResponse(
     val isApproved: Boolean,
     val isLiked: Boolean,
     val likeCount: Int,
+    val viewCount: Int,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ) {
@@ -77,6 +78,7 @@ data class PerfumeResponse(
                 isLiked = isLiked,
                 isApproved = perfume.isApproved,
                 likeCount = likeCount,
+                viewCount = perfume.viewCount,
                 createdAt = perfume.createdAt,
                 updatedAt = perfume.updatedAt
             )

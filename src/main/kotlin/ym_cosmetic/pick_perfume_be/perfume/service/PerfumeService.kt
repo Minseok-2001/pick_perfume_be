@@ -63,11 +63,37 @@ class PerfumeService(
         return PerfumeResponse.from(perfume, isLiked, likeCount)
     }
 
+    /**
+     * 향수 상세 조회와 함께 조회수 증가
+     */
+    @Transactional
+    fun findPerfumeByIdAndIncreaseViewCount(id: Long, member: Member?): PerfumeResponse {
+        val perfume = perfumeRepository.findByIdWithCreatorAndBrand(id)
+            ?: throw EntityNotFoundException("Perfume not found with id: $id")
+        perfume.increaseViewCount()
+
+        val isLiked = checkIfPerfumeLikedByMember(id, member)
+        val likeCount = getPerfumeLikeCount(id)
+
+        return PerfumeResponse.from(perfume, isLiked, likeCount)
+    }
+
+    /**
+     * 단독 조회수 증가 메서드
+     */
+    @Transactional
+    fun increaseViewCount(id: Long): Int {
+        val perfume = perfumeRepository.findById(id)
+            .orElseThrow { EntityNotFoundException("Perfume not found with id: $id") }
+
+        return perfume.increaseViewCount()
+    }
+
     @Transactional(readOnly = true)
     fun findAllApprovedPerfumes(pageable: Pageable, member: Member?): Page<PerfumeSummaryResponse> {
         val perfumePage = perfumeRepository.findAllApprovedWithCreatorAndBrand(pageable)
         val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
-        
+
         // 모든 향수 ID에 대한 좋아요 카운트를 조회
         val perfumeIds = perfumePage.content.map { it.id!! }
         val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
@@ -96,7 +122,7 @@ class PerfumeService(
         }
 
         val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
-        
+
         // 모든 향수 ID에 대한 좋아요 카운트를 조회
         val perfumeIds = perfumePage.content.map { it.id!! }
         val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }

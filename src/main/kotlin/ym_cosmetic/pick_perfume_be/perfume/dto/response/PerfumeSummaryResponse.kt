@@ -16,6 +16,7 @@ data class PerfumeSummaryResponse(
     val reviewCount: Int,
     val isLiked: Boolean = false,
     val likeCount: Int = 0,
+    val viewCount: Int = 0,
     val creatorNickname: String?,
     val createdAt: LocalDateTime
 ) {
@@ -30,6 +31,7 @@ data class PerfumeSummaryResponse(
                 imageUrl = perfume.image?.url,
                 isLiked = isLiked,
                 likeCount = likeCount,
+                viewCount = perfume.viewCount,
                 averageRating = perfume.calculateAverageRating(),
                 reviewCount = perfume.getReviewCount(),
                 creatorNickname = perfume.creator?.nickname,
