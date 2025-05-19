@@ -1,2 +1,0 @@
-ALTER TABLE post
-    ALTER version SET DEFAULT 0;

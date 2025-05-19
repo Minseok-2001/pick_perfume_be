@@ -27,6 +27,7 @@ class PostRepositoryImpl(
     private val board = QBoard.board
     private val perfumeEmbed = QPostPerfumeEmbed.postPerfumeEmbed
     private val perfume = QPerfume.perfume
+    private val postView = QPostView.postView
 
     override fun searchPosts(condition: PostSearchCondition, pageable: Pageable): Page<Post> {
         val predicate = BooleanBuilder()
@@ -114,12 +115,15 @@ class PostRepositoryImpl(
                     .fetch()
             }
             else -> {
-                // 조회수 기준 정렬
+                // 조회수 기준 정렬 (PostView 테이블 활용)
                 queryFactory
-                    .selectFrom(post)
+                    .select(post)
+                    .from(post)
                     .leftJoin(post.member).fetchJoin()
+                    .leftJoin(postView).on(postView.post.eq(post))
                     .where(whereConditions)
-                    .orderBy(post.viewCount.desc())
+                    .groupBy(post)
+                    .orderBy(postView.count().desc(), post.createdAt.desc())
                     .offset(pageable.offset)
                     .limit(pageable.pageSize.toLong())
                     .fetch()

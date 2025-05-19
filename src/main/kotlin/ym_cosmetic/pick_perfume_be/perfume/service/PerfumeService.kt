@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.perfume.service
 
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -30,11 +31,13 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeLike
+import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeView
 import ym_cosmetic.pick_perfume_be.perfume.repository.*
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeCreatedEvent
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeDeletedEvent
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeUpdatedEvent
+import java.time.LocalDate
 
 @Service
 class PerfumeService(
@@ -49,8 +52,8 @@ class PerfumeService(
     private val memberRepository: MemberRepository,
     private val s3Service: S3Service,
     private val eventPublisher: ApplicationEventPublisher,
-    private val perfumeLikeRepository: PerfumeLikeRepository
-
+    private val perfumeLikeRepository: PerfumeLikeRepository,
+    private val perfumeViewRepository: PerfumeViewRepository
 ) {
     @Transactional(readOnly = true)
     fun findPerfumeById(id: Long, member: Member?): PerfumeResponse {
@@ -59,35 +62,55 @@ class PerfumeService(
 
         val isLiked = checkIfPerfumeLikedByMember(id, member)
         val likeCount = getPerfumeLikeCount(id)
+        val viewCount = getPerfumeViewCount(id)
 
-        return PerfumeResponse.from(perfume, isLiked, likeCount)
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
     }
 
     /**
      * 향수 상세 조회와 함께 조회수 증가
+     * 같은 사용자(또는 IP)가 같은 날에 여러 번 조회해도 조회수는 1번만 증가합니다
      */
     @Transactional
-    fun findPerfumeByIdAndIncreaseViewCount(id: Long, member: Member?): PerfumeResponse {
+    fun findPerfumeByIdAndIncreaseViewCount(
+        id: Long,
+        member: Member?,
+        request: HttpServletRequest
+    ): PerfumeResponse {
         val perfume = perfumeRepository.findByIdWithCreatorAndBrand(id)
             ?: throw EntityNotFoundException("Perfume not found with id: $id")
-        perfume.increaseViewCount()
+
+        // 조회수 처리 - 같은 날에 같은 사용자(또는 IP)의 중복 조회 방지
+        val today = LocalDate.now()
+        val ipAddress = extractClientIp(request)
+
+        if (member != null && member.id != null) {
+            // 로그인 사용자의 경우 회원 ID로 확인
+            val alreadyViewed = perfumeViewRepository.existsByPerfumeIdAndMemberIdAndViewDate(
+                id, member.id!!, today
+            )
+
+            if (!alreadyViewed) {
+                perfumeViewRepository.save(PerfumeView.create(perfume, member, ipAddress))
+            }
+        } else if (ipAddress != null) {
+            // 비로그인 사용자의 경우 IP 주소로 확인
+            val alreadyViewed = perfumeViewRepository.existsByPerfumeIdAndIpAddressAndViewDate(
+                id, ipAddress, today
+            )
+
+            if (!alreadyViewed) {
+                perfumeViewRepository.save(PerfumeView.create(perfume, null, ipAddress))
+            }
+        }
 
         val isLiked = checkIfPerfumeLikedByMember(id, member)
         val likeCount = getPerfumeLikeCount(id)
+        val viewCount = getPerfumeViewCount(id)
 
-        return PerfumeResponse.from(perfume, isLiked, likeCount)
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
     }
 
-    /**
-     * 단독 조회수 증가 메서드
-     */
-    @Transactional
-    fun increaseViewCount(id: Long): Int {
-        val perfume = perfumeRepository.findById(id)
-            .orElseThrow { EntityNotFoundException("Perfume not found with id: $id") }
-
-        return perfume.increaseViewCount()
-    }
 
     @Transactional(readOnly = true)
     fun findAllApprovedPerfumes(pageable: Pageable, member: Member?): Page<PerfumeSummaryResponse> {
@@ -97,12 +120,14 @@ class PerfumeService(
         // 모든 향수 ID에 대한 좋아요 카운트를 조회
         val perfumeIds = perfumePage.content.map { it.id!! }
         val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
+        val viewCounts = perfumeIds.associateWith { getPerfumeViewCount(it) }
 
         return perfumePage.map { perfume ->
             PerfumeSummaryResponse.from(
                 perfume = perfume,
                 isLiked = likedPerfumeIds.contains(perfume.id),
-                likeCount = likeCounts[perfume.id] ?: 0
+                likeCount = likeCounts[perfume.id] ?: 0,
+                viewCount = viewCounts[perfume.id] ?: 0
             )
         }
     }
@@ -123,15 +148,17 @@ class PerfumeService(
 
         val likedPerfumeIds = getLikedPerfumeIdsByMember(member)
 
-        // 모든 향수 ID에 대한 좋아요 카운트를 조회
+        // 모든 향수 ID에 대한 좋아요 카운트와 조회수를 조회
         val perfumeIds = perfumePage.content.map { it.id!! }
         val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
+        val viewCounts = perfumeIds.associateWith { getPerfumeViewCount(it) }
 
         val perfumesPage = perfumePage.map { perfume ->
             PerfumeSummaryResponse.from(
                 perfume = perfume,
                 isLiked = likedPerfumeIds.contains(perfume.id),
-                likeCount = likeCounts[perfume.id] ?: 0
+                likeCount = likeCounts[perfume.id] ?: 0,
+                viewCount = viewCounts[perfume.id] ?: 0
             )
         }
 
@@ -285,6 +312,40 @@ class PerfumeService(
 
     private fun getPerfumeLikeCount(perfumeId: Long): Int {
         return perfumeLikeRepository.countByPerfumeId(perfumeId)
+    }
+
+    private fun getPerfumeViewCount(perfumeId: Long): Int {
+        return perfumeViewRepository.countByPerfumeId(perfumeId)
+    }
+
+    /**
+     * 클라이언트 IP 주소 추출
+     */
+    private fun extractClientIp(request: HttpServletRequest): String? {
+        var ip = request.getHeader("X-Forwarded-For")
+
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("Proxy-Client-IP")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("WL-Proxy-Client-IP")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("HTTP_CLIENT_IP")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR")
+        }
+        if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
+            ip = request.remoteAddr
+        }
+
+        // 여러 프록시를 거친 경우 첫 번째 IP만 사용
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim()
+        }
+
+        return ip
     }
 
     private fun getBrandByNameOrCreate(brandName: String): Brand {

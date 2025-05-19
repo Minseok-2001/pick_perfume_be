@@ -34,7 +34,7 @@ data class PerfumeResponse(
     val updatedAt: LocalDateTime
 ) {
     companion object {
-        fun from(perfume: Perfume, isLiked: Boolean = false, likeCount: Int = 0): PerfumeResponse {
+        fun from(perfume: Perfume, isLiked: Boolean = false, likeCount: Int = 0, viewCount: Int = 0): PerfumeResponse {
             val notes = perfume.getNotes()
 
             // 디자이너 처리
@@ -78,7 +78,7 @@ data class PerfumeResponse(
                 isLiked = isLiked,
                 isApproved = perfume.isApproved,
                 likeCount = likeCount,
-                viewCount = perfume.viewCount,
+                viewCount = viewCount,
                 createdAt = perfume.createdAt,
                 updatedAt = perfume.updatedAt
             )

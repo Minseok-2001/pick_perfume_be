@@ -2,6 +2,7 @@ package ym_cosmetic.pick_perfume_be.community.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -37,16 +38,32 @@ class PostController(
     ): ApiResponse<Long> {
         val postId = postService.createPost(request, member)
         return ApiResponse.success("게시글이 등록되었습니다.", postId)
-
     }
 
-    @GetMapping("/{postId}")
-    @Operation(summary = "게시글 조회", description = "특정 게시글을 조회합니다.")
-    fun getPost(
+    /**
+     * 게시글 조회 (조회수 증가 없음)
+     */
+    @GetMapping("/{postId}/without-view")
+    @Operation(summary = "게시글 조회 (조회수 증가 없음)", description = "특정 게시글을 조회수 증가 없이 조회합니다.")
+    fun getPostWithoutIncreasingViewCount(
         @PathVariable postId: Long,
         @OptionalAuth @CurrentMember currentMember: Member?
     ): ApiResponse<PostResponse> {
-        val post = postService.getPost(postId, currentMember)
+        val post = postService.getPostWithoutIncreasingViewCount(postId, currentMember)
+        return ApiResponse.success("게시글 조회 성공", post)
+    }
+
+    /**
+     * 게시글 조회 (조회수 증가 O)
+     */
+    @GetMapping("/{postId}")
+    @Operation(summary = "게시글 조회", description = "특정 게시글을 조회합니다. 조회수가 증가합니다.")
+    fun getPost(
+        @PathVariable postId: Long,
+        @OptionalAuth @CurrentMember currentMember: Member?,
+        request: HttpServletRequest
+    ): ApiResponse<PostResponse> {
+        val post = postService.getPost(postId, currentMember, request)
         return ApiResponse.success("게시글 조회 성공", post)
     }
 
@@ -60,7 +77,6 @@ class PostController(
     ): ApiResponse<Long> {
         val updatedPostId = postService.updatePost(postId, request, member)
         return ApiResponse.success("게시글이 수정되었습니다.", updatedPostId)
-
     }
 
     @DeleteMapping("/{postId}")
@@ -71,7 +87,6 @@ class PostController(
     ): ApiResponse<Long> {
         val deletedPostId = postService.deletePost(postId, member)
         return ApiResponse.success("게시글이 삭제되었습니다.", deletedPostId)
-
     }
 
     @GetMapping
@@ -103,7 +118,6 @@ class PostController(
         val posts =
             postService.getRankingPosts(periodType, rankingType, pageable, boardId, currentMember)
         return ApiResponse.success("랭킹 게시글 조회 성공", posts)
-
     }
 
     @GetMapping("/board/{boardId}")
@@ -119,7 +133,6 @@ class PostController(
     ): ApiResponse<PageResponse<PostListResponse>> {
         val posts = postService.getPostsByBoard(boardId, pageable, currentMember)
         return ApiResponse.success("게시판별 게시글 목록 조회 성공", posts)
-
     }
 
     @GetMapping("/member/{memberId}")

@@ -80,15 +80,8 @@ class Perfume private constructor(
     @Column(nullable = false)
     var searchSynced: Boolean = false,
 
-    @Column(nullable = false)
-    @ColumnDefault("0")
-    var viewCount: Int = 0,
 
-    @Version
-    @ColumnDefault("0")
-    var version: Long = 0L
-
-) : BaseTimeEntity() {
+    ) : BaseTimeEntity() {
 
     companion object {
         fun create(
@@ -259,15 +252,5 @@ class Perfume private constructor(
                 .maxByOrNull { it.value.size }
                 ?.key
         }
-    }
-
-    /**
-     * 조회수 증가
-     * @return 증가된 조회수
-     */
-    @Synchronized
-    fun increaseViewCount(): Int {
-        viewCount += 1
-        return viewCount
     }
 }

@@ -1,5 +1,6 @@
 package ym_cosmetic.pick_perfume_be.perfume.controller
 
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -54,12 +55,23 @@ class PerfumeController(
         return ApiResponse.success(stats)
     }
 
+
+    /**
+     * 향수 상세정보 조회 (조회수 증가)
+     */
     @GetMapping("/{id}")
     fun getPerfumeById(
         @PathVariable id: Long,
-        @CurrentMember @OptionalAuth member: Member?
+        @CurrentMember @OptionalAuth member: Member?,
+        request: HttpServletRequest
     ): ApiResponse<PerfumeResponse> {
-        return ApiResponse.success(perfumeService.findPerfumeByIdAndIncreaseViewCount(id, member))
+        return ApiResponse.success(
+            perfumeService.findPerfumeByIdAndIncreaseViewCount(
+                id,
+                member,
+                request
+            )
+        )
     }
 
 

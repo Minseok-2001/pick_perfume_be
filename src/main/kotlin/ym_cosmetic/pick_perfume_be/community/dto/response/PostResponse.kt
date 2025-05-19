@@ -25,14 +25,15 @@ data class PostResponse(
             likeCount: Long,
             commentCount: Long,
             embeddedPerfumes: List<PostPerfumeEmbed>,
-            isLikedByCurrentUser: Boolean = false
+            isLikedByCurrentUser: Boolean = false,
+            viewCount: Long = 0
         ): PostResponse {
             return PostResponse(
                 id = post.id,
                 title = post.getTitle(),
                 content = post.getContent(),
                 board = BoardResponse.from(post.getBoard()),
-                viewCount = post.getViewCount(),
+                viewCount = viewCount,
                 likeCount = likeCount,
                 commentCount = commentCount,
                 author = PostAuthorResponse.from(post.getMember()),
