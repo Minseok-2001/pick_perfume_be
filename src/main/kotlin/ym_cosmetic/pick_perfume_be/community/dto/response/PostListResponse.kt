@@ -22,7 +22,7 @@ data class PostListResponse(
             commentCount: Long,
             thumbnailPerfume: String? = null,
             isLikedByCurrentUser: Boolean = false,
-            viewCount: Long = 0
+            viewCount: Long
         ): PostListResponse {
             return PostListResponse(
                 id = post.id,

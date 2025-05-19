@@ -75,7 +75,7 @@ class PostsService(
 
         // 댓글 수 조회
         val commentCount = commentRepository.countByPostId(postId)
-        
+
         // 조회수 조회 (PostView 테이블에서)
         val viewCount = postViewRepository.countByPostId(postId)
 
@@ -113,7 +113,7 @@ class PostsService(
 
         // 댓글 수 조회
         val commentCount = commentRepository.countByPostId(postId)
-        
+
         // 조회수 조회 (PostView 테이블에서)
         val viewCount = postViewRepository.countByPostId(postId)
 
@@ -134,50 +134,62 @@ class PostsService(
             viewCount
         )
     }
-    
+
     /**
      * 게시물 조회수만 증가
      */
     @Transactional
-    fun increasePostViewCount(postId: Long, currentMember: Member?, request: HttpServletRequest): Long {
+    fun increasePostViewCount(
+        postId: Long,
+        currentMember: Member?,
+        request: HttpServletRequest
+    ): Long {
         val post = postRepository.findByIdAndIsDeletedFalse(postId)
             .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
-            
+
         return increasePostViewCount(post, currentMember, request)
     }
-    
+
     /**
      * 게시물 조회수 증가 처리 (내부 메서드)
      */
-    private fun increasePostViewCount(post: Post, currentMember: Member?, request: HttpServletRequest): Long {
+    private fun increasePostViewCount(
+        post: Post,
+        currentMember: Member?,
+        request: HttpServletRequest
+    ): Long {
         val today = LocalDate.now()
         val ipAddress = extractClientIp(request)
-        
+
         // 이미 조회했는지 확인
         val alreadyViewed = if (currentMember != null && currentMember.id != null) {
             // 로그인 사용자의 경우 회원 ID로 확인
-            postViewRepository.existsByPostIdAndMemberIdAndViewDate(post.id, currentMember.id!!, today)
+            postViewRepository.existsByPostIdAndMemberIdAndViewDate(
+                post.id,
+                currentMember.id!!,
+                today
+            )
         } else if (ipAddress != null) {
             // 비로그인 사용자의 경우 IP 주소로 확인
             postViewRepository.existsByPostIdAndIpAddressAndViewDate(post.id, ipAddress, today)
         } else {
             false
         }
-        
+
         // 아직 조회하지 않았으면 조회수 추가
         if (!alreadyViewed) {
             postViewRepository.save(PostView.create(post, currentMember, ipAddress))
         }
-        
+
         return postViewRepository.countByPostId(post.id)
     }
-    
+
     /**
      * 클라이언트 IP 주소 추출
      */
     private fun extractClientIp(request: HttpServletRequest): String? {
         var ip = request.getHeader("X-Forwarded-For")
-        
+
         if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
             ip = request.getHeader("Proxy-Client-IP")
         }
@@ -193,12 +205,12 @@ class PostsService(
         if (ip.isNullOrEmpty() || "unknown".equals(ip, ignoreCase = true)) {
             ip = request.remoteAddr
         }
-        
+
         // 여러 프록시를 거친 경우 첫 번째 IP만 사용
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim()
         }
-        
+
         return ip
     }
 
@@ -287,6 +299,7 @@ class PostsService(
         val postListResponses = postsPage.map { post ->
             val likeCount = postLikeRepository.countByPostId(post.id)
             val commentCount = commentRepository.countByPostId(post.id)
+            val postViewCount = postViewRepository.countByPostId(post.id)
 
             // 썸네일용 향수 이미지 조회 (첫 번째 임베딩된 향수)
             val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(post.id)
@@ -297,7 +310,9 @@ class PostsService(
                 likeCount = likeCount,
                 commentCount = commentCount,
                 thumbnailPerfume = thumbnailPerfume,
-                isLikedByCurrentUser = post.id in likedPostIds
+                isLikedByCurrentUser = post.id in likedPostIds,
+                viewCount = postViewCount
+
             )
         }
 
@@ -320,6 +335,7 @@ class PostsService(
         val postListResponses = postsPage.map { post ->
             val likeCount = postLikeRepository.countByPostId(post.id)
             val commentCount = commentRepository.countByPostId(post.id)
+            val postViewCount = postViewRepository.countByPostId(post.id)
 
             // 썸네일용 향수 이미지 조회 (첫 번째 임베딩된 향수)
             val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(post.id)
@@ -330,7 +346,8 @@ class PostsService(
                 likeCount = likeCount,
                 commentCount = commentCount,
                 thumbnailPerfume = thumbnailPerfume,
-                isLikedByCurrentUser = post.id in likedPostIds
+                isLikedByCurrentUser = post.id in likedPostIds,
+                viewCount = postViewCount
             )
         }
 
@@ -353,6 +370,7 @@ class PostsService(
         val postListResponses = postsPage.map { post ->
             val likeCount = postLikeRepository.countByPostId(post.id)
             val commentCount = commentRepository.countByPostId(post.id)
+            val postViewCount = postViewRepository.countByPostId(post.id)
 
             // 썸네일용 향수 이미지 조회 (첫 번째 임베딩된 향수)
             val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(post.id)
@@ -363,7 +381,8 @@ class PostsService(
                 likeCount = likeCount,
                 commentCount = commentCount,
                 thumbnailPerfume = thumbnailPerfume,
-                isLikedByCurrentUser = post.id in likedPostIds
+                isLikedByCurrentUser = post.id in likedPostIds,
+                viewCount = postViewCount
             )
         }
 
@@ -386,6 +405,7 @@ class PostsService(
         val postListResponses = postsPage.map { post ->
             val likeCount = postLikeRepository.countByPostId(post.id)
             val commentCount = commentRepository.countByPostId(post.id)
+            val postViewCount = postViewRepository.countByPostId(post.id)
 
             // 썸네일용 향수 이미지 조회 (첫 번째 임베딩된 향수)
             val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(post.id)
@@ -396,7 +416,8 @@ class PostsService(
                 likeCount = likeCount,
                 commentCount = commentCount,
                 thumbnailPerfume = thumbnailPerfume,
-                isLikedByCurrentUser = post.id in likedPostIds
+                isLikedByCurrentUser = post.id in likedPostIds,
+                viewCount = postViewCount
             )
         }
 
@@ -439,6 +460,7 @@ class PostsService(
         return posts.map { post ->
             val likeCount = postLikeRepository.countByPostId(post.id)
             val commentCount = commentRepository.countByPostId(post.id)
+            val postViewCount = postViewRepository.countByPostId(post.id)
 
             // 썸네일용 향수 이미지 조회 (첫 번째 임베딩된 향수)
             val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(post.id)
@@ -449,7 +471,8 @@ class PostsService(
                 likeCount = likeCount,
                 commentCount = commentCount,
                 thumbnailUrl = thumbnailPerfume,
-                isLikedByCurrentUser = post.id in likedPostIds
+                isLikedByCurrentUser = post.id in likedPostIds,
+                viewCount = postViewCount
             )
         }
     }

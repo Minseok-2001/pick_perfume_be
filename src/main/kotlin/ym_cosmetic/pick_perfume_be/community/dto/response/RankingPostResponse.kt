@@ -22,7 +22,7 @@ data class RankingPostResponse(
             commentCount: Long,
             thumbnailUrl: String?,
             isLikedByCurrentUser: Boolean,
-            viewCount: Long = 0
+            viewCount: Long
         ): RankingPostResponse {
             return RankingPostResponse(
                 id = post.id,
