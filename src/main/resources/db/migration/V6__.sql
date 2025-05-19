@@ -1,0 +1,11 @@
+ALTER TABLE post
+    ADD version BIGINT DEFAULT 0 NULL;
+
+ALTER TABLE post
+    MODIFY version BIGINT NOT NULL;
+
+ALTER TABLE perfume
+    ALTER version SET DEFAULT 0;
+
+ALTER TABLE perfume
+    ALTER view_count SET DEFAULT 0;

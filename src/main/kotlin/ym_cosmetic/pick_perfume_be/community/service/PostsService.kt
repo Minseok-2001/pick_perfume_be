@@ -31,9 +31,9 @@ class PostsService(
     private val postLikeRepository: PostLikeRepository,
     private val commentRepository: CommentRepository,
     private val postPerfumeEmbedRepository: PostPerfumeEmbedRepository
-)  {
+) {
 
-     fun createPost(request: PostCreateRequest, member: Member): Long {
+    fun createPost(request: PostCreateRequest, member: Member): Long {
         val board = boardRepository.findById(request.boardId)
             .orElseThrow { EntityNotFoundException("게시판을 찾을 수 없습니다.") }
 
@@ -58,13 +58,12 @@ class PostsService(
         return savedPost.id
     }
 
-    @Transactional(readOnly = true)
-     fun getPost(postId: Long, currentMember: Member?): PostResponse {
+    @Transactional
+    fun getPost(postId: Long, currentMember: Member?): PostResponse {
         val post = postRepository.findByIdAndIsDeletedFalse(postId)
             .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
 
-        // 조회수 증가 로직 (분리된 메서드로 이동)
-        incrementViewCount(postId)
+        post.increaseViewCount()
 
         // 좋아요 수 조회
         val likeCount = postLikeRepository.countByPostId(postId)
@@ -90,27 +89,15 @@ class PostsService(
     }
 
     /**
-     * 게시물 조회수 증가
-     */
-    @Transactional
-     fun incrementViewCount(postId: Long) {
-        val post = postRepository.findByIdAndIsDeletedFalse(postId)
-            .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
-        
-        post.incrementViewCount()
-        postRepository.save(post)
-    }
-
-    /**
      * 게시물 좋아요 토글
      */
     @Transactional
-     fun toggleLike(postId: Long, member: Member): Boolean {
+    fun toggleLike(postId: Long, member: Member): Boolean {
         val post = postRepository.findByIdAndIsDeletedFalse(postId)
             .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
-            
+
         val existingLike = postLikeRepository.findByPostIdAndMemberId(postId, member.id!!)
-        
+
         return if (existingLike != null) {
             // 좋아요가 이미 있으면 삭제
             postLikeRepository.delete(existingLike)
@@ -123,7 +110,7 @@ class PostsService(
         }
     }
 
-     fun updatePost(postId: Long, request: PostUpdateRequest, member: Member): Long {
+    fun updatePost(postId: Long, request: PostUpdateRequest, member: Member): Long {
         val post = postRepository.findByIdAndIsDeletedFalse(postId)
             .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
 
@@ -157,7 +144,7 @@ class PostsService(
         return post.id
     }
 
-     fun deletePost(postId: Long, member: Member): Long {
+    fun deletePost(postId: Long, member: Member): Long {
         val post = postRepository.findByIdAndIsDeletedFalse(postId)
             .orElseThrow { EntityNotFoundException("게시글을 찾을 수 없습니다.") }
 
@@ -172,7 +159,7 @@ class PostsService(
     }
 
     @Transactional(readOnly = true)
-     fun getPosts(
+    fun getPosts(
         pageable: Pageable,
         currentMember: Member?
     ): PageResponse<PostListResponse> {
@@ -204,7 +191,7 @@ class PostsService(
     }
 
     @Transactional(readOnly = true)
-     fun getPostsByBoard(
+    fun getPostsByBoard(
         boardId: Long,
         pageable: Pageable,
         currentMember: Member?
@@ -237,7 +224,7 @@ class PostsService(
     }
 
     @Transactional(readOnly = true)
-     fun getPostsByMember(
+    fun getPostsByMember(
         memberId: Long,
         pageable: Pageable,
         currentMember: Member?
@@ -270,7 +257,7 @@ class PostsService(
     }
 
     @Transactional(readOnly = true)
-     fun searchPosts(
+    fun searchPosts(
         condition: PostSearchCondition,
         pageable: Pageable,
         currentMember: Member?
@@ -306,7 +293,7 @@ class PostsService(
      * 랭킹 게시물 조회
      */
     @Transactional(readOnly = true)
-     fun getRankingPosts(
+    fun getRankingPosts(
         periodType: PeriodType,
         rankingType: RankingType,
         pageable: Pageable,
@@ -315,11 +302,11 @@ class PostsService(
     ): List<RankingPostResponse> {
         val now = LocalDateTime.now()
         val startDate = periodType.period(now)
-        
+
         // 랭킹 타입에 따른 정렬 기준 설정
         val rankByLikes = rankingType == RankingType.LIKES
         val rankByComments = rankingType == RankingType.COMMENTS
-        
+
         val posts = postRepository.findRankingPosts(
             startDate = startDate,
             endDate = now,
@@ -328,21 +315,21 @@ class PostsService(
             rankByLikes = rankByLikes,
             rankByComments = rankByComments
         )
-        
+
         // 좋아요한 게시글 ID 목록 조회
         val likedPostIds = currentMember?.let {
             postLikeRepository.findPostIdsByMemberId(it.id!!).toSet()
         } ?: emptySet()
-        
+
         // 응답 데이터 구성
         return posts.map { post ->
             val likeCount = postLikeRepository.countByPostId(post.id)
             val commentCount = commentRepository.countByPostId(post.id)
-            
+
             // 썸네일용 향수 이미지 조회 (첫 번째 임베딩된 향수)
             val embeddedPerfumes = postPerfumeEmbedRepository.findByPostId(post.id)
             val thumbnailPerfume = embeddedPerfumes.firstOrNull()?.getPerfume()?.image?.url
-            
+
             RankingPostResponse.from(
                 post = post,
                 likeCount = likeCount,

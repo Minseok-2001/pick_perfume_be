@@ -35,7 +35,7 @@ class PerfumeController(
         val perfumes = perfumeService.findAllApprovedPerfumes(pageable, member)
         return ApiResponse.success(perfumes)
     }
-    
+
     @GetMapping("/filtered")
     fun getFilteredPerfumes(
         @ModelAttribute filter: PerfumeFilterRequest?,
@@ -43,10 +43,11 @@ class PerfumeController(
         @PageableDefault(size = 20) pageable: Pageable,
         @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PerfumePageResponse> {
-        val result = perfumeService.findAllPerfumesWithFilter(filter, pageable, member, includeStats)
+        val result =
+            perfumeService.findAllPerfumesWithFilter(filter, pageable, member, includeStats)
         return ApiResponse.success(result)
     }
-    
+
     @GetMapping("/stats")
     fun getPerfumeStats(): ApiResponse<PerfumeSummaryStats> {
         val stats = perfumeService.getPerfumeStatistics()
@@ -58,8 +59,9 @@ class PerfumeController(
         @PathVariable id: Long,
         @CurrentMember @OptionalAuth member: Member?
     ): ApiResponse<PerfumeResponse> {
-        return ApiResponse.success(perfumeService.findPerfumeById(id, member))
+        return ApiResponse.success(perfumeService.findPerfumeByIdAndIncreaseViewCount(id, member))
     }
+
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -102,7 +104,7 @@ class PerfumeController(
         val imageUrl = perfumeService.uploadPerfumeImage(id, file)
         return ApiResponse.success(imageUrl)
     }
-    
+
     @PostMapping("/{id}/like")
     fun likePerfume(
         @PathVariable id: Long,
@@ -110,7 +112,7 @@ class PerfumeController(
     ): ApiResponse<Boolean> {
         return ApiResponse.success(perfumeService.likePerfume(id, member))
     }
-    
+
     @DeleteMapping("/{id}/like")
     fun unlikePerfume(
         @PathVariable id: Long,
