@@ -20,6 +20,7 @@ class SearchController(
     fun searchPerfumes(
         @RequestParam keyword: String?,
         @RequestParam brandName: String? = null,
+        @RequestParam brandId: Long? = null,
         @RequestParam noteType: NoteType? = null,
         @RequestParam note: String? = null,
         @RequestParam accord: String? = null,
@@ -36,6 +37,7 @@ class SearchController(
         val criteria = PerfumeSearchCriteria(
             keyword = keyword,
             brandName = brandName,
+            brandId = brandId,
             noteType = noteType,
             note = note,
             accord = accord,

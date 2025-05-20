@@ -19,14 +19,18 @@ class SurveyController(
 ) {
 
     @PostMapping
-    @Operation(summary = "설문 제출", description = "새로운 설문을 제출합니다.")
+    @Operation(
+        summary = "설문 제출",
+        description = "새로운 설문을 제출합니다. PERFUME_RATING_SLIDER 질문 유형의 경우, " +
+                "향수 ID 또는 사용자가 직접 입력한 향수 이름을 함께 제출할 수 있습니다."
+    )
     fun submitSurvey(@RequestBody request: SurveySubmitRequest): ApiResponse<SurveyResponseDto> {
         val survey = surveyService.submitSurvey(request)
         return ApiResponse.success(survey)
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "설문 조회", description = "설문 ID로 설문 정보를 조회합니다.")
+    @Operation(summary = "설문 조회", description = "설문 ID로 설문 정보를 조회합니다. 향수 평점 정보도 함께 조회됩니다.")
     fun getSurveyById(@PathVariable id: Long): ApiResponse<SurveyResponseDto> {
         val survey = surveyService.getSurveyById(id)
         return ApiResponse.success(survey)

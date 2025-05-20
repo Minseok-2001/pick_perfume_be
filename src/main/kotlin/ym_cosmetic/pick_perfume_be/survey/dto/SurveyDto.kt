@@ -64,7 +64,8 @@ data class SurveyAnswerDto(
     val questionType: QuestionType,
     val choiceAnswers: List<String>?,
     val sliderAnswer: Int?,
-    val matrixAnswers: Map<String, Int>?
+    val matrixAnswers: Map<String, Int>?,
+    val perfumeRatings: List<PerfumeRatingResponseDto>? = null
 ) {
     companion object {
         fun fromEntity(response: SurveyResponse): SurveyAnswerDto {
@@ -76,7 +77,31 @@ data class SurveyAnswerDto(
                 questionType = response.question.questionType,
                 choiceAnswers = response.choiceAnswers.map { it.optionText },
                 sliderAnswer = response.sliderAnswer,
-                matrixAnswers = response.matrixAnswers.associate { it.optionKey to it.value }
+                matrixAnswers = response.matrixAnswers.associate { it.optionKey to it.value },
+                perfumeRatings = null // 향수 평점은 별도로 조회해야 함
+            )
+        }
+    }
+}
+
+/**
+ * 향수 평점 응답 DTO
+ */
+data class PerfumeRatingResponseDto(
+    val ratingId: Long?,
+    val perfumeId: Long?,
+    val perfumeName: String,
+    val rating: Float,
+    val isCustom: Boolean
+) {
+    companion object {
+        fun fromEntity(entity: SurveyResponsePerfumeRating): PerfumeRatingResponseDto {
+            return PerfumeRatingResponseDto(
+                ratingId = entity.ratingId,
+                perfumeId = entity.perfume?.id,
+                perfumeName = entity.perfumeName,
+                rating = entity.rating,
+                isCustom = entity.isCustom
             )
         }
     }
@@ -98,7 +123,8 @@ data class ResponseSubmitDto(
     val questionId: Long,
     val choiceAnswers: List<String>? = null,
     val sliderAnswer: Int? = null,
-    val matrixAnswers: Map<String, Int>? = null
+    val matrixAnswers: Map<String, Int>? = null,
+    val perfumeRating: List<PerfumeRatingDto>? = null
 ) {
     fun validate(question: SurveyTemplate): Boolean {
         // 질문 유형에 따른 응답 유효성 검사
@@ -125,12 +151,28 @@ data class ResponseSubmitDto(
             }
 
             QuestionType.PERFUME_RATING_SLIDER -> {
-                sliderAnswer != null &&
-                        question.scale?.let { sliderAnswer in it.min..it.max } ?: false
+                perfumeRating != null &&
+                        perfumeRating.isNotEmpty() &&
+                        perfumeRating.all { rating ->
+                            rating.rating > 0 &&
+                                    question.scale?.let { rating.rating in it.min..it.max } ?: false
+                        }
             }
+
+
         }
     }
 }
+
+/**
+ * 향수 평점 DTO
+ */
+data class PerfumeRatingDto(
+    val perfumeId: Long? = null,
+    val perfumeName: String,
+    val rating: Int,
+    val isCustom: Boolean = false
+)
 
 /**
  * 설문 분석 결과 DTO

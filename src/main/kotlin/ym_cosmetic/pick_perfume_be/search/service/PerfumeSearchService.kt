@@ -41,6 +41,10 @@ class PerfumeSearchService(
             boolQueryBuilder.filter(QueryBuilders.termQuery("brandName.keyword", brand))
         }
 
+        criteria.brandId?.let { brandId ->
+            boolQueryBuilder.filter(QueryBuilders.termQuery("brandId", brandId))
+        }
+
         // 노트 필터
         criteria.note?.let { note ->
             boolQueryBuilder.filter(QueryBuilders.termQuery("notes.keyword", note))

@@ -2,11 +2,11 @@ package ym_cosmetic.pick_perfume_be.survey.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.survey.dto.*
-import ym_cosmetic.pick_perfume_be.survey.entity.Survey
-import ym_cosmetic.pick_perfume_be.survey.entity.SurveyResponse
-import ym_cosmetic.pick_perfume_be.survey.entity.SurveyStatus
+import ym_cosmetic.pick_perfume_be.survey.entity.*
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyRepository
+import ym_cosmetic.pick_perfume_be.survey.repository.SurveyResponsePerfumeRatingRepository
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyResponseRepository
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyTemplateRepository
 
@@ -14,7 +14,9 @@ import ym_cosmetic.pick_perfume_be.survey.repository.SurveyTemplateRepository
 class SurveyService(
     private val surveyRepository: SurveyRepository,
     private val surveyTemplateRepository: SurveyTemplateRepository,
-    private val surveyResponseRepository: SurveyResponseRepository
+    private val surveyResponseRepository: SurveyResponseRepository,
+    private val perfumeRepository: PerfumeRepository,
+    private val surveyResponsePerfumeRatingRepository: SurveyResponsePerfumeRatingRepository
 ) {
 
     /**
@@ -66,6 +68,35 @@ class SurveyService(
 
             // 응답 저장
             val savedResponse = surveyResponseRepository.save(response)
+
+            // 향수 평점 처리 (PERFUME_RATING_SLIDER 타입인 경우)
+            if (template.questionType == QuestionType.PERFUME_RATING_SLIDER && responseDto.perfumeRating != null) {
+                val perfumeRatingList = responseDto.perfumeRating
+
+                val perfumeRatingEntities = mutableListOf<SurveyResponsePerfumeRating>()
+
+                perfumeRatingList.forEach { rating ->
+                    val perfume = rating.perfumeId?.let {
+                        perfumeRepository.findById(it).orElse(null)
+                    }
+
+                    // 향수 평점 생성 및 리스트에 추가
+                    val perfumeRatingEntity = savedResponse.addPerfumeRating(
+                        perfume = perfume,
+                        perfumeName = rating.perfumeName,
+                        rating = rating.rating.toFloat(),
+                        isCustom = rating.isCustom
+                    )
+
+                    perfumeRatingEntities.add(perfumeRatingEntity)
+                }
+
+                // 한 번에 저장
+                if (perfumeRatingEntities.isNotEmpty()) {
+                    surveyResponsePerfumeRatingRepository.saveAll(perfumeRatingEntities)
+                }
+            }
+            
             savedSurvey.responses.add(savedResponse)
 
             // DTO 변환
@@ -83,7 +114,27 @@ class SurveyService(
         val survey = surveyRepository.findById(id)
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $id") }
 
-        val responses = survey.responses.map { SurveyAnswerDto.fromEntity(it) }
+        val responses = survey.responses.map { response ->
+            // 각 응답에 대해 향수 평점 정보 조회
+            val perfumeRatings = if (response.question.questionType == QuestionType.PERFUME_RATING_SLIDER) {
+                surveyResponsePerfumeRatingRepository.findByResponseId(response.responseId ?: 0L)
+                    .map { PerfumeRatingResponseDto.fromEntity(it) }
+            } else {
+                null
+            }
+            
+            SurveyAnswerDto(
+                responseId = response.responseId,
+                questionId = response.question.questionId ?: 0L,
+                questionKey = response.question.questionKey,
+                questionText = response.question.questionText,
+                questionType = response.question.questionType,
+                choiceAnswers = response.choiceAnswers.map { it.optionText },
+                sliderAnswer = response.sliderAnswer,
+                matrixAnswers = response.matrixAnswers.associate { it.optionKey to it.value },
+                perfumeRatings = perfumeRatings
+            )
+        }
 
         return SurveyResponseDto.fromEntity(survey, responses)
     }
