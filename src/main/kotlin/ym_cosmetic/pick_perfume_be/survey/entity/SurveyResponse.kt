@@ -2,6 +2,7 @@ package ym_cosmetic.pick_perfume_be.survey.entity
 
 import jakarta.persistence.*
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
+import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
 
 /**
  * 설문 응답 엔티티
@@ -41,6 +42,17 @@ class SurveyResponse(
     fun addMatrixAnswer(key: String, value: Int): SurveyResponse {
         matrixAnswers.add(SurveyResponseMatrix(response = this, optionKey = key, value = value))
         return this
+    }
+
+    fun addPerfumeRating(perfume: Perfume?, perfumeName: String, rating: Float, isCustom: Boolean): SurveyResponsePerfumeRating {
+        val responseId = this.responseId ?: throw IllegalStateException("응답 ID가 없습니다.")
+        return SurveyResponsePerfumeRating(
+            responseId = responseId,
+            perfume = perfume,
+            perfumeName = perfumeName,
+            rating = rating,
+            isCustom = isCustom
+        )
     }
 }
 

@@ -6,6 +6,7 @@ import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 data class PerfumeSearchCriteria(
     val keyword: String? = null,
     val brandName: String? = null,
+    val brandId: Long? = null,
     val note: String? = null,
     val noteType: NoteType? = null,
     val accord: String? = null,
