@@ -1,4 +1,15 @@
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   main:
     allow-bean-definition-overriding: true
   flyway:
@@ -27,7 +38,7 @@ spring:
       table-name: SPRING_SESSION
     timeout: 3600 # 세션 타임아웃 (초)
   elasticsearch:
-    uris: ${ELASTICSEARCH_HOST:http://localhost:9200}
+    uris: ${ELASTICSEARCH_HOST:}
     username: ${ELASTICSEARCH_USERNAME:}
     password: ${ELASTICSEARCH_PASSWORD:}
     connection-timeout: ${ELASTICSEARCH_CONNECTION_TIMEOUT:5s}
@@ -35,6 +46,8 @@ spring:
   batch:
     jdbc:
       initialize-schema: never
+
+
 
 springdoc:
   swagger-ui:
@@ -47,7 +60,15 @@ springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
+
+oauth2:
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID:d3a429648673d69c3ecdab1e39bd2bce}
+    redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/callback/kakao}
+    client-secret: ${KAKAO_CLIENT_SECRET:bXhVMlZmDNmTwK9o2agiwQjaKH0E2Z1s}
+
 app:
+  domainUrl: ${APP_DOMAIN_URL:http://localhost:3000}
   session:
     cookie:
       secure: true # HTTPS에서만 쿠키 전송
@@ -74,3 +95,4 @@ cloudflare:
       name: ${CLOUDFLARE_R2_BUCKET_NAME:scentist}
     public:
       url: ${CLOUDFLARE_R2_PUBLIC_URL:}
+

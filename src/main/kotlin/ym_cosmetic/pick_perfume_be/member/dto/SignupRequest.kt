@@ -1,6 +1,7 @@
 package ym_cosmetic.pick_perfume_be.member.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
@@ -8,12 +9,12 @@ import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 
 @Schema(description = "회원가입 요청")
 data class SignupRequest(
-    @Schema(description = "사용자 이름", example = "user123")
-    @NotBlank(message = "사용자 이름은 필수입니다.")
+    @Schema(description = "닉네임", example = "user123")
+    @NotBlank(message = "닉네임은 필수입니다.")
     @Size(
         min = 3,
         max = 20,
-        message = "사용자 이름은 3자에서 20자 사이여야 합니다."
+        message = "닉네임은 3자에서 20자 사이여야 합니다."
     )
     val nickname: String,
 
@@ -36,10 +37,7 @@ data class SignupRequest(
 
     @Schema(description = "이메일", example = "user@example.com")
     @NotBlank(message = "이메일은 필수입니다.")
-    @Pattern(
-        regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
-        message = "유효한 이메일 형식이어야 합니다."
-    )
+    @Email(message = "이메일 형식이 아닙니다.")
     val email: String,
 
 
