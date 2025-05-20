@@ -41,6 +41,10 @@ dependencies {
     // CSV 처리
     implementation("com.opencsv:opencsv:5.8")
 
+    // mail
+    implementation ("org.springframework.boot:spring-boot-starter-mail")
+
+
     // 코틀린 관련
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
