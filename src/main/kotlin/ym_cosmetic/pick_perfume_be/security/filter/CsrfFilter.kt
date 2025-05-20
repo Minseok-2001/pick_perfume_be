@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
@@ -11,6 +12,9 @@ import java.util.*
 
 @Component
 class CsrfFilter : OncePerRequestFilter() {
+    @Value("\${app.session.cookie.domain:}")
+    private lateinit var domain: String
+
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(
         request: HttpServletRequest, response: HttpServletResponse,
@@ -19,13 +23,16 @@ class CsrfFilter : OncePerRequestFilter() {
         val session = request.getSession(false)
         val method = request.method
         val host = request.serverName
+        val origin = request.getHeader("Origin")
 
         if ("localhost" == host || "127.0.0.1" == host ||
             request.requestURI.startsWith("/docs") ||
             request.requestURI.startsWith("/api-docs") ||
             request.requestURI.startsWith("/swagger-ui") ||
             request.requestURI.contains("/users/signup") ||
-            request.requestURI.contains("/auth/login")
+            request.requestURI.contains("/auth/login") ||
+            request.requestURI.contains("/auth/password/forgot") ||
+            domain == origin
         ) {
             filterChain.doFilter(request, response)
             return
