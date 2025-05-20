@@ -1,6 +1,8 @@
 package ym_cosmetic.pick_perfume_be.common.config
 
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
@@ -16,6 +18,11 @@ class WebMvcConfig(
     private val currentMemberArgumentResolver: CurrentMemberArgumentResolver
 ) : WebMvcConfigurer {
 
+    @Bean
+    fun restTemplate(): RestTemplate {
+        return RestTemplate()
+    }
+
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(authenticationInterceptor)
         registry.addInterceptor(roleCheckInterceptor)
@@ -24,6 +31,8 @@ class WebMvcConfig(
     override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
         resolvers.add(currentMemberArgumentResolver)
     }
+
+    
 
     override fun addCorsMappings(registry: CorsRegistry) {
         registry.addMapping("/**")
@@ -37,4 +46,5 @@ class WebMvcConfig(
             .allowCredentials(true)
             .maxAge(3600)
     }
+
 }
