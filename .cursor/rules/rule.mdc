@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # 향수 추천 및 커뮤니티 시스템을 위한 DDD 기반 백엔드 설계 가이드라인
 
