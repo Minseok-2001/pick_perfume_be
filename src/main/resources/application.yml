@@ -63,20 +63,20 @@ springdoc:
 
 oauth2:
   kakao:
-    client-id: ${KAKAO_CLIENT_ID:d3a429648673d69c3ecdab1e39bd2bce}
+    client-id: ${KAKAO_CLIENT_ID:}
     redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/callback/kakao}
-    client-secret: ${KAKAO_CLIENT_SECRET:bXhVMlZmDNmTwK9o2agiwQjaKH0E2Z1s}
+    client-secret: ${KAKAO_CLIENT_SECRET:}
 
 app:
   domainUrl: ${APP_DOMAIN_URL:http://localhost:3000}
   session:
     cookie:
-      secure: true # HTTPS에서만 쿠키 전송
-      same-site: Lax # SameSite 설정
-      domain: ${APP_DOMAIN:} # 쿠키 도메인 (환경변수에서 가져옴)
-    max-sessions-per-user: 1 # 사용자당 최대 세션 수
-    expire-oldest-session: true # 최대 세션 수 초과 시 가장 오래된 세션 만료
-    cleanup-cron: 0 0 */1 * * * # 만료된 세션 정리 주기 (1시간마다)
+      secure: true
+      same-site: Lax
+      domain: ${APP_DOMAIN:}
+    max-sessions-per-user: 1
+    expire-oldest-session: true
+    cleanup-cron: 0 0 */1 * * *
 
 server:
   servlet:
