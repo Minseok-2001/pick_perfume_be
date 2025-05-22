@@ -1,6 +1,5 @@
 package ym_cosmetic.pick_perfume_be.recommendation.controller
 
-import kotlinx.coroutines.runBlocking
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
@@ -22,10 +21,9 @@ class RecommendationController(
     fun getPersonalizedRecommendations(
         @CurrentMember member: Member,
         @RequestParam(defaultValue = "10") limit: Int
-    ): ApiResponse<List<PerfumeSummaryResponse>> = runBlocking {
-        val recommendations =
-            recommendationService.getPersonalizedRecommendations(member.id!!, limit)
-        ApiResponse.success(recommendations)
+    ): ApiResponse<List<PerfumeSummaryResponse>> {
+        val recommendations = recommendationService.getPersonalizedRecommendations(member.id!!, limit)
+        return ApiResponse.success(recommendations)
     }
 
     /**
@@ -37,10 +35,9 @@ class RecommendationController(
         @CurrentMember @OptionalAuth member: Member?,
         @PathVariable perfumeId: Long,
         @RequestParam(defaultValue = "5") limit: Int
-    ): ApiResponse<List<PerfumeSummaryResponse>> = runBlocking {
-        val recommendations =
-            recommendationService.getSimilarPerfumes(member?.id, perfumeId, limit)
-        ApiResponse.success(recommendations)
+    ): ApiResponse<List<PerfumeSummaryResponse>> {
+        val recommendations = recommendationService.getSimilarPerfumes(member?.id, perfumeId, limit)
+        return ApiResponse.success(recommendations)
     }
 
     /**
@@ -51,10 +48,9 @@ class RecommendationController(
         @CurrentMember member: Member,
         @PathVariable brandName: String,
         @RequestParam(defaultValue = "10") limit: Int
-    ): ApiResponse<List<PerfumeSummaryResponse>> = runBlocking {
-        val recommendations =
-            recommendationService.getRecommendationsByBrand(member.id!!, brandName, limit)
-        ApiResponse.success(recommendations)
+    ): ApiResponse<List<PerfumeSummaryResponse>> {
+        val recommendations = recommendationService.getRecommendationsByBrand(member.id!!, brandName, limit)
+        return ApiResponse.success(recommendations)
     }
 
     /**
@@ -65,10 +61,9 @@ class RecommendationController(
         @CurrentMember member: Member,
         @PathVariable noteName: String,
         @RequestParam(defaultValue = "10") limit: Int
-    ): ApiResponse<List<PerfumeSummaryResponse>> = runBlocking {
-        val recommendations =
-            recommendationService.getRecommendationsByNote(member.id!!, noteName, limit)
-        ApiResponse.success(recommendations)
+    ): ApiResponse<List<PerfumeSummaryResponse>> {
+        val recommendations = recommendationService.getRecommendationsByNote(member.id!!, noteName, limit)
+        return ApiResponse.success(recommendations)
     }
 
     /**
@@ -78,9 +73,9 @@ class RecommendationController(
     fun getHybridRecommendations(
         @CurrentMember member: Member,
         @RequestParam(defaultValue = "10") limit: Int
-    ): ApiResponse<List<PerfumeSummaryResponse>> = runBlocking {
+    ): ApiResponse<List<PerfumeSummaryResponse>> {
         val recommendations = recommendationService.getHybridRecommendations(member.id!!, limit)
-        ApiResponse.success(recommendations)
+        return ApiResponse.success(recommendations)
     }
 
     /**
