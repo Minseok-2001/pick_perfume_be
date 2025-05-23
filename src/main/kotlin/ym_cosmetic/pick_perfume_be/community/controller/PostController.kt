@@ -186,4 +186,38 @@ class PostController(
         val message = if (isLiked) "게시글 좋아요 성공" else "게시글 좋아요 취소 성공"
         return ApiResponse.success(message, isLiked)
     }
+
+    /**
+     * 사용자가 좋아요한 게시물 목록 조회
+     */
+    @GetMapping("/likes")
+    @Operation(summary = "좋아요한 게시물 목록 조회", description = "사용자가 좋아요한 게시물 목록을 조회합니다.")
+    fun getLikedPosts(
+        @PageableDefault(
+            size = 10,
+            sort = ["createdAt"],
+            direction = Sort.Direction.DESC
+        ) pageable: Pageable,
+        @CurrentMember member: Member
+    ): ApiResponse<PageResponse<PostListResponse>> {
+        val posts = postService.getLikedPosts(member, pageable)
+        return ApiResponse.success("좋아요한 게시물 목록 조회 성공", posts)
+    }
+    
+    /**
+     * 사용자가 조회한 게시물 목록 조회
+     */
+    @GetMapping("/views")
+    @Operation(summary = "조회한 게시물 목록 조회", description = "사용자가 조회한 게시물 목록을 조회합니다.")
+    fun getViewedPosts(
+        @PageableDefault(
+            size = 10,
+            sort = ["createdAt"],
+            direction = Sort.Direction.DESC
+        ) pageable: Pageable,
+        @CurrentMember member: Member
+    ): ApiResponse<PageResponse<PostListResponse>> {
+        val posts = postService.getViewedPosts(member, pageable)
+        return ApiResponse.success("조회한 게시물 목록 조회 성공", posts)
+    }
 } 

@@ -19,4 +19,7 @@ interface PostPerfumeEmbedRepository : JpaRepository<PostPerfumeEmbed, Long> {
     fun existsByPostIdAndPerfumeId(postId: Long, perfumeId: Long): Boolean
     
     fun deleteByPostIdAndPerfumeId(postId: Long, perfumeId: Long)
+    
+    @Query("SELECT ppe FROM PostPerfumeEmbed ppe WHERE ppe.post.id = :postId ORDER BY ppe.id ASC LIMIT 1")
+    fun findFirstByPostId(@Param("postId") postId: Long): PostPerfumeEmbed?
 } 
