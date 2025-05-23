@@ -476,4 +476,91 @@ class PostsService(
             )
         }
     }
+
+    /**
+     * 사용자가 좋아요한 게시물 목록 조회
+     */
+    @Transactional(readOnly = true)
+    fun getLikedPosts(member: Member, pageable: Pageable): PageResponse<PostListResponse> {
+        if (member.id == null) {
+            throw IllegalArgumentException("인증된 사용자만 좋아요한 게시물 목록을 조회할 수 있습니다.")
+        }
+
+        // 사용자가 좋아요한 게시물 ID 목록 조회
+        val likedPostIds = postLikeRepository.findPostIdsByMemberId(member.id!!)
+        if (likedPostIds.isEmpty()) {
+            return PageResponse.empty()
+        }
+
+        // 좋아요한 게시물 목록 조회
+        val posts = postRepository.findByIdInAndIsDeletedFalse(likedPostIds, pageable)
+        
+        // 각 게시물의 좋아요 수, 댓글 수, 조회수 조회
+        val postResponses = posts.content.map { post ->
+            val likeCount = postLikeRepository.countByPostId(post.id)
+            val commentCount = commentRepository.countByPostId(post.id)
+            val viewCount = postViewRepository.countByPostId(post.id)
+            
+            // 썸네일 향수 이미지 URL 조회 (첫 번째 임베딩된 향수 이미지 사용)
+            val thumbnailPerfume = postPerfumeEmbedRepository.findFirstByPostId(post.id)?.getPerfume()?.image?.url
+            
+            PostListResponse.from(
+                post = post,
+                likeCount = likeCount,
+                commentCount = commentCount,
+                thumbnailPerfume = thumbnailPerfume,
+                isLikedByCurrentUser = true, // 본인이 좋아요한 목록이므로 항상 true
+                viewCount = viewCount
+            )
+        }
+
+        return PageResponse.from(
+            posts.map { postResponses.find { response -> response.id == it.id }!! }
+        )
+    }
+
+    /**
+     * 사용자가 조회한 게시물 목록 조회
+     */
+    @Transactional(readOnly = true)
+    fun getViewedPosts(member: Member, pageable: Pageable): PageResponse<PostListResponse> {
+        if (member.id == null) {
+            throw IllegalArgumentException("인증된 사용자만 조회한 게시물 목록을 조회할 수 있습니다.")
+        }
+
+        // 사용자가 조회한 게시물 ID 목록 조회
+        val viewedPostIds = postViewRepository.findPostIdsByMemberId(member.id!!)
+        if (viewedPostIds.isEmpty()) {
+            return PageResponse.empty()
+        }
+
+        // 조회한 게시물 목록 조회
+        val posts = postRepository.findByIdInAndIsDeletedFalse(viewedPostIds, pageable)
+        
+        // 사용자가 좋아요한 게시물 ID 목록 조회
+        val likedPostIds = postLikeRepository.findPostIdsByMemberId(member.id!!)
+        
+        // 각 게시물의 좋아요 수, 댓글 수, 조회수 조회
+        val postResponses = posts.content.map { post ->
+            val likeCount = postLikeRepository.countByPostId(post.id)
+            val commentCount = commentRepository.countByPostId(post.id)
+            val viewCount = postViewRepository.countByPostId(post.id)
+            
+            // 썸네일 향수 이미지 URL 조회 (첫 번째 임베딩된 향수 이미지 사용)
+            val thumbnailPerfume = postPerfumeEmbedRepository.findFirstByPostId(post.id)?.getPerfume()?.image?.url
+            
+            PostListResponse.from(
+                post = post,
+                likeCount = likeCount,
+                commentCount = commentCount,
+                thumbnailPerfume = thumbnailPerfume,
+                isLikedByCurrentUser = likedPostIds.contains(post.id),
+                viewCount = viewCount
+            )
+        }
+
+        return PageResponse.from(
+            posts.map { postResponses.find { response -> response.id == it.id }!! }
+        )
+    }
 } 

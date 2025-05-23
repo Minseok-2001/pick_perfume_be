@@ -442,4 +442,67 @@ class PerfumeService(
 
         return false
     }
+
+    @Transactional(readOnly = true)
+    fun findLikedPerfumes(member: Member, pageable: Pageable): Page<PerfumeSummaryResponse> {
+        if (member.id == null) {
+            throw IllegalArgumentException("인증된 사용자만 좋아요한 향수 목록을 조회할 수 있습니다.")
+        }
+
+        // 사용자가 좋아요한 향수 ID 목록 조회
+        val likedPerfumeIds = perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
+        if (likedPerfumeIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+
+        // 좋아요한 향수 목록 조회
+        val perfumePage = perfumeRepository.findByIdIn(likedPerfumeIds.toList(), pageable)
+
+        // 좋아요 카운트와 조회수 카운트 조회
+        val perfumeIds = perfumePage.content.map { it.id!! }
+        val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
+        val viewCounts = perfumeIds.associateWith { getPerfumeViewCount(it) }
+
+        return perfumePage.map { perfume ->
+            PerfumeSummaryResponse.from(
+                perfume = perfume,
+                isLiked = true, // 본인이 좋아요한 목록이므로 항상 true
+                likeCount = likeCounts[perfume.id] ?: 0,
+                viewCount = viewCounts[perfume.id] ?: 0
+            )
+        }
+    }
+
+    @Transactional(readOnly = true)
+    fun findViewedPerfumes(member: Member, pageable: Pageable): Page<PerfumeSummaryResponse> {
+        if (member.id == null) {
+            throw IllegalArgumentException("인증된 사용자만 조회한 향수 목록을 조회할 수 있습니다.")
+        }
+
+        // 사용자가 조회한 향수 ID 목록 조회
+        val viewedPerfumeIds = perfumeViewRepository.findPerfumeIdsByMemberId(member.id!!)
+        if (viewedPerfumeIds.isEmpty()) {
+            return Page.empty(pageable)
+        }
+
+        // 조회한 향수 목록 조회
+        val perfumePage = perfumeRepository.findByIdIn(viewedPerfumeIds, pageable)
+
+        // 사용자가 좋아요한 향수 ID 목록 조회
+        val likedPerfumeIds = perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
+
+        // 좋아요 카운트와 조회수 카운트 조회
+        val perfumeIds = perfumePage.content.map { it.id!! }
+        val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
+        val viewCounts = perfumeIds.associateWith { getPerfumeViewCount(it) }
+
+        return perfumePage.map { perfume ->
+            PerfumeSummaryResponse.from(
+                perfume = perfume,
+                isLiked = likedPerfumeIds.contains(perfume.id),
+                likeCount = likeCounts[perfume.id] ?: 0,
+                viewCount = viewCounts[perfume.id] ?: 0
+            )
+        }
+    }
 }

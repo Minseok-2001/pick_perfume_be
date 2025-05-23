@@ -2,6 +2,7 @@ package ym_cosmetic.pick_perfume_be.community.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import ym_cosmetic.pick_perfume_be.community.entity.PostView
 import java.time.LocalDate
 
@@ -38,4 +39,8 @@ interface PostViewRepository : JpaRepository<PostView, Long> {
     // 여러 게시물 ID들에 대한 조회수 집계
     @Query("SELECT pv.post.id, COUNT(pv) FROM PostView pv WHERE pv.post.id IN :postIds GROUP BY pv.post.id")
     fun countByPostIdIn(postIds: List<Long>): Map<Long, Long>
+    
+    // 사용자가 조회한 게시물 ID 목록 조회 (최근 조회 순)
+    @Query("SELECT pv.post.id FROM PostView pv WHERE pv.member.id = :memberId GROUP BY pv.post.id ORDER BY MAX(pv.createdAt) DESC")
+    fun findPostIdsByMemberId(@Param("memberId") memberId: Long): List<Long>
 } 

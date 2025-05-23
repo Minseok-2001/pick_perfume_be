@@ -2,6 +2,7 @@ package ym_cosmetic.pick_perfume_be.perfume.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeView
 import java.time.LocalDate
 
@@ -38,4 +39,8 @@ interface PerfumeViewRepository : JpaRepository<PerfumeView, Long> {
     // 여러 향수 ID들에 대한 조회수 집계
     @Query("SELECT pv.perfume.id, COUNT(pv) FROM PerfumeView pv WHERE pv.perfume.id IN :perfumeIds GROUP BY pv.perfume.id")
     fun countByPerfumeIdIn(perfumeIds: List<Long>): Map<Long, Long>
+
+    // 사용자가 조회한 향수 ID 목록 조회 (최근 조회 순)
+    @Query("SELECT pv.perfume.id FROM PerfumeView pv WHERE pv.member.id = :memberId GROUP BY pv.perfume.id ORDER BY MAX(pv.createdAt) DESC")
+    fun findPerfumeIdsByMemberId(@Param("memberId") memberId: Long): List<Long>
 } 

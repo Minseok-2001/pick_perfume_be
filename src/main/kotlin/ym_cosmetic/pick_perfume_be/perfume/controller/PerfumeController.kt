@@ -132,4 +132,26 @@ class PerfumeController(
     ): ApiResponse<Boolean> {
         return ApiResponse.success(perfumeService.unlikePerfume(id, member))
     }
+    
+    /**
+     * 사용자가 좋아요한 향수 목록 조회
+     */
+    @GetMapping("/likes")
+    fun getLikedPerfumes(
+        @PageableDefault(size = 20) pageable: Pageable,
+        @CurrentMember member: Member
+    ): ApiResponse<Page<PerfumeSummaryResponse>> {
+        return ApiResponse.success(perfumeService.findLikedPerfumes(member, pageable))
+    }
+    
+    /**
+     * 사용자가 조회한 향수 목록 조회
+     */
+    @GetMapping("/views")
+    fun getViewedPerfumes(
+        @PageableDefault(size = 20) pageable: Pageable,
+        @CurrentMember member: Member
+    ): ApiResponse<Page<PerfumeSummaryResponse>> {
+        return ApiResponse.success(perfumeService.findViewedPerfumes(member, pageable))
+    }
 }

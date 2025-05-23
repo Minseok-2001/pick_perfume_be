@@ -25,5 +25,18 @@ data class PageResponse<T>(
                 empty = page.isEmpty
             )
         }
+
+        fun <T> empty(): PageResponse<T> {
+            return PageResponse(
+                content = emptyList(),
+                totalElements = 0,
+                totalPages = 0,
+                page = 0,
+                size = 0,
+                first = true,
+                last = true,
+                empty = true
+            )
+        }
     }
 } 

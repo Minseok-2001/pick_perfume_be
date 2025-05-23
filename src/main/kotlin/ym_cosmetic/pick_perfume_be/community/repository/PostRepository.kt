@@ -29,5 +29,7 @@ interface PostRepository : JpaRepository<Post, Long>, PostRepositoryCustom {
         pageable: Pageable
     ): Page<Post>
 
+    @Query("SELECT p FROM Post p WHERE p.id IN :ids AND p.isDeleted = false")
+    fun findByIdInAndIsDeletedFalse(@Param("ids") ids: List<Long>, pageable: Pageable): Page<Post>
 
 } 
