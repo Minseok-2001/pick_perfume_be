@@ -30,4 +30,6 @@ interface SurveyRepository : JpaRepository<Survey, Long> {
      */
     @Query("SELECT COUNT(s) FROM Survey s WHERE s.status = 'SUBMITTED'")
     fun countUnprocessedSurveys(): Long
-} 
+
+    fun findFirstByOrderByCreatedAtDesc(): Survey?
+}
