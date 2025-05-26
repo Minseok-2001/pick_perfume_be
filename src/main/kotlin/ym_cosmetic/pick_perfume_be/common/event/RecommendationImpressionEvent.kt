@@ -1,4 +1,4 @@
-package ym_cosmetic.pick_perfume_be.recommendation.event
+package ym_cosmetic.pick_perfume_be.common.event
 
 data class RecommendationImpressionEvent(
     val memberId: Long,

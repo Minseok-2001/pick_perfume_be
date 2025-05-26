@@ -81,9 +81,10 @@ class SurveyRecommendationService(
      * @return 추천된 향수 목록
      */
     @Transactional(readOnly = true)
-    fun getRecommendationsBySurvey(surveyId: Long, limit: Int): List<PerfumeSummaryResponse> {
-        // 1. 설문 조회
-        val survey = surveyRepository.findById(surveyId)
+    fun getRecommendationsBySurvey(surveyId: Long?, limit: Int): List<PerfumeSummaryResponse> {
+        val surveyId = surveyId ?: surveyRepository.findFirstByOrderByCreatedAtDesc()?.surveyId
+
+        val survey = surveyRepository.findById(surveyId ?: throw NoSuchElementException("설문 ID가 null입니다."))
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $surveyId") }
 
         // 2. 설문 응답 분석

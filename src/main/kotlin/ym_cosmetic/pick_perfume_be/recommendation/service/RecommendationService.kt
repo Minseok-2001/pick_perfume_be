@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ym_cosmetic.pick_perfume_be.common.event.PerfumeViewedEvent
 import ym_cosmetic.pick_perfume_be.common.event.RecommendationClickedEvent
+import ym_cosmetic.pick_perfume_be.common.event.RecommendationImpressionEvent
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeLikeRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
-import ym_cosmetic.pick_perfume_be.recommendation.event.RecommendationImpressionEvent
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchCriteria
 import ym_cosmetic.pick_perfume_be.search.dto.PerfumeSearchResult
 import ym_cosmetic.pick_perfume_be.search.service.PerfumeSearchService
@@ -325,6 +325,7 @@ class RecommendationService(
     /**
      * 추천 클릭 기록
      */
+    @Transactional
     fun recordRecommendationClick(
         memberId: Long,
         perfumeId: Long,

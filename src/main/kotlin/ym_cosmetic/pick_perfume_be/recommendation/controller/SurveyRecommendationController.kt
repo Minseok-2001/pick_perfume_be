@@ -1,10 +1,6 @@
 package ym_cosmetic.pick_perfume_be.recommendation.controller
 
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.recommendation.service.SurveyRecommendationService
@@ -25,7 +21,7 @@ class SurveyRecommendationController(
      */
     @GetMapping("/{surveyId}")
     fun getRecommendationsBySurvey(
-        @PathVariable surveyId: Long,
+        @PathVariable surveyId: Long?,
         @RequestParam(defaultValue = "5") limit: Int
     ): ApiResponse<List<PerfumeSummaryResponse>> {
         val recommendations = surveyRecommendationService.getRecommendationsBySurvey(surveyId, limit)

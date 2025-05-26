@@ -4,16 +4,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.event.TransactionalEventListener
+import ym_cosmetic.pick_perfume_be.common.event.PerfumeViewedEvent
+import ym_cosmetic.pick_perfume_be.common.event.RecommendationClickedEvent
 import ym_cosmetic.pick_perfume_be.common.event.ReviewCreatedEvent
 import ym_cosmetic.pick_perfume_be.common.event.VoteCreatedEvent
 import ym_cosmetic.pick_perfume_be.member.entity.MemberActivity
 import ym_cosmetic.pick_perfume_be.member.enums.ActivityType
 import ym_cosmetic.pick_perfume_be.member.repository.MemberActivityRepository
-import ym_cosmetic.pick_perfume_be.recommendation.event.PerfumeViewedEvent
-import ym_cosmetic.pick_perfume_be.recommendation.event.RecommendationClickedEvent
 import java.time.LocalDateTime
 
 @Service
@@ -58,9 +58,9 @@ class MemberActivityService(
     /**
      * 향수 조회 이벤트 처리
      */
-    @TransactionalEventListener
+    @EventListener
+    @Transactional
     fun handlePerfumeViewedEvent(event: PerfumeViewedEvent) {
-        coroutineScope.launch {
             try {
                 recordActivity(
                     memberId = event.memberId,
@@ -71,45 +71,44 @@ class MemberActivityService(
                 logger.error("Failed to record perfume viewed activity: ${e.message}", e)
                 // 실패한 이벤트를 재처리 큐에 넣거나 알림 발송
             }
-        }
     }
 
     /**
      * 추천 클릭 이벤트 처리
      */
-    @TransactionalEventListener
+    @EventListener
+    @Transactional
     fun handleRecommendationClickedEvent(event: RecommendationClickedEvent) {
-        coroutineScope.launch {
-            recordActivity(
+        logger.info("추천 클릭 이벤트 수신: memberId=${event.memberId}, perfumeId=${event.perfumeId}")
+        recordActivity(
                 memberId = event.memberId,
                 activityType = ActivityType.RECOMMENDATION_CLICK,
                 perfumeId = event.perfumeId,
                 recommendationType = event.recommendationType
             )
-        }
+
     }
 
     /**
      * 리뷰 생성 이벤트 처리
      */
-    @TransactionalEventListener
+    @EventListener
+    @Transactional
     fun handleReviewCreatedEvent(event: ReviewCreatedEvent) {
-        coroutineScope.launch {
             recordActivity(
                 memberId = event.memberId,
                 activityType = ActivityType.REVIEW,
                 perfumeId = event.perfumeId,
                 rating = event.rating
             )
-        }
     }
 
     /**
      * 투표 생성 이벤트 처리
      */
-    @TransactionalEventListener
+    @EventListener
+    @Transactional
     fun handleVoteCreatedEvent(event: VoteCreatedEvent) {
-        coroutineScope.launch {
             recordActivity(
                 memberId = event.memberId,
                 activityType = ActivityType.VOTE,
@@ -117,7 +116,6 @@ class MemberActivityService(
                 voteCategory = event.category,
                 voteValue = event.value
             )
-        }
     }
 
     /**
