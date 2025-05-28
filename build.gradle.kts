@@ -33,6 +33,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.session:spring-session-jdbc")
 
+    // 모니터링 의존성
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
     // Spring Batch
     implementation("org.springframework.boot:spring-boot-starter-batch")
     implementation("org.springframework.batch:spring-batch-core")

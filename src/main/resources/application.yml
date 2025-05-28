@@ -47,7 +47,24 @@ spring:
     jdbc:
       initialize-schema: never
 
-
+# 모니터링 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,info,metrics
+      base-path: /actuator
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: pick_perfume_be
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
 
 springdoc:
   swagger-ui:
@@ -59,7 +76,6 @@ springdoc:
   show-actuator: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
-
 
 oauth2:
   kakao:
@@ -95,4 +111,3 @@ cloudflare:
       name: ${CLOUDFLARE_R2_BUCKET_NAME:scentist}
     public:
       url: ${CLOUDFLARE_R2_PUBLIC_URL:}
-
