@@ -37,6 +37,7 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r .ebextensions deploy/
+          cp -r .platform deploy/
           jarfile=$(find build -name "*.jar" -not -path "*/tmp/*" | head -n 1)
           if [ -z "$jarfile" ]; then
             echo "JAR 파일을 찾을 수 없습니다."
