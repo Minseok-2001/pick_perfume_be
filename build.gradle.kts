@@ -33,13 +33,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.session:spring-session-jdbc")
 
-    // Spring Batch
-    implementation("org.springframework.boot:spring-boot-starter-batch")
-    implementation("org.springframework.batch:spring-batch-core")
-    implementation("org.springframework.batch:spring-batch-integration")
-    
-    // CSV 처리
-    implementation("com.opencsv:opencsv:5.8")
 
     // mail
     implementation ("org.springframework.boot:spring-boot-starter-mail")

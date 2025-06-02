@@ -111,7 +111,7 @@ data class PerfumeRatingResponseDto(
  * 설문 제출 요청 DTO
  */
 data class SurveySubmitRequest(
-    val memberId: Long?,
+    val sessionId: String? = null,
     val imageUrl: String?,
     val responses: List<ResponseSubmitDto>
 )

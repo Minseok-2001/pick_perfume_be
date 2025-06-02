@@ -2,6 +2,7 @@ package ym_cosmetic.pick_perfume_be.survey.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 import ym_cosmetic.pick_perfume_be.survey.dto.*
 import ym_cosmetic.pick_perfume_be.survey.entity.*
@@ -23,10 +24,11 @@ class SurveyService(
      * 설문 제출
      */
     @Transactional
-    fun submitSurvey(request: SurveySubmitRequest): SurveyResponseDto {
+    fun submitSurvey(member: Member?, request: SurveySubmitRequest): SurveyResponseDto {
         // 설문 엔티티 생성
         val survey = Survey(
-            memberId = request.memberId,
+            memberId = member?.id,
+            sessionId = request.sessionId,
             imageUrl = request.imageUrl,
             status = SurveyStatus.SUBMITTED
         )
@@ -41,8 +43,6 @@ class SurveyService(
             // 템플릿 조회
             val template = surveyTemplateRepository.findById(responseDto.questionId)
                 .orElseThrow { NoSuchElementException("질문을 찾을 수 없습니다: ${responseDto.questionId}") }
-
-            println("템플릿: $template")
             // 응답 유효성 검사
             if (!responseDto.validate(template)) {
                 throw IllegalArgumentException("잘못된 응답 형식입니다: ${template.questionKey}")

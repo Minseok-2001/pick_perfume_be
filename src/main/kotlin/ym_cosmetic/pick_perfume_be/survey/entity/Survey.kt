@@ -18,6 +18,9 @@ class Survey(
     @Column(name = "member_id")
     val memberId: Long? = null,
 
+    @Column(name = "session_id")
+    var sessionId: String? = null,
+
     @Column(name = "image_url")
     val imageUrl: String? = null,
 

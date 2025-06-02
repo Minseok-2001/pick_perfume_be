@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
 import ym_cosmetic.pick_perfume_be.common.dto.response.ApiResponse
+import ym_cosmetic.pick_perfume_be.member.entity.Member
+import ym_cosmetic.pick_perfume_be.security.CurrentMember
+import ym_cosmetic.pick_perfume_be.security.OptionalAuth
 import ym_cosmetic.pick_perfume_be.survey.dto.SurveyAnalysisResult
 import ym_cosmetic.pick_perfume_be.survey.dto.SurveyResponseDto
 import ym_cosmetic.pick_perfume_be.survey.dto.SurveySubmitRequest
@@ -24,8 +27,10 @@ class SurveyController(
         description = "새로운 설문을 제출합니다. PERFUME_RATING_SLIDER 질문 유형의 경우, " +
                 "향수 ID 또는 사용자가 직접 입력한 향수 이름을 함께 제출할 수 있습니다."
     )
-    fun submitSurvey(@RequestBody request: SurveySubmitRequest): ApiResponse<SurveyResponseDto> {
-        val survey = surveyService.submitSurvey(request)
+    fun submitSurvey(
+        @CurrentMember @OptionalAuth member: Member?,
+        @RequestBody request: SurveySubmitRequest): ApiResponse<SurveyResponseDto> {
+        val survey = surveyService.submitSurvey(member,request)
         return ApiResponse.success(survey)
     }
 

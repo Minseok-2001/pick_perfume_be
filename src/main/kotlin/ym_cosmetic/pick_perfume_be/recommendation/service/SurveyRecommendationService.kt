@@ -9,9 +9,16 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
+import ym_cosmetic.pick_perfume_be.member.entity.Member
+import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeLikeRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
+import ym_cosmetic.pick_perfume_be.recommendation.dto.request.SurveyRecommendationFeedbackRequest
+import ym_cosmetic.pick_perfume_be.recommendation.dto.response.SurveyRecommendationResponse
+import ym_cosmetic.pick_perfume_be.recommendation.entity.SurveyRecommendation
+import ym_cosmetic.pick_perfume_be.recommendation.entity.SurveyRecommendationFeedback
+import ym_cosmetic.pick_perfume_be.recommendation.repository.SurveyRecommendationFeedbackRepository
+import ym_cosmetic.pick_perfume_be.recommendation.repository.SurveyRecommendationRepository
 import ym_cosmetic.pick_perfume_be.search.document.PerfumeDocument
 import ym_cosmetic.pick_perfume_be.survey.entity.QuestionType
 import ym_cosmetic.pick_perfume_be.survey.repository.SurveyRepository
@@ -25,7 +32,10 @@ class SurveyRecommendationService(
     private val surveyResponsePerfumeRatingRepository: SurveyResponsePerfumeRatingRepository,
     private val perfumeRepository: PerfumeRepository,
     private val perfumeLikeRepository: PerfumeLikeRepository,
-    private val openSearchOperations: ElasticsearchOperations
+    private val openSearchOperations: ElasticsearchOperations,
+    private val surveyRecommendationRepository: SurveyRecommendationRepository,
+    private val surveyRecommendationFeedbackRepository: SurveyRecommendationFeedbackRepository,
+    private val memberRepository: MemberRepository
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SurveyRecommendationService::class.java)
@@ -80,12 +90,31 @@ class SurveyRecommendationService(
      * @param limit 추천 개수
      * @return 추천된 향수 목록
      */
-    @Transactional(readOnly = true)
-    fun getRecommendationsBySurvey(surveyId: Long?, limit: Int): List<PerfumeSummaryResponse> {
+    @Transactional
+    fun getRecommendationsBySurvey(surveyId: Long?, limit: Int): List<SurveyRecommendationResponse> {
         val surveyId = surveyId ?: surveyRepository.findFirstByOrderByCreatedAtDesc()?.surveyId
 
         val survey = surveyRepository.findById(surveyId ?: throw NoSuchElementException("설문 ID가 null입니다."))
             .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $surveyId") }
+
+        // 기존 추천 결과가 있는지 확인
+        val existingRecommendations = surveyRecommendationRepository.findBySurveyIdOrderByRank(surveyId)
+        if (existingRecommendations.isNotEmpty()) {
+            // 기존 추천 결과 반환
+            val memberId = survey.memberId
+            val likedPerfumeIds = if (memberId != null) {
+                perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
+            } else {
+                emptySet()
+            }
+
+            return existingRecommendations.map { recommendation ->
+                SurveyRecommendationResponse.from(
+                    surveyRecommendation = recommendation,
+                    isLiked = likedPerfumeIds.contains(recommendation.perfume.id)
+                )
+            }
+        }
 
         // 2. 설문 응답 분석
         val responses = surveyResponseRepository.findBySurveySurveyId(surveyId)
@@ -330,11 +359,34 @@ class SurveyRecommendationService(
             IndexCoordinates.of("perfumes")
         )
 
-        // 6. 검색 결과를 PerfumeSummaryResponse로 변환
+        // 6. 검색 결과를 향수 엔티티로 변환
         val perfumeIds = searchHits.map { it.content.id }
         val perfumes = perfumeRepository.findAllById(perfumeIds)
+        val perfumeMap = perfumes.associateBy { it.id }
 
-        // 7. 회원 ID가 있는 경우 좋아요 정보 포함
+        // 7. 추천 결과를 DB에 저장
+        val recommendations = mutableListOf<SurveyRecommendation>()
+        searchHits.forEachIndexed { index, searchHit ->
+            val perfume = perfumeMap[searchHit.content.id]
+            if (perfume != null) {
+                val member = survey.memberId?.let { memberId ->
+                    memberRepository.findById(memberId).orElse(null)
+                }
+                
+                val recommendation = SurveyRecommendation.create(
+                    survey = survey,
+                    member = member,
+                    perfume = perfume,
+                    recommendationScore = searchHit.score,
+                    recommendationRank = index + 1
+                )
+                recommendations.add(recommendation)
+            }
+        }
+
+        val savedRecommendations = surveyRecommendationRepository.saveAll(recommendations)
+
+        // 8. 회원 ID가 있는 경우 좋아요 정보 포함
         val memberId = survey.memberId
         val likedPerfumeIds = if (memberId != null) {
             perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
@@ -342,15 +394,76 @@ class SurveyRecommendationService(
             emptySet()
         }
 
-        // 8. 검색 결과 순서대로 정렬하여 반환
-        val perfumeMap = perfumes.associateBy { it.id }
-        return perfumeIds
-            .mapNotNull { perfumeMap[it] }
-            .map { perfume ->
-                PerfumeSummaryResponse.from(
-                    perfume = perfume,
-                    isLiked = likedPerfumeIds.contains(perfume.id)
+        // 9. 응답 DTO로 변환하여 반환
+        return savedRecommendations.map { recommendation ->
+            SurveyRecommendationResponse.from(
+                surveyRecommendation = recommendation,
+                isLiked = likedPerfumeIds.contains(recommendation.perfume.id)
+            )
+        }
+    }
+
+    /**
+     * 설문 추천 결과에 대한 피드백 저장
+     *
+     * @param surveyId 설문 ID
+     * @param member 회원 정보
+     * @param feedbackRequests 피드백 요청 목록
+     */
+    @Transactional
+    fun feedbackRecommendations(
+        surveyId: Long, 
+        member: Member?,
+        feedbackRequests: List<SurveyRecommendationFeedbackRequest>
+    ) {
+        // 설문 존재 확인
+        surveyRepository.findById(surveyId)
+            .orElseThrow { NoSuchElementException("설문을 찾을 수 없습니다: $surveyId") }
+
+        feedbackRequests.forEach { request ->
+            // 해당 설문의 추천 결과 찾기
+            val recommendation = surveyRecommendationRepository.findBySurveyIdAndPerfumeId(
+                surveyId, request.perfumeId
+            ) ?: throw NoSuchElementException(
+                "해당 설문에서 추천된 향수를 찾을 수 없습니다. surveyId: $surveyId, perfumeId: ${request.perfumeId}"
+            )
+                val feedback = SurveyRecommendationFeedback.create(
+                    surveyRecommendation = recommendation,
+                    member = member,
+                    feedbackType = request.feedbackType,
+                    rating = request.rating,
+                    comment = request.comment
                 )
-            }
+                surveyRecommendationFeedbackRepository.save(feedback)
+        }
+    }
+
+    /**
+     * 설문 추천 결과 조회 (피드백 포함)
+     *
+     * @param surveyId 설문 ID
+     * @param memberId 회원 ID (선택사항)
+     * @return 추천 결과 목록
+     */
+    @Transactional(readOnly = true)
+    fun getRecommendationsWithFeedback(surveyId: Long, memberId: Long?): List<SurveyRecommendationResponse> {
+        val recommendations = if (memberId != null) {
+            surveyRecommendationRepository.findBySurveyIdAndMemberIdOrderByRank(surveyId, memberId)
+        } else {
+            surveyRecommendationRepository.findBySurveyIdOrderByRank(surveyId)
+        }
+
+        val likedPerfumeIds = if (memberId != null) {
+            perfumeLikeRepository.findPerfumeIdsByMemberId(memberId)
+        } else {
+            emptySet()
+        }
+
+        return recommendations.map { recommendation ->
+            SurveyRecommendationResponse.from(
+                surveyRecommendation = recommendation,
+                isLiked = likedPerfumeIds.contains(recommendation.perfume.id)
+            )
+        }
     }
 }
