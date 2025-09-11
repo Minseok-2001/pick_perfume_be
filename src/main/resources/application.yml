@@ -54,9 +54,6 @@ springdoc:
     path: /docs
     tags-sorter: alpha
     operations-sorter: alpha
-    # 기본값은 환경변수로 설정
-    server-url: ${SWAGGER_SERVER_URL:https://api.scentist.link}
-    disable-swagger-default-url: true
   api-docs:
     path: /api-docs
   show-actuator: true
