@@ -1,7 +1,7 @@
 package ym_cosmetic.pick_perfume_be.infrastructure.r2
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -13,46 +13,55 @@ import ym_cosmetic.pick_perfume_be.community.dto.response.PresignedUrlResponse
 import java.time.Duration
 
 @Service
-class R2Service {
-    
-    @Autowired
-    private lateinit var r2Config: R2Config
-    
-    @Autowired
-    private lateinit var s3Client: S3Client
-    
-    @Autowired
-    private lateinit var s3Presigner: S3Presigner
+class R2Service(
+    private val r2Config: R2Config,
+    private val s3Client: S3Client,
+    private val s3Presigner: S3Presigner
+) {
 
+    fun uploadFile(dirPath: String, fileName: String, bytes: ByteArray, contentType: String): String {
+        val key = buildKey(dirPath, fileName)
 
-     fun createPresignedUrl(dirPath: String, fileName: String): PresignedUrlResponse {
         try {
-            val keyName = "$dirPath/$fileName"
-            
+            val putRequest = PutObjectRequest.builder()
+                .bucket(r2Config.getBucketName())
+                .key(key)
+                .contentType(contentType)
+                .build()
+
+            s3Client.putObject(putRequest, RequestBody.fromBytes(bytes))
+            return buildPublicUrl(key)
+        } catch (e: Exception) {
+            throw R2Exception("R2 객체 업로드에 실패했습니다: ${e.message}", e)
+        }
+    }
+
+    fun createPresignedUrl(dirPath: String, fileName: String): PresignedUrlResponse {
+        val key = buildKey(dirPath, fileName)
+
+        try {
             val putRequest = PutObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofHours(1))
                 .putObjectRequest(
                     PutObjectRequest.builder()
                         .bucket(r2Config.getBucketName())
-                        .key(keyName)
+                        .key(key)
                         .build()
                 )
                 .build()
-            
+
             val presignedPutRequest = s3Presigner.presignPutObject(putRequest)
-            
-            val publicUrl = "${r2Config.getPublicUrl()}/$keyName"
+
             return PresignedUrlResponse(
                 presignedUrl = presignedPutRequest.url().toString(),
-                publicUrl = publicUrl
+                publicUrl = buildPublicUrl(key)
             )
         } catch (e: Exception) {
-            throw R2Exception("Presigned URL 생성 중 오류 발생: ${e.message}")
+            throw R2Exception("R2 업로드용 프리사인 URL 생성에 실패했습니다: ${e.message}", e)
         }
     }
-    
-    // 다운로드용 Presigned URL 생성 메서드 (필요시 사용)
-     fun createPresignedDownloadUrl(key: String, expirationInMinutes: Long): String {
+
+    fun createPresignedDownloadUrl(key: String, expirationInMinutes: Long): String {
         try {
             val getRequest = GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(expirationInMinutes))
@@ -63,12 +72,31 @@ class R2Service {
                         .build()
                 )
                 .build()
-            
+
             val presignedGetRequest = s3Presigner.presignGetObject(getRequest)
-            
+
             return presignedGetRequest.url().toString()
         } catch (e: Exception) {
-            throw R2Exception("다운로드 URL 생성 중 오류 발생: ${e.message}")
+            throw R2Exception("R2 다운로드용 프리사인 URL 생성에 실패했습니다: ${e.message}", e)
         }
+    }
+
+    private fun buildKey(dirPath: String, fileName: String): String {
+        val normalizedDir = dirPath.trim().trim('/').trim()
+        val normalizedFile = fileName.trim().trim('/').trim()
+
+        if (normalizedFile.isEmpty()) {
+            throw R2Exception("업로드할 파일 이름이 비어 있습니다.")
+        }
+
+        return if (normalizedDir.isBlank()) {
+            normalizedFile
+        } else {
+            "$normalizedDir/$normalizedFile"
+        }
+    }
+
+    private fun buildPublicUrl(key: String): String {
+        return "${r2Config.getPublicUrl().trimEnd('/')}/$key"
     }
 }

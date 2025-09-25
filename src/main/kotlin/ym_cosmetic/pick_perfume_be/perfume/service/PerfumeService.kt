@@ -15,7 +15,7 @@ import ym_cosmetic.pick_perfume_be.common.exception.EntityNotFoundException
 import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.designer.entity.Designer
 import ym_cosmetic.pick_perfume_be.designer.repository.DesignerRepository
-import ym_cosmetic.pick_perfume_be.infrastructure.s3.S3Service
+import ym_cosmetic.pick_perfume_be.infrastructure.r2.R2Service
 import ym_cosmetic.pick_perfume_be.infrastructure.gemini.GeminiImageService
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
@@ -52,13 +52,13 @@ class PerfumeService(
     private val perfumeAccordRepository: PerfumeAccordRepository,
     private val perfumeDesignerRepository: PerfumeDesignerRepository,
     private val memberRepository: MemberRepository,
-    private val s3Service: S3Service,
+    private val r2Service: R2Service,
     private val eventPublisher: ApplicationEventPublisher,
     private val perfumeLikeRepository: PerfumeLikeRepository,
     private val perfumeViewRepository: PerfumeViewRepository,
     private val geminiImageService: GeminiImageService
 ) {
-    @Transactional(readOnly = true)
+    @Transactional
     fun findPerfumeById(id: Long, member: Member?): PerfumeResponse {
         val perfume = perfumeRepository.findByIdWithCreatorAndBrand(id)
             ?: throw EntityNotFoundException("Perfume not found with id: $id")
@@ -66,9 +66,7 @@ class PerfumeService(
         val isLiked = checkIfPerfumeLikedByMember(id, member)
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
-
-
-
+        ensurePerfumeAiImage(perfume)
         return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
     }
 
@@ -113,12 +111,8 @@ class PerfumeService(
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
         ensurePerfumeAiImage(perfume)
-
-
-
         return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
     }
-
 
     @Transactional(readOnly = true)
     fun findAllApprovedPerfumes(pageable: Pageable, member: Member?): Page<PerfumeSummaryResponse> {
@@ -274,7 +268,14 @@ class PerfumeService(
         val perfume = perfumeRepository.findById(id)
             .orElseThrow { EntityNotFoundException("Perfume not found with id: $id") }
 
-        val imageUrl = s3Service.uploadFile("perfumes/${id}", file)
+        val fileName = file.originalFilename?.takeIf { it.isNotBlank() } ?: "perfume-$id-${System.currentTimeMillis()}"
+        val contentType = file.contentType ?: "application/octet-stream"
+        val imageUrl = r2Service.uploadFile(
+            dirPath = "perfumes/$id",
+            fileName = fileName,
+            bytes = file.bytes,
+            contentType = contentType
+        )
         perfume.updateImage(ImageUrl(imageUrl))
 
         return imageUrl
@@ -323,9 +324,6 @@ class PerfumeService(
 
 
 
-
-
-
     private fun ensurePerfumeAiImage(perfume: Perfume) {
         if (perfume.aiImage != null) {
             return
@@ -344,7 +342,7 @@ class PerfumeService(
 
         val fileExtension = determineFileExtension(generated.mimeType)
         val fileName = "ai-preview-$perfumeId-${System.currentTimeMillis()}$fileExtension"
-        val uploadUrl = s3Service.uploadFile(
+        val uploadUrl = r2Service.uploadFile(
             dirPath = "perfumes/$perfumeId/ai",
             fileName = fileName,
             bytes = generated.data,
@@ -582,6 +580,11 @@ class PerfumeService(
         }
     }
 }
+
+
+
+
+
 
 
 
