@@ -4,6 +4,8 @@ import io.github.resilience4j.ratelimiter.RateLimiter
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeAiImageRequest
 import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImageProcessStatus
@@ -52,7 +54,16 @@ class PerfumeAiImageGenerationScheduler(
             return
         }
 
-        worker.generateAsync(request.id!!)
+        val requestId = request.id ?: return
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCommit() {
+                    worker.generateAsync(requestId)
+                }
+            })
+        } else {
+            worker.generateAsync(requestId)
+        }
     }
 
     companion object {
@@ -63,4 +74,6 @@ class PerfumeAiImageGenerationScheduler(
         private val logger = LoggerFactory.getLogger(PerfumeAiImageGenerationScheduler::class.java)
     }
 }
+
+
 
