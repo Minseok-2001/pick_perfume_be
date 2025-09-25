@@ -18,7 +18,7 @@ import java.util.Locale
 @Service
 class GeminiImageService(
     private val restTemplate: RestTemplate,
-    @Value("\${gemini.api-key:}") private val apiKey: String,
+    @Value("\${gemini.api-key:}") private val configuredApiKey: String,
     @Value("\${gemini.model:models/gemini-2.5-flash-image-preview}") private val model: String,
     @Value("\${gemini.enabled:true}") private val enabled: Boolean
 ) {
@@ -28,45 +28,48 @@ class GeminiImageService(
             return null
         }
 
+        val apiKey = resolveApiKey()
         if (apiKey.isBlank()) {
             logger.warn("Gemini API key is not configured; skipping image generation.")
             return null
         }
 
         val parts = mutableListOf<Part>()
+        parts.add(Part.fromText(prompt))
 
         referenceImageUrl
             ?.let { fetchReferenceImage(it) }
             ?.let { parts.add(Part.fromBytes(it.data, it.mimeType)) }
 
-        parts.add(Part.fromText(prompt))
-
         return runCatching {
-            Client.builder().apiKey(apiKey).build().use { client ->
-                val response = client.models.generateContent(
-                    model,
-                    Content.fromParts(*parts.toTypedArray()),
-                    GenerateContentConfig.builder()
-                        .responseModalities(listOf("IMAGE"))
-                        .build()
-                )
+            Client.Builder()
+                .apiKey(apiKey)
+                .build()
+                .use { client ->
+                    val response = client.models.generateContent(
+                        model,
+                        Content.fromParts(*parts.toTypedArray()),
+                        GenerateContentConfig.builder()
+                            .responseModalities("IMAGE")
+                            .build()
+                    )
 
-                val blob = response.candidates()
-                    .orElse(emptyList())
-                    .firstOrNull()
-                    ?.content()?.orElse(null)
-                    ?.parts()?.orElse(emptyList())
-                    ?.firstOrNull { it.inlineData().isPresent }
-                    ?.inlineData()?.orElse(null)
-                    ?: return@use null
+                    val blob = response.candidates()
+                        .orElse(emptyList())
+                        .firstOrNull()
+                        ?.content()?.orElse(null)
+                        ?.parts()?.orElse(emptyList())
+                        ?.firstOrNull { it.inlineData().isPresent }
+                        ?.inlineData()?.orElse(null)
+                        ?: return@use null
 
-                val data = blob.data().orElse(null) ?: return@use null
+                    val data = blob.data().orElse(null) ?: return@use null
 
-                GeminiGeneratedImage(
-                    mimeType = blob.mimeType().orElse(DEFAULT_MIME_TYPE),
-                    data = data
-                )
-            }
+                    GeminiGeneratedImage(
+                        mimeType = blob.mimeType().orElse(DEFAULT_MIME_TYPE),
+                        data = data
+                    )
+                }
         }.onFailure { ex ->
             logger.error("Failed to generate image via Gemini SDK", ex)
         }.getOrNull()
@@ -87,6 +90,16 @@ class GeminiImageService(
         }.getOrNull()
     }
 
+    private fun resolveApiKey(): String {
+        if (configuredApiKey.isNotBlank()) {
+            return configuredApiKey
+        }
+        val fromEnv = sequenceOf(
+            System.getenv("GEMINI_API_KEY"),
+            System.getenv("GOOGLE_API_KEY")
+        ).firstOrNull { !it.isNullOrBlank() }
+        return fromEnv?.trim().orEmpty()
+    }
     private fun inferMimeType(url: String): String {
         val sanitized = url.substringBefore('?')
         val extension = sanitized.substringAfterLast('.', "").lowercase(Locale.ROOT)
@@ -115,3 +128,6 @@ private data class ReferenceImage(
     val data: ByteArray,
     val mimeType: String
 )
+
+
+
