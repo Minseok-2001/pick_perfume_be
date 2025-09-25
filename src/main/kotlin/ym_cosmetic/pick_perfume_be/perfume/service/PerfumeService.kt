@@ -16,6 +16,7 @@ import ym_cosmetic.pick_perfume_be.common.vo.ImageUrl
 import ym_cosmetic.pick_perfume_be.designer.entity.Designer
 import ym_cosmetic.pick_perfume_be.designer.repository.DesignerRepository
 import ym_cosmetic.pick_perfume_be.infrastructure.s3.S3Service
+import ym_cosmetic.pick_perfume_be.infrastructure.gemini.GeminiImageService
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import ym_cosmetic.pick_perfume_be.member.repository.MemberRepository
@@ -26,6 +27,7 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeDesignerRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeAiImageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
@@ -53,7 +55,8 @@ class PerfumeService(
     private val s3Service: S3Service,
     private val eventPublisher: ApplicationEventPublisher,
     private val perfumeLikeRepository: PerfumeLikeRepository,
-    private val perfumeViewRepository: PerfumeViewRepository
+    private val perfumeViewRepository: PerfumeViewRepository,
+    private val geminiImageService: GeminiImageService
 ) {
     @Transactional(readOnly = true)
     fun findPerfumeById(id: Long, member: Member?): PerfumeResponse {
@@ -64,7 +67,9 @@ class PerfumeService(
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
 
-        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
+        val aiPreviewImage = generatePerfumeAiPreview(perfume)
+
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount, aiPreviewImage)
     }
 
     /**
@@ -108,7 +113,9 @@ class PerfumeService(
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
 
-        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
+        val aiPreviewImage = generatePerfumeAiPreview(perfume)
+
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount, aiPreviewImage)
     }
 
 
@@ -310,6 +317,58 @@ class PerfumeService(
         return perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
     }
 
+    private fun generatePerfumeAiPreview(perfume: Perfume): PerfumeAiImageResponse? {
+        val prompt = buildPerfumeImagePrompt(perfume)
+        if (prompt.isBlank()) {
+            return null
+        }
+
+        return geminiImageService.generateImage(
+            prompt = prompt,
+            referenceImageUrl = perfume.image?.url
+        )?.let { generated ->
+            PerfumeAiImageResponse(
+                mimeType = generated.mimeType,
+                data = generated.data
+            )
+        }
+    }
+
+    private fun buildPerfumeImagePrompt(perfume: Perfume): String {
+        val accords = perfume.getAccords()
+            .sortedBy { it.position ?: Int.MAX_VALUE }
+            .map { it.accord.name }
+        val mainAccord = accords.firstOrNull()
+        val supportingAccords = accords.drop(1)
+
+        val topNotes = perfume.getNotesByType(NoteType.TOP).map { it.note.name }
+        val middleNotes = perfume.getNotesByType(NoteType.MIDDLE).map { it.note.name }
+        val baseNotes = perfume.getNotesByType(NoteType.BASE).map { it.note.name }
+
+        return buildString {
+            appendLine("Create a single, high-quality concept image that conveys the mood of this perfume. The image should help users imagine the scent profile. Avoid any text overlays.")
+            appendLine("Perfume: ${perfume.name}")
+            appendLine("Brand: ${perfume.brand.name}")
+            mainAccord?.let { appendLine("Primary accord: $it") }
+            if (supportingAccords.isNotEmpty()) {
+                appendLine("Supporting accords: ${supportingAccords.joinToString()}")
+            }
+            if (topNotes.isNotEmpty()) {
+                appendLine("Top notes: ${topNotes.joinToString()}")
+            }
+            if (middleNotes.isNotEmpty()) {
+                appendLine("Heart notes: ${middleNotes.joinToString()}")
+            }
+            if (baseNotes.isNotEmpty()) {
+                appendLine("Base notes: ${baseNotes.joinToString()}")
+            }
+            perfume.content?.takeIf { it.isNotBlank() }?.let {
+                appendLine("Narrative inspiration: ${it.trim()}")
+            }
+            append("Style guidance: focus on atmosphere, lighting, and textures that fit the accords. Make it feel immersive without showing product packaging.")
+        }.trim()
+    }
+
     private fun getPerfumeLikeCount(perfumeId: Long): Int {
         return perfumeLikeRepository.countByPerfumeId(perfumeId)
     }
@@ -506,3 +565,8 @@ class PerfumeService(
         }
     }
 }
+
+
+
+
+

@@ -96,3 +96,8 @@ cloudflare:
     public:
       url: ${CLOUDFLARE_R2_PUBLIC_URL:}
 
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+  model: ${GEMINI_MODEL:gemini-2.5-flash-image-preview}
+  enabled: ${GEMINI_ENABLED:true}

@@ -31,10 +31,17 @@ data class PerfumeResponse(
     val likeCount: Int,
     val viewCount: Int,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+    val aiPreviewImage: PerfumeAiImageResponse? = null
 ) {
     companion object {
-        fun from(perfume: Perfume, isLiked: Boolean = false, likeCount: Int = 0, viewCount: Int = 0): PerfumeResponse {
+        fun from(
+            perfume: Perfume,
+            isLiked: Boolean = false,
+            likeCount: Int = 0,
+            viewCount: Int = 0,
+            aiPreviewImage: PerfumeAiImageResponse? = null
+        ): PerfumeResponse {
             val notes = perfume.getNotes()
 
             // 디자이너 처리
@@ -80,7 +87,8 @@ data class PerfumeResponse(
                 likeCount = likeCount,
                 viewCount = viewCount,
                 createdAt = perfume.createdAt,
-                updatedAt = perfume.updatedAt
+                updatedAt = perfume.updatedAt,
+                aiPreviewImage = aiPreviewImage
             )
         }
     }
@@ -91,3 +99,4 @@ data class PerfumeDesignerResponse(
     val role: DesignerRole,
     val content: String?
 )
+
