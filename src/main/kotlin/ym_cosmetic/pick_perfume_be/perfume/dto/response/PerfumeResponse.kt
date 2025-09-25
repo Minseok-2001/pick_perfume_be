@@ -39,15 +39,11 @@ data class PerfumeResponse(
             perfume: Perfume,
             isLiked: Boolean = false,
             likeCount: Int = 0,
-            viewCount: Int = 0,
-            aiPreviewImage: PerfumeAiImageResponse? = null
+            viewCount: Int = 0
         ): PerfumeResponse {
             val notes = perfume.getNotes()
 
-            // 디자이너 처리
             val designers = mutableListOf<PerfumeDesignerResponse>()
-
-            // 각 역할별로 디자이너를 가져와서 처리
             DesignerRole.entries.forEach { role ->
                 val roleDesigners = perfume.getDesignersByRole(role)
                 roleDesigners.forEach { designer ->
@@ -55,7 +51,7 @@ data class PerfumeResponse(
                         PerfumeDesignerResponse(
                             designer = DesignerSummaryResponse.from(designer),
                             role = role,
-                            content = null // 설명은 엔티티에서 직접 가져올 수 없어 null로 설정
+                            content = null
                         )
                     )
                 }
@@ -88,7 +84,7 @@ data class PerfumeResponse(
                 viewCount = viewCount,
                 createdAt = perfume.createdAt,
                 updatedAt = perfume.updatedAt,
-                aiPreviewImage = aiPreviewImage
+                aiPreviewImage = perfume.aiImage?.let { PerfumeAiImageResponse.from(it) }
             )
         }
     }

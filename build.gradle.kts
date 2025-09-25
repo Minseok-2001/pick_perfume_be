@@ -102,6 +102,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.9")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    implementation("com.google.genai:google-genai:1.15.0")
     // AWS S3 SDK
     implementation("software.amazon.awssdk:s3:2.23.11")
     // S3 Presigned URL 생성을 위한 의존성

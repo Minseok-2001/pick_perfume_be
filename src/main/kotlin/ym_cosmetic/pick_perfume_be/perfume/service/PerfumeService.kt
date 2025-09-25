@@ -27,7 +27,6 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeDesignerRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
-import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeAiImageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
@@ -40,6 +39,7 @@ import ym_cosmetic.pick_perfume_be.search.event.PerfumeCreatedEvent
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeDeletedEvent
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeUpdatedEvent
 import java.time.LocalDate
+import java.util.Locale
 
 @Service
 class PerfumeService(
@@ -67,9 +67,9 @@ class PerfumeService(
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
 
-        val aiPreviewImage = generatePerfumeAiPreview(perfume)
 
-        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount, aiPreviewImage)
+
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
     }
 
     /**
@@ -112,10 +112,11 @@ class PerfumeService(
         val isLiked = checkIfPerfumeLikedByMember(id, member)
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
+        ensurePerfumeAiImage(perfume)
 
-        val aiPreviewImage = generatePerfumeAiPreview(perfume)
 
-        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount, aiPreviewImage)
+
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
     }
 
 
@@ -317,21 +318,40 @@ class PerfumeService(
         return perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
     }
 
-    private fun generatePerfumeAiPreview(perfume: Perfume): PerfumeAiImageResponse? {
-        val prompt = buildPerfumeImagePrompt(perfume)
-        if (prompt.isBlank()) {
-            return null
+
+
+
+
+
+
+
+
+    private fun ensurePerfumeAiImage(perfume: Perfume) {
+        if (perfume.aiImage != null) {
+            return
         }
 
-        return geminiImageService.generateImage(
+        val perfumeId = perfume.id ?: return
+        val prompt = buildPerfumeImagePrompt(perfume)
+        if (prompt.isBlank()) {
+            return
+        }
+
+        val generated = geminiImageService.generateImage(
             prompt = prompt,
             referenceImageUrl = perfume.image?.url
-        )?.let { generated ->
-            PerfumeAiImageResponse(
-                mimeType = generated.mimeType,
-                data = generated.data
-            )
-        }
+        ) ?: return
+
+        val fileExtension = determineFileExtension(generated.mimeType)
+        val fileName = "ai-preview-$perfumeId-${System.currentTimeMillis()}$fileExtension"
+        val uploadUrl = s3Service.uploadFile(
+            dirPath = "perfumes/$perfumeId/ai",
+            fileName = fileName,
+            bytes = generated.data,
+            contentType = generated.mimeType
+        )
+
+        perfume.updateAiImage(ImageUrl(uploadUrl))
     }
 
     private fun buildPerfumeImagePrompt(perfume: Perfume): String {
@@ -369,6 +389,18 @@ class PerfumeService(
         }.trim()
     }
 
+    private fun determineFileExtension(mimeType: String): String {
+        return when (mimeType.lowercase(Locale.ROOT)) {
+            "image/png" -> ".png"
+            "image/webp" -> ".webp"
+            "image/gif" -> ".gif"
+            "image/bmp" -> ".bmp"
+            "image/svg+xml" -> ".svg"
+            "image/jpeg", "image/jpg" -> ".jpg"
+            else -> ".jpg"
+        }
+    }
+
     private fun getPerfumeLikeCount(perfumeId: Long): Int {
         return perfumeLikeRepository.countByPerfumeId(perfumeId)
     }
@@ -377,9 +409,6 @@ class PerfumeService(
         return perfumeViewRepository.countByPerfumeId(perfumeId)
     }
 
-    /**
-     * 클라이언트 IP 주소 추출
-     */
     private fun extractClientIp(request: HttpServletRequest): String? {
         var ip = request.getHeader("X-Forwarded-For")
 
@@ -399,74 +428,69 @@ class PerfumeService(
             ip = request.remoteAddr
         }
 
-        // 여러 프록시를 거친 경우 첫 번째 IP만 사용
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim()
-        }
-
-        return ip
+        return ip?.split(",")?.firstOrNull()?.trim()
     }
 
     private fun getBrandByNameOrCreate(brandName: String): Brand {
-        return brandRepository.findByNameIgnoreCase(brandName)
-            ?: brandRepository.save(Brand(name = brandName))
+        val normalizedName = brandName.trim()
+        return brandRepository.findByNameIgnoreCase(normalizedName)
+            ?: brandRepository.save(Brand.create(name = normalizedName))
     }
 
     private fun getDesignerByNameOrCreate(designerName: String): Designer {
-        return designerRepository.findByNameIgnoreCase(designerName)
-            ?: designerRepository.save(Designer(name = designerName))
+        val normalizedName = designerName.trim()
+        return designerRepository.findByNameIgnoreCase(normalizedName)
+            ?: designerRepository.save(Designer.create(name = normalizedName))
     }
 
     private fun addPerfumeNotes(perfume: Perfume, noteNames: List<String>, type: NoteType) {
         noteNames.forEach { noteName ->
-            val note = noteRepository.findByNameIgnoreCase(noteName)
-                ?: noteRepository.save(Note(name = noteName))
-
-            val perfumeNote = perfume.addNote(note, type)
-            perfumeNoteRepository.save(perfumeNote)
+            val normalizedName = noteName.trim()
+            if (normalizedName.isNotBlank()) {
+                val note = noteRepository.findByNameIgnoreCase(normalizedName)
+                    ?: noteRepository.save(Note.create(name = normalizedName))
+                val perfumeNote = perfume.addNote(note, type)
+                perfumeNoteRepository.save(perfumeNote)
+            }
         }
     }
 
     private fun addPerfumeAccords(perfume: Perfume, accordNames: List<String>) {
         accordNames.forEach { accordName ->
-            val accord = accordRepository.findByNameIgnoreCase(accordName)
-                ?: accordRepository.save(Accord(name = accordName))
-
-            val perfumeAccord = perfume.addAccord(accord)
-            perfumeAccordRepository.save(perfumeAccord)
+            val normalizedName = accordName.trim()
+            if (normalizedName.isNotBlank()) {
+                val accord = accordRepository.findByNameIgnoreCase(normalizedName)
+                    ?: accordRepository.save(Accord.create(name = normalizedName))
+                val perfumeAccord = perfume.addAccord(accord)
+                perfumeAccordRepository.save(perfumeAccord)
+            }
         }
     }
 
     private fun addPerfumeDesigners(perfume: Perfume, designers: List<PerfumeDesignerRequest>) {
         designers.forEach { designerRequest ->
             val designer = getDesignerByNameOrCreate(designerRequest.designerName)
-            val perfumeDesigner =
-                perfume.addDesigner(designer, designerRequest.role, designerRequest.content)
+            val perfumeDesigner = perfume.addDesigner(
+                designer = designer,
+                role = designerRequest.role,
+                content = designerRequest.content
+            )
             perfumeDesignerRepository.save(perfumeDesigner)
         }
     }
 
     private fun updatePerfumeNotes(perfume: Perfume, noteNames: List<String>, type: NoteType) {
-        // 기존 노트 삭제
         perfumeNoteRepository.deleteByPerfumeIdAndType(perfume.id!!, type)
-
-        // 새 노트 추가
         addPerfumeNotes(perfume, noteNames, type)
     }
 
     private fun updatePerfumeAccords(perfume: Perfume, accordNames: List<String>) {
-        // 기존 어코드 삭제
         perfumeAccordRepository.deleteByPerfumeId(perfume.id!!)
-
-        // 새 어코드 추가
         addPerfumeAccords(perfume, accordNames)
     }
 
     private fun updatePerfumeDesigners(perfume: Perfume, designers: List<PerfumeDesignerRequest>) {
-        // 기존 디자이너 삭제
         perfumeDesignerRepository.deleteByPerfumeId(perfume.id!!)
-
-        // 새 디자이너 추가
         addPerfumeDesigners(perfume, designers)
     }
 
@@ -480,7 +504,7 @@ class PerfumeService(
             .orElseThrow { EntityNotFoundException("해당 향수를 찾을 수 없습니다: $perfumeId") }
 
         if (perfumeLikeRepository.existsByPerfumeIdAndMemberId(perfumeId, member.id!!)) {
-            return true // 이미 좋아요 상태
+            return true
         }
 
         val perfumeLike = PerfumeLike.create(perfume, member)
@@ -508,16 +532,13 @@ class PerfumeService(
             throw IllegalArgumentException("인증된 사용자만 좋아요한 향수 목록을 조회할 수 있습니다.")
         }
 
-        // 사용자가 좋아요한 향수 ID 목록 조회
         val likedPerfumeIds = perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
         if (likedPerfumeIds.isEmpty()) {
             return Page.empty(pageable)
         }
 
-        // 좋아요한 향수 목록 조회
         val perfumePage = perfumeRepository.findByIdIn(likedPerfumeIds.toList(), pageable)
 
-        // 좋아요 카운트와 조회수 카운트 조회
         val perfumeIds = perfumePage.content.map { it.id!! }
         val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
         val viewCounts = perfumeIds.associateWith { getPerfumeViewCount(it) }
@@ -525,7 +546,7 @@ class PerfumeService(
         return perfumePage.map { perfume ->
             PerfumeSummaryResponse.from(
                 perfume = perfume,
-                isLiked = true, // 본인이 좋아요한 목록이므로 항상 true
+                isLiked = true,
                 likeCount = likeCounts[perfume.id] ?: 0,
                 viewCount = viewCounts[perfume.id] ?: 0
             )
@@ -538,19 +559,15 @@ class PerfumeService(
             throw IllegalArgumentException("인증된 사용자만 조회한 향수 목록을 조회할 수 있습니다.")
         }
 
-        // 사용자가 조회한 향수 ID 목록 조회
         val viewedPerfumeIds = perfumeViewRepository.findPerfumeIdsByMemberId(member.id!!)
         if (viewedPerfumeIds.isEmpty()) {
             return Page.empty(pageable)
         }
 
-        // 조회한 향수 목록 조회
         val perfumePage = perfumeRepository.findByIdIn(viewedPerfumeIds, pageable)
 
-        // 사용자가 좋아요한 향수 ID 목록 조회
         val likedPerfumeIds = perfumeLikeRepository.findPerfumeIdsByMemberId(member.id!!)
 
-        // 좋아요 카운트와 조회수 카운트 조회
         val perfumeIds = perfumePage.content.map { it.id!! }
         val likeCounts = perfumeIds.associateWith { getPerfumeLikeCount(it) }
         val viewCounts = perfumeIds.associateWith { getPerfumeViewCount(it) }
@@ -565,7 +582,6 @@ class PerfumeService(
         }
     }
 }
-
 
 
 

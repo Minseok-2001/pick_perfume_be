@@ -54,6 +54,12 @@ class Perfume private constructor(
     @Embedded
     var image: ImageUrl? = null,
 
+    @Embedded
+    @AttributeOverrides(
+        AttributeOverride(name = "url", column = Column(name = "ai_image_url"))
+    )
+    var aiImage: ImageUrl? = null,
+
     @Column(nullable = false)
     @ColumnDefault("false")
     var isApproved: Boolean = false,
@@ -165,6 +171,12 @@ class Perfume private constructor(
 
     fun updateImage(image: ImageUrl?): Perfume {
         this.image = image
+        this.searchSynced = false
+        return this
+    }
+
+    fun updateAiImage(image: ImageUrl?): Perfume {
+        this.aiImage = image
         this.searchSynced = false
         return this
     }

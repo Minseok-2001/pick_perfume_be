@@ -1,21 +1,25 @@
 package ym_cosmetic.pick_perfume_be.infrastructure.gemini
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.genai.Client
+import com.google.genai.types.Content
+import com.google.genai.types.GenerateContentConfig
+import com.google.genai.types.Part
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
+import org.springframework.http.HttpMethod
+import org.springframework.http.RequestEntity
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
-import java.util.Base64
+import java.net.URI
+import java.util.Locale
 
 @Service
 class GeminiImageService(
     private val restTemplate: RestTemplate,
     @Value("\${gemini.api-key:}") private val apiKey: String,
-    @Value("\${gemini.base-url:https://generativelanguage.googleapis.com}") private val baseUrl: String,
-    @Value("\${gemini.model:gemini-2.5-flash-image-preview}") private val model: String,
+    @Value("\${gemini.model:models/gemini-2.5-flash-image-preview}") private val model: String,
     @Value("\${gemini.enabled:true}") private val enabled: Boolean
 ) {
 
@@ -29,58 +33,55 @@ class GeminiImageService(
             return null
         }
 
-        val parts = mutableListOf(
-            GeminiPartRequest(text = prompt)
-        )
+        val parts = mutableListOf<Part>()
 
         referenceImageUrl
-            ?.let { fetchInlineData(it) }
-            ?.let { parts.add(GeminiPartRequest(inlineData = it)) }
+            ?.let { fetchReferenceImage(it) }
+            ?.let { parts.add(Part.fromBytes(it.data, it.mimeType)) }
 
-        val requestBody = GeminiGenerateContentRequest(
-            contents = listOf(GeminiContentRequest(parts = parts))
-        )
-
-        val headers = HttpHeaders().apply {
-            contentType = MediaType.APPLICATION_JSON
-            set("x-goog-api-key", apiKey)
-        }
+        parts.add(Part.fromText(prompt))
 
         return runCatching {
-            val response = restTemplate.postForEntity(
-                "${'$'}baseUrl/v1beta/models/${'$'}model:generateContent",
-                HttpEntity(requestBody, headers),
-                GeminiGenerateContentResponse::class.java
-            )
+            Client.builder().apiKey(apiKey).build().use { client ->
+                val response = client.models.generateContent(
+                    model,
+                    Content.fromParts(*parts.toTypedArray()),
+                    GenerateContentConfig.builder()
+                        .responseModalities(listOf("IMAGE"))
+                        .build()
+                )
 
-            response.body?.candidates
-                ?.firstOrNull()
-                ?.content?.parts
-                ?.firstOrNull { it.inlineData != null }
-                ?.inlineData
-                ?.let { inline ->
-                    val data = inline.data ?: return@runCatching null
-                    GeminiGeneratedImage(
-                        mimeType = inline.mimeType ?: DEFAULT_MIME_TYPE,
-                        data = data
-                    )
-                }
+                val blob = response.candidates()
+                    .orElse(emptyList())
+                    .firstOrNull()
+                    ?.content()?.orElse(null)
+                    ?.parts()?.orElse(emptyList())
+                    ?.firstOrNull { it.inlineData().isPresent }
+                    ?.inlineData()?.orElse(null)
+                    ?: return@use null
+
+                val data = blob.data().orElse(null) ?: return@use null
+
+                GeminiGeneratedImage(
+                    mimeType = blob.mimeType().orElse(DEFAULT_MIME_TYPE),
+                    data = data
+                )
+            }
         }.onFailure { ex ->
-            logger.error("Failed to generate image via Gemini API", ex)
+            logger.error("Failed to generate image via Gemini SDK", ex)
         }.getOrNull()
     }
 
-    private fun fetchInlineData(url: String): GeminiInlineDataRequest? {
+    private fun fetchReferenceImage(url: String): ReferenceImage? {
         return runCatching {
-            val bytes = restTemplate.getForObject(url, ByteArray::class.java)
-            if (bytes != null) {
-                GeminiInlineDataRequest(
-                    mimeType = inferMimeType(url),
-                    data = Base64.getEncoder().encodeToString(bytes)
-                )
-            } else {
-                null
+            val headers = HttpHeaders().apply {
+                add(HttpHeaders.USER_AGENT, "pick-perfume-ai-image-client")
             }
+            val request = RequestEntity<Any>(headers, HttpMethod.GET, URI.create(url))
+            val response: ResponseEntity<ByteArray> = restTemplate.exchange(request, ByteArray::class.java)
+            val body = response.body ?: return@runCatching null
+            val contentType = response.headers.contentType?.toString() ?: inferMimeType(url)
+            ReferenceImage(data = body, mimeType = contentType)
         }.onFailure { ex ->
             logger.warn("Failed to fetch reference image from {}", url, ex)
         }.getOrNull()
@@ -88,7 +89,7 @@ class GeminiImageService(
 
     private fun inferMimeType(url: String): String {
         val sanitized = url.substringBefore('?')
-        val extension = sanitized.substringAfterLast('.', "").lowercase()
+        val extension = sanitized.substringAfterLast('.', "").lowercase(Locale.ROOT)
         return when (extension) {
             "png" -> "image/png"
             "gif" -> "image/gif"
@@ -107,49 +108,10 @@ class GeminiImageService(
 
 data class GeminiGeneratedImage(
     val mimeType: String,
-    val data: String
+    val data: ByteArray
 )
 
-private data class GeminiGenerateContentRequest(
-    val contents: List<GeminiContentRequest>
-)
-
-private data class GeminiContentRequest(
-    val parts: List<GeminiPartRequest>
-)
-
-private data class GeminiPartRequest(
-    val text: String? = null,
-    @JsonProperty("inline_data")
-    val inlineData: GeminiInlineDataRequest? = null
-)
-
-private data class GeminiInlineDataRequest(
-    @JsonProperty("mime_type")
-    val mimeType: String,
-    val data: String
-)
-
-private data class GeminiGenerateContentResponse(
-    val candidates: List<GeminiCandidate>?
-)
-
-private data class GeminiCandidate(
-    val content: GeminiContent?
-)
-
-private data class GeminiContent(
-    val parts: List<GeminiPartResponse>?
-)
-
-private data class GeminiPartResponse(
-    val text: String? = null,
-    @JsonProperty("inline_data")
-    val inlineData: GeminiInlineDataResponse? = null
-)
-
-private data class GeminiInlineDataResponse(
-    @JsonProperty("mime_type")
-    val mimeType: String?,
-    val data: String?
+private data class ReferenceImage(
+    val data: ByteArray,
+    val mimeType: String
 )
