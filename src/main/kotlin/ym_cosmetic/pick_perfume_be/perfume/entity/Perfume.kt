@@ -11,6 +11,7 @@ import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.note.entity.Note
 import ym_cosmetic.pick_perfume_be.perfume.enums.DesignerRole
 import ym_cosmetic.pick_perfume_be.perfume.enums.Gender
+import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImagePromptType
 import ym_cosmetic.pick_perfume_be.perfume.vo.Concentration
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.review.entity.Review
@@ -59,6 +60,9 @@ class Perfume private constructor(
         AttributeOverride(name = "url", column = Column(name = "ai_image_url"))
     )
     var aiImage: ImageUrl? = null,
+
+    @OneToMany(mappedBy = "perfume")
+    private val aiImages: MutableList<PerfumeAiImage> = mutableListOf(),
 
     @Column(nullable = false)
     @ColumnDefault("false")
@@ -125,6 +129,15 @@ class Perfume private constructor(
         perfumeNotes.filter { it.type == type }
 
     fun getAccords(): List<PerfumeAccord> = perfumeAccords.toList()
+    fun getAiImages(): List<PerfumeAiImage> = aiImages.toList()
+    fun hasAiImageFor(promptType: PerfumeAiImagePromptType): Boolean =
+        aiImages.any { it.promptType == promptType }
+
+    fun upsertAiImage(image: PerfumeAiImage): PerfumeAiImage {
+        aiImages.removeIf { it.promptType == image.promptType }
+        aiImages.add(image)
+        return image
+    }
 
     fun addNote(note: Note, type: NoteType): PerfumeNote {
         val perfumeNote = PerfumeNote.create(

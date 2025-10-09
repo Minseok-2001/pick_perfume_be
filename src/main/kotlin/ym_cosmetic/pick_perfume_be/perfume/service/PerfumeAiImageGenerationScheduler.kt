@@ -9,13 +9,16 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeAiImageRequest
 import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImageProcessStatus
+import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImagePromptType
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeAiImageRequestRepository
+import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeAiImageRepository
 import ym_cosmetic.pick_perfume_be.perfume.repository.PerfumeRepository
 
 @Service
 class PerfumeAiImageGenerationScheduler(
     private val perfumeRepository: PerfumeRepository,
     private val aiImageRequestRepository: PerfumeAiImageRequestRepository,
+    private val perfumeAiImageRepository: PerfumeAiImageRepository,
     private val rateLimiter: RateLimiter,
     private val worker: PerfumeAiImageGenerationWorker
 ) {
@@ -23,38 +26,55 @@ class PerfumeAiImageGenerationScheduler(
     @Transactional
     fun schedule(perfumeId: Long, member: Member?, ipAddress: String?) {
         val perfume = perfumeRepository.findById(perfumeId).orElse(null) ?: return
-        if (perfume.aiImage != null) {
+        val existingVariants = perfumeAiImageRepository.findByPerfumeId(perfumeId)
+            .map { it.promptType }
+            .toSet()
+        val missingPromptTypes = PerfumeAiImagePromptType.entries.filterNot { it in existingVariants }
+
+        if (missingPromptTypes.isEmpty()) {
             return
         }
 
-        val latestRequest = aiImageRequestRepository.findTopByPerfumeIdOrderByCreatedAtDesc(perfumeId)
-        if (latestRequest != null && latestRequest.status in ACTIVE_STATUSES) {
-            return
-        }
+        for (promptType in missingPromptTypes) {
+            val latestRequest =
+                aiImageRequestRepository.findTopByPerfumeIdAndPromptTypeOrderByCreatedAtDesc(perfumeId, promptType)
+            if (latestRequest != null && latestRequest.status in ACTIVE_STATUSES) {
+                continue
+            }
 
-        val permissionGranted = rateLimiter.acquirePermission()
-        val status = if (permissionGranted) {
-            PerfumeAiImageProcessStatus.QUEUED
-        } else {
-            PerfumeAiImageProcessStatus.RATE_LIMITED
-        }
+            val permissionGranted = rateLimiter.acquirePermission()
+            val status = if (permissionGranted) {
+                PerfumeAiImageProcessStatus.QUEUED
+            } else {
+                PerfumeAiImageProcessStatus.RATE_LIMITED
+            }
 
-        val request = aiImageRequestRepository.save(
-            PerfumeAiImageRequest.create(
-                perfume = perfume,
-                member = member,
-                ipAddress = ipAddress,
-                status = status,
-                message = if (permissionGranted) null else "Rate limit exceeded"
+            val request = aiImageRequestRepository.save(
+                PerfumeAiImageRequest.create(
+                    perfume = perfume,
+                    member = member,
+                    ipAddress = ipAddress,
+                    status = status,
+                    promptType = promptType,
+                    message = if (permissionGranted) null else "Rate limit exceeded"
+                )
             )
-        )
 
-        if (!permissionGranted) {
-            logger.warn("AI preview generation rate limited for perfumeId={} ip={}", perfumeId, ipAddress)
-            return
+            if (!permissionGranted) {
+                logger.warn(
+                    "AI preview generation rate limited for perfumeId={} promptType={} ip={}",
+                    perfumeId,
+                    promptType,
+                    ipAddress
+                )
+                break
+            }
+
+            request.id?.let { dispatchToWorker(it) }
         }
+    }
 
-        val requestId = request.id ?: return
+    private fun dispatchToWorker(requestId: Long) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
                 override fun afterCommit() {

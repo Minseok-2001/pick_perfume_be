@@ -25,13 +25,16 @@ import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeCreateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeDesignerRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeAiImageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryStats
 import ym_cosmetic.pick_perfume_be.perfume.entity.Perfume
+import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeAiImageVote
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeLike
 import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeView
+import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImagePromptType
 import ym_cosmetic.pick_perfume_be.perfume.repository.*
 import ym_cosmetic.pick_perfume_be.perfume.vo.NoteType
 import ym_cosmetic.pick_perfume_be.search.event.PerfumeCreatedEvent
@@ -54,7 +57,9 @@ class PerfumeService(
     private val eventPublisher: ApplicationEventPublisher,
     private val perfumeLikeRepository: PerfumeLikeRepository,
     private val perfumeViewRepository: PerfumeViewRepository,
-    private val perfumeAiImageGenerationScheduler: PerfumeAiImageGenerationScheduler
+    private val perfumeAiImageGenerationScheduler: PerfumeAiImageGenerationScheduler,
+    private val perfumeAiImageRepository: PerfumeAiImageRepository,
+    private val perfumeAiImageVoteRepository: PerfumeAiImageVoteRepository
 ) {
     @Transactional
     fun findPerfumeById(id: Long, member: Member?): PerfumeResponse {
@@ -65,7 +70,8 @@ class PerfumeService(
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
         ensurePerfumeAiImage(perfume, member, null)
-        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
+        val aiPreviews = buildAiPreviewResponses(perfume, member, null)
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount, aiPreviews)
     }
 
     /**
@@ -109,7 +115,55 @@ class PerfumeService(
         val likeCount = getPerfumeLikeCount(id)
         val viewCount = getPerfumeViewCount(id)
         ensurePerfumeAiImage(perfume, member, ipAddress)
-        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount)
+        val aiPreviews = buildAiPreviewResponses(perfume, member, ipAddress)
+        return PerfumeResponse.from(perfume, isLiked, likeCount, viewCount, aiPreviews)
+    }
+
+    @Transactional
+    fun voteForPerfumeAiImage(
+        perfumeId: Long,
+        aiImageId: Long,
+        member: Member?,
+        request: HttpServletRequest
+    ): List<PerfumeAiImageResponse> {
+        val perfume = perfumeRepository.findByIdWithCreatorAndBrand(perfumeId)
+            ?: throw EntityNotFoundException("Perfume not found with id: $perfumeId")
+
+        val aiImage = perfumeAiImageRepository.findById(aiImageId)
+            .orElseThrow { EntityNotFoundException("Perfume AI image not found with id: $aiImageId") }
+
+        if (aiImage.perfume.id != perfume.id) {
+            throw IllegalArgumentException("AI image $aiImageId does not belong to perfume $perfumeId")
+        }
+
+        val ipAddress = extractClientIp(request)
+        if (member?.id == null && ipAddress.isNullOrBlank()) {
+            throw IllegalArgumentException("Unable to identify voter. Please authenticate or provide a valid IP.")
+        }
+
+        val existingVote = when {
+            member?.id != null -> perfumeAiImageVoteRepository.findByPerfumeIdAndMemberId(perfumeId, member.id!!)
+            !ipAddress.isNullOrBlank() -> perfumeAiImageVoteRepository.findByPerfumeIdAndIpAddress(perfumeId, ipAddress)
+            else -> null
+        }
+
+        if (existingVote != null) {
+            existingVote.attachMemberIfMissing(member)
+            if (existingVote.aiImage.id == aiImageId) {
+                return buildAiPreviewResponses(perfume, member, ipAddress)
+            }
+            existingVote.changeSelection(aiImage)
+        } else {
+            val newVote = PerfumeAiImageVote.create(
+                perfume = perfume,
+                aiImage = aiImage,
+                member = member,
+                ipAddress = ipAddress
+            )
+            perfumeAiImageVoteRepository.save(newVote)
+        }
+
+        return buildAiPreviewResponses(perfume, member, ipAddress)
     }
 
     @Transactional(readOnly = true)
@@ -223,7 +277,8 @@ class PerfumeService(
         addPerfumeDesigners(savedPerfume, request.designers)
         eventPublisher.publishEvent(PerfumeCreatedEvent(savedPerfume.id!!))
 
-        return PerfumeResponse.from(savedPerfume)
+        val aiPreviews = buildAiPreviewResponses(savedPerfume, creator, null)
+        return PerfumeResponse.from(savedPerfume, aiImages = aiPreviews)
     }
 
     @Transactional
@@ -258,7 +313,8 @@ class PerfumeService(
         updatePerfumeDesigners(perfume, request.designers)
         eventPublisher.publishEvent(PerfumeUpdatedEvent(id))
 
-        return PerfumeResponse.from(perfume)
+        val aiPreviews = buildAiPreviewResponses(perfume, null, null)
+        return PerfumeResponse.from(perfume, aiImages = aiPreviews)
     }
 
     @Transactional
@@ -286,7 +342,8 @@ class PerfumeService(
 
         perfume.approve()
 
-        return PerfumeResponse.from(perfume)
+        val aiPreviews = buildAiPreviewResponses(perfume, null, null)
+        return PerfumeResponse.from(perfume, aiImages = aiPreviews)
     }
 
     @Transactional
@@ -295,6 +352,8 @@ class PerfumeService(
         perfumeNoteRepository.deleteByPerfumeId(id)
         perfumeAccordRepository.deleteByPerfumeId(id)
         perfumeDesignerRepository.deleteByPerfumeId(id)
+        perfumeAiImageVoteRepository.deleteByPerfumeId(id)
+        perfumeAiImageRepository.deleteByPerfumeId(id)
 
         // 향수 삭제
         perfumeRepository.deleteById(id)
@@ -322,11 +381,48 @@ class PerfumeService(
 
 
 
+    private fun buildAiPreviewResponses(
+        perfume: Perfume,
+        member: Member?,
+        ipAddress: String?
+    ): List<PerfumeAiImageResponse> {
+        val perfumeId = perfume.id
+            ?: return perfume.aiImage?.let { listOf(PerfumeAiImageResponse.legacy(it)) } ?: emptyList()
+
+        val aiImages = perfumeAiImageRepository.findByPerfumeId(perfumeId)
+        if (aiImages.isEmpty()) {
+            return perfume.aiImage?.let { listOf(PerfumeAiImageResponse.legacy(it)) } ?: emptyList()
+        }
+
+        val voteCounts = aiImages
+            .mapNotNull { it.id }
+            .associateWith { perfumeAiImageVoteRepository.countByAiImageId(it) }
+
+        val voterRecord = when {
+            member?.id != null -> perfumeAiImageVoteRepository.findByPerfumeIdAndMemberId(perfumeId, member.id!!)
+            !ipAddress.isNullOrBlank() -> perfumeAiImageVoteRepository.findByPerfumeIdAndIpAddress(perfumeId, ipAddress)
+            else -> null
+        }
+        val selectedImageId = voterRecord?.aiImage?.id
+
+        return aiImages
+            .sortedBy { it.promptType.ordinal }
+            .mapNotNull { aiImage ->
+                val imageId = aiImage.id ?: return@mapNotNull null
+                PerfumeAiImageResponse.from(
+                    aiImage = aiImage,
+                    voteCount = voteCounts[imageId] ?: 0,
+                    selectedByCurrentUser = selectedImageId != null && selectedImageId == imageId
+                )
+            }
+    }
+
     private fun ensurePerfumeAiImage(perfume: Perfume, member: Member?, ipAddress: String?) {
-        if (perfume.aiImage != null) {
+        val perfumeId = perfume.id ?: return
+        val generatedCount = perfumeAiImageRepository.countByPerfumeId(perfumeId)
+        if (generatedCount >= PerfumeAiImagePromptType.entries.size) {
             return
         }
-        val perfumeId = perfume.id ?: return
         perfumeAiImageGenerationScheduler.schedule(perfumeId, member, ipAddress)
     }
 

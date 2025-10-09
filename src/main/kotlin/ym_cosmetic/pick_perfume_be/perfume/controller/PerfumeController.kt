@@ -14,6 +14,7 @@ import ym_cosmetic.pick_perfume_be.member.enums.MemberRole
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeCreateRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeFilterRequest
 import ym_cosmetic.pick_perfume_be.perfume.dto.request.PerfumeUpdateRequest
+import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeAiImageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumePageResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeResponse
 import ym_cosmetic.pick_perfume_be.perfume.dto.response.PerfumeSummaryResponse
@@ -115,6 +116,17 @@ class PerfumeController(
     ): ApiResponse<String> {
         val imageUrl = perfumeService.uploadPerfumeImage(id, file)
         return ApiResponse.success(imageUrl)
+    }
+
+    @PostMapping("/{id}/ai-images/{imageId}/vote")
+    fun votePerfumeAiImage(
+        @PathVariable id: Long,
+        @PathVariable imageId: Long,
+        @CurrentMember @OptionalAuth member: Member?,
+        request: HttpServletRequest
+    ): ApiResponse<List<PerfumeAiImageResponse>> {
+        val result = perfumeService.voteForPerfumeAiImage(id, imageId, member, request)
+        return ApiResponse.success(result)
     }
 
     @PostMapping("/{id}/like")

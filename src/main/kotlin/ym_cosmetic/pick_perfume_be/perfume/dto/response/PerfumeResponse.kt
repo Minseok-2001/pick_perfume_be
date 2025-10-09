@@ -32,14 +32,15 @@ data class PerfumeResponse(
     val viewCount: Int,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-    val aiPreviewImage: PerfumeAiImageResponse? = null
+    val aiPreviewImages: List<PerfumeAiImageResponse>
 ) {
     companion object {
         fun from(
             perfume: Perfume,
             isLiked: Boolean = false,
             likeCount: Int = 0,
-            viewCount: Int = 0
+            viewCount: Int = 0,
+            aiImages: List<PerfumeAiImageResponse> = emptyList()
         ): PerfumeResponse {
             val notes = perfume.getNotes()
 
@@ -54,6 +55,20 @@ data class PerfumeResponse(
                             content = null
                         )
                     )
+                }
+            }
+
+            val previewImages = if (aiImages.isNotEmpty()) {
+                aiImages
+            } else {
+                val variants = perfume.getAiImages()
+                    .sortedBy { it.promptType.ordinal }
+                    .map { PerfumeAiImageResponse.from(it) }
+
+                if (variants.isNotEmpty()) {
+                    variants
+                } else {
+                    perfume.aiImage?.let { listOf(PerfumeAiImageResponse.legacy(it)) } ?: emptyList()
                 }
             }
 
@@ -84,7 +99,7 @@ data class PerfumeResponse(
                 viewCount = viewCount,
                 createdAt = perfume.createdAt,
                 updatedAt = perfume.updatedAt,
-                aiPreviewImage = perfume.aiImage?.let { PerfumeAiImageResponse.from(it) }
+                aiPreviewImages = previewImages
             )
         }
     }

@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import ym_cosmetic.pick_perfume_be.common.BaseTimeEntity
 import ym_cosmetic.pick_perfume_be.member.entity.Member
 import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImageProcessStatus
+import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImagePromptType
 import java.time.LocalDateTime
 
 @Entity
@@ -25,11 +26,18 @@ class PerfumeAiImageRequest private constructor(
     val ipAddress: String? = null,
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "prompt_type", nullable = false, length = 50)
+    val promptType: PerfumeAiImagePromptType,
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: PerfumeAiImageProcessStatus,
 
     @Column(length = 1000)
     var message: String? = null,
+
+    @Column(name = "prompt", columnDefinition = "TEXT")
+    var prompt: String? = null,
 
     @Column(name = "completed_at")
     var completedAt: LocalDateTime? = null
@@ -65,14 +73,18 @@ class PerfumeAiImageRequest private constructor(
             member: Member?,
             ipAddress: String?,
             status: PerfumeAiImageProcessStatus,
-            message: String? = null
+            promptType: PerfumeAiImagePromptType,
+            message: String? = null,
+            prompt: String? = null
         ): PerfumeAiImageRequest {
             return PerfumeAiImageRequest(
                 perfume = perfume,
                 member = member,
                 ipAddress = ipAddress,
                 status = status,
-                message = message
+                promptType = promptType,
+                message = message,
+                prompt = prompt
             )
         }
     }
