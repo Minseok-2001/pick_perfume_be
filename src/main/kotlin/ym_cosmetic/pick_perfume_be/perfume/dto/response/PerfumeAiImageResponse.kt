@@ -5,6 +5,7 @@ import ym_cosmetic.pick_perfume_be.perfume.entity.PerfumeAiImage
 import ym_cosmetic.pick_perfume_be.perfume.enums.PerfumeAiImagePromptType
 
 data class PerfumeAiImageResponse(
+    val id: Long?,
     val promptType: PerfumeAiImagePromptType,
     val themeLabel: String,
     val visualFocus: String,
@@ -22,6 +23,7 @@ data class PerfumeAiImageResponse(
             selectedByCurrentUser: Boolean = false
         ): PerfumeAiImageResponse {
             return PerfumeAiImageResponse(
+                id = aiImage.id,
                 promptType = aiImage.promptType,
                 themeLabel = aiImage.promptType.themeLabel,
                 visualFocus = aiImage.promptType.visualFocus,
@@ -36,6 +38,7 @@ data class PerfumeAiImageResponse(
 
         fun legacy(imageUrl: ImageUrl): PerfumeAiImageResponse {
             return PerfumeAiImageResponse(
+                id = null,
                 promptType = PerfumeAiImagePromptType.STORYBOARD_IMPRESSION,
                 themeLabel = "legacy-single",
                 visualFocus = PerfumeAiImagePromptType.STORYBOARD_IMPRESSION.visualFocus,
