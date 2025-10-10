@@ -14,13 +14,10 @@ if [ ! -f "$CERT_FILE" ]
 then
     echo "Certificate not found. Generating a new one..."
 
-    # Certbot이 80번 포트를 사용해야 하므로 Nginx를 잠시 중지합니다.
     sudo systemctl stop nginx
 
-    # --standalone 옵션으로 인증서를 발급받습니다. 이메일은 본인 것으로 수정해주세요.
-    sudo certbot certonly --standalone --non-interactive --agree-tos -m your-email@example.com -d api.scentist.link
+    sudo certbot certonly --standalone --non-interactive --agree-tos -m ms.jung.dev@gmail.com -d api.scentist.link
 
-    # Nginx를 다시 시작합니다. (배포 프로세스가 나중에 다시 reload 하므로 이 부분은 보험용입니다.)
     sudo systemctl start nginx
 else
     echo "Certificate already exists. Skipping generation."
